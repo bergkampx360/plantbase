@@ -37,17 +37,17 @@ Plantbase uses **two DB connections with two different roles** (docs/architektur
    ```sql
    DO $$
    BEGIN
-     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'plantbase_readonly') THEN
-       CREATE ROLE plantbase_readonly LOGIN PASSWORD '<from .env, never hardcode>';
+     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'plantbase_ro') THEN
+       CREATE ROLE plantbase_ro LOGIN PASSWORD '<from .env, never hardcode>';
      END IF;
    END
    $$;
 
-   GRANT CONNECT ON DATABASE plantbase TO plantbase_readonly;
-   GRANT USAGE ON SCHEMA public TO plantbase_readonly;
-   GRANT SELECT ON ALL TABLES IN SCHEMA public TO plantbase_readonly;
-   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO plantbase_readonly;
-   REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA public FROM plantbase_readonly;
+   GRANT CONNECT ON DATABASE plantbase TO plantbase_ro;
+   GRANT USAGE ON SCHEMA public TO plantbase_ro;
+   GRANT SELECT ON ALL TABLES IN SCHEMA public TO plantbase_ro;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO plantbase_ro;
+   REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA public FROM plantbase_ro;
    ```
    Apply it manually against a running container with:
    ```bash
@@ -55,9 +55,9 @@ Plantbase uses **two DB connections with two different roles** (docs/architektur
    ```
 
 4. **Point env vars at the right role.** In `.env` (never commit):
-   - `DATABASE_URL` → app/Prisma role (read-write).
-   - `DATABASE_URL_READONLY` → `plantbase_readonly`.
-   Update `.env.example` with the variable names (no real values/passwords).
+   - `DATABASE_URL` → app/Prisma role (read-write, `plantbase`).
+   - `DATABASE_URL_READONLY` → `plantbase_ro`.
+   These variable names are already documented in `.env.example` (no real values/passwords there).
 
 5. **Verify the role actually can't write** — this is the one check that matters:
    ```bash
