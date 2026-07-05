@@ -19,6 +19,13 @@ Példák: `feat: add read-only runSql tool`, `test: cover runSql SELECT-only gua
 
 Minden befejezett, koherens lépés után kicsi, fókuszált commit (egy lépés = egy commit). Lásd a `Stop` hookot.
 
+### PR merge
+
+Squash merge only — a repo GitHub-beállításában a merge commit és a rebase merge le van tiltva, csak
+squash engedélyezett. Egy PR összes commitja eggyé tömörül a `main`-en, hogy a history lineáris és
+egyszerűen követhető maradjon. A PR-on belüli kis, fókuszált commitok (ld. Auto-commit) a review alatt
+számítanak, a `main`-en nem őrződnek meg külön-külön.
+
 ## Hookok (`settings.json`)
 
 ```json

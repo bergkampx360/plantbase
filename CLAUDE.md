@@ -4,6 +4,7 @@ Always use Context7 when library/API documentation, setup, configuration steps, 
 
 Do not commit directly to `main`.
 Create a feature branch for changes, commit there, open a pull request, and only merge automatically when checks pass.
+Merge PRs via squash merge only (the repo is configured to disallow merge commits and rebase merges).
 
 Do not expose or commit secrets.
 Never commit `.env` files.
