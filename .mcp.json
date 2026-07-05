@@ -13,6 +13,16 @@
       "headers": {
         "CONTEXT7_API_KEY": "${CONTEXT7_PAT}"
       }
+    },
+    "postgres": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "postgres-mcp", "--access-mode=restricted", "${DATABASE_URL_READONLY}"]
+    },
+    "prisma": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "prisma", "mcp"]
     }
   }
 }
