@@ -75,3 +75,5 @@ docs/
 ## Dokumentáció-frissítés
 
 A `/docs` frissítését a **`ddd-audit` skill** végzi (git-history → docs), külön, igény szerint futtatva. NEM készítünk doc-freshness ellenőrző scriptet és Stop hookot az elején. A CI-alapú változat a 4. órán jön (always-on / CI/CD).
+
+A gyökér **`README.md`** is ide tartozik: kulcs változásoknál (új `packages/`/`apps/` létrejötte, stack-váltás, workflow-szabály változása — pl. squash-merge policy) frissíteni kell, ugyanúgy manuálisan/igény szerint, nem automatizált hookkal.
