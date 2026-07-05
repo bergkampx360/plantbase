@@ -15,6 +15,8 @@ Agent/tooling variables belong in `.env.agent`.
 
 After editing `.envrc`, tell the user to run `direnv allow` — direnv blocks the file until it's re-approved.
 
+When a change makes `README.md` stale (new `packages/`/`apps/`, stack change, workflow-rule change), update it in the same PR or flag it explicitly — don't leave it silently out of date.
+
 Prefer simple, maintainable, type-safe code.
 For external or untrusted input, use `unknown` instead of `any` and narrow/validate safely.
 
