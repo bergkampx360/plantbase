@@ -12,6 +12,8 @@ Use `.env.example` and `.env.agent.example` to document required variables.
 Application runtime variables belong in `.env`.
 Agent/tooling variables belong in `.env.agent`.
 
+After editing `.envrc`, tell the user to run `direnv allow` — direnv blocks the file until it's re-approved.
+
 Prefer simple, maintainable, type-safe code.
 For external or untrusted input, use `unknown` instead of `any` and narrow/validate safely.
 
