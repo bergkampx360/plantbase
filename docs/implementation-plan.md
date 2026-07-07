@@ -20,15 +20,15 @@ Ez alapján a "függőségek/seed/tesztek már megvannak" feltevést úgy oldom 
 
 Kódolás előtt minden érintett library aktuális dokumentációját Context7-ből olvastam be, nem memóriából dolgozom:
 
-| Library | Mire használom | Amit megerősítettem |
-|---|---|---|
-| Nx (`/websites/nx_dev`) | monorepo | `npx create-nx-workspace --template nrwl/typescript-template` (pnpm), `nx g @nx/js:lib packages/X --bundler=tsc --unitTestRunner=vitest`, `nx g @nx/node:application apps/X` |
-| Prisma (`/websites/prisma_io`) | `packages/db` (séma+migráció+seed, ld. A2–A3) | Prisma **v7** mintája: `generator client { provider = "prisma-client", output = "../src/generated/prisma" }` (NEM `prisma-client-js`), `prisma.config.ts` a séma/migráció/seed úttal; idempotens seed = **upsert egyedi mezőn** (Prisma doksi: "an upsert operation is idempotent if the target table enforces unique... ensuring only one... created or an existing one updated") — nem `createMany({ skipDuplicates: true })`, mert az nem frissíti a meglévő sorokat, ha a fix lista módosul |
-| Commander.js (`/tj/commander.js`) | `apps/cli` | `program.command().argument().action()` minta, TS/ESM-kompatibilis |
-| Vitest (`/websites/vitest_dev`) | tesztek | `.test.ts` fájlnév, natív TS-támogatás, `defineConfig` |
-| node-postgres (`/brianc/node-postgres`) | `runSql` | `new Pool({ connectionString })`, paraméterezett `pool.query(sql, params)`, hibakezelés |
-| Zod (`/websites/zod_dev`) | tool-input validáció | `z.object(...)`, `.parse()` dobja a hibát érvénytelen inputnál |
-| pnpm (`/websites/pnpm_io`) | `apps/cli` → `plantbase` bin (A6) | a `pnpm link --global` **megszűnt pnpm v11-ben**; a jelenlegi hivatalos mód helyi csomag binárisának globális regisztrálására: `pnpm add -g .` a csomag könyvtárából, `bin` mező megléte esetén |
+| Library                                 | Mire használom                                | Amit megerősítettem                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nx (`/websites/nx_dev`)                 | monorepo                                      | `npx create-nx-workspace --template nrwl/typescript-template` (pnpm), `nx g @nx/js:lib packages/X --bundler=tsc --unitTestRunner=vitest`, `nx g @nx/node:application apps/X`                                                                                                                                                                                                                                                                                                                    |
+| Prisma (`/websites/prisma_io`)          | `packages/db` (séma+migráció+seed, ld. A2–A3) | Prisma **v7** mintája: `generator client { provider = "prisma-client", output = "../src/generated/prisma" }` (NEM `prisma-client-js`), `prisma.config.ts` a séma/migráció/seed úttal; idempotens seed = **upsert egyedi mezőn** (Prisma doksi: "an upsert operation is idempotent if the target table enforces unique... ensuring only one... created or an existing one updated") — nem `createMany({ skipDuplicates: true })`, mert az nem frissíti a meglévő sorokat, ha a fix lista módosul |
+| Commander.js (`/tj/commander.js`)       | `apps/cli`                                    | `program.command().argument().action()` minta, TS/ESM-kompatibilis                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Vitest (`/websites/vitest_dev`)         | tesztek                                       | `.test.ts` fájlnév, natív TS-támogatás, `defineConfig`                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| node-postgres (`/brianc/node-postgres`) | `runSql`                                      | `new Pool({ connectionString })`, paraméterezett `pool.query(sql, params)`, hibakezelés                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Zod (`/websites/zod_dev`)               | tool-input validáció                          | `z.object(...)`, `.parse()` dobja a hibát érvénytelen inputnál                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| pnpm (`/websites/pnpm_io`)              | `apps/cli` → `plantbase` bin (A6)             | a `pnpm link --global` **megszűnt pnpm v11-ben**; a jelenlegi hivatalos mód helyi csomag binárisának globális regisztrálására: `pnpm add -g .` a csomag könyvtárából, `bin` mező megléte esetén                                                                                                                                                                                                                                                                                                 |
 
 Az Anthropic TypeScript SDK-t (kézi tool-use loop, `client.messages.create`, tool definíció formátum) a `claude-api` skill már ellenőrzött, aktuális dokumentációja alapján tervezem — nem memóriából.
 
@@ -45,7 +45,7 @@ Az Anthropic TypeScript SDK-t (kézi tool-use loop, `client.messages.create`, to
 
 Mérföldkő: fut és tesztelhető a projekt — Nx workspace, `packages/db` sémával+migrációval+seeddel, `packages/core` és `apps/cli` váza, üres CLI elindul.
 
-### A1 — Nx + pnpm workspace scaffold
+### A1 — Nx + pnpm workspace scaffold ✅ KÉSZ
 
 - `pnpm`-alapú Nx workspace létrehozása a repo gyökerén (`create-nx-workspace` a `nrwl/typescript-template`-tel, vagy a meglévő gyökér-fájlok mellé illesztve manuálisan: `package.json`, `pnpm-workspace.yaml`, `nx.json`, gyökér `tsconfig.base.json`, ESLint+Prettier).
 - Még nincs `packages/`/`apps/` tartalom.
@@ -189,7 +189,7 @@ Független a fenti mérföldkőtől — nem gátolja azt, és semmi más rész s
 
 `docs/system-prompt.md` tartalmi (nem csak mechanikus) módosítása, indoklással:
 
-1. **`<examples>` tag hozzáadása** — 2-3 konkrét NL-kérdés → SQL példa (pl. *"Milyen pozsgás növényeim vannak raktáron 5000 Ft alatt?"* → megfelelő `SELECT` `ILIKE`+`COALESCE`+`stock > 0`+`LIMIT` mintával). **Indoklás:** `docs/konvenciok.md` explicit ajánlja ezt a taget az XML-struktúrához ("role, schema, rules, **examples**, question"), a jelenlegi system-prompt.md-ből ez hiányzik — a few-shot példák a gyakorlatban csökkentik a hallucináció/rossz SQL esélyét.
+1. **`<examples>` tag hozzáadása** — 2-3 konkrét NL-kérdés → SQL példa (pl. _"Milyen pozsgás növényeim vannak raktáron 5000 Ft alatt?"_ → megfelelő `SELECT` `ILIKE`+`COALESCE`+`stock > 0`+`LIMIT` mintával). **Indoklás:** `docs/konvenciok.md` explicit ajánlja ezt a taget az XML-struktúrához ("role, schema, rules, **examples**, question"), a jelenlegi system-prompt.md-ből ez hiányzik — a few-shot példák a gyakorlatban csökkentik a hallucináció/rossz SQL esélyét.
 2. **`<rules>`/`<behavior>` kiegészítése:** "Ha a kérdésben szereplő kategória (vagy más kategorikus érték) nem egyezik egyértelműen egy ismert értékkel, ELŐBB hívd meg a `listCategories` toolt, mielőtt találgatnál vagy `ILIKE`-kal közelítenél." **Indoklás:** a B4-ben bevezetett `listCategories` tool pont ezt a bizonytalanságot hivatott kiváltani — enélkül a szabály nélkül a modell nem feltétlenül használná a toolt, és találgatna vagy hibás `ILIKE` mintát építene.
 3. **`<tools>` szekció véglegesítése** a `listCategories` bejegyzéssel (ha B4 mechanikus lépése után még finomítani kell a leírást).
 
@@ -213,12 +213,12 @@ A commit/PR leírás tartalmazza a fenti indoklást explicit (nem csak a diffet)
 
 ## A kurzus-követelmények lefedettsége
 
-| Követelmény | Lefedve? |
-|---|---|
-| `listCategories` saját tool, `askAgent`-be kötve | ✅ B4 |
+| Követelmény                                                | Lefedve?                                       |
+| ---------------------------------------------------------- | ---------------------------------------------- |
+| `listCategories` saját tool, `askAgent`-be kötve           | ✅ B4                                          |
 | Rendszeres, kis, fókuszált commitok (Conventional Commits) | ✅ "Git-workflow" szakasz + eddigi PR-történet |
-| Min. 3 releváns marketplace plugin/skill | ✅ A7 (a meglévő 2 + `commit-commands`) |
-| ROI-levezetés pénzben, `docs/roi.md` | ✅ már elkészült, mergelve (PR #6) |
-| System prompt minőségi javítása, indoklással | ✅ B5 |
+| Min. 3 releváns marketplace plugin/skill                   | ✅ A7 (a meglévő 2 + `commit-commands`)        |
+| ROI-levezetés pénzben, `docs/roi.md`                       | ✅ már elkészült, mergelve (PR #6)             |
+| System prompt minőségi javítása, indoklással               | ✅ B5                                          |
 
 Nincs több nyitott kérdés — implementáció kezdhető A1-gyel.
