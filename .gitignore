@@ -15,3 +15,6 @@ vitest.config.*.timestamp*
 
 # generált Prisma Client — `pnpm --filter @plantbase/db run db:generate` állítja elő
 packages/db/src/generated
+
+# futásidejű interakció-napló (JSONL), felhasználói kérdéseket/válaszokat tartalmaz
+logs

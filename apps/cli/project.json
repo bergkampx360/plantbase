@@ -16,9 +16,10 @@
         "bundle": true,
         "thirdParty": true,
         "main": "apps/cli/src/main.ts",
-        "tsConfig": "apps/cli/tsconfig.app.json",
+        "tsConfig": "apps/cli/tsconfig.esbuild.json",
         "assets": ["apps/cli/src/assets"],
-        "generatePackageJson": true,
+        "generatePackageJson": false,
+        "skipTypeCheck": true,
         "esbuildOptions": {
           "sourcemap": true,
           "outExtension": {
