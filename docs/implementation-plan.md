@@ -97,7 +97,7 @@ Ez konzisztens `docs/architektura.md` 6. döntésével ("A Prisma [séma, migrá
 **Teszt:** `psql "$DATABASE_URL_READONLY" -c "SELECT count(*) FROM products;"` sikeres; `psql "$DATABASE_URL_READONLY" -c "INSERT INTO products (name) VALUES ('x');"` → `permission denied`.
 **Commit:** `chore: provision read-only DB role for agent access`
 
-### A5 — `packages/core` váz
+### A5 — `packages/core` váz ✅ KÉSZ
 
 - `nx g @nx/js:lib packages/core --bundler=tsc --unitTestRunner=vitest`, `package.json` `name` mezője **`@plantbase/core`** (a `scaffold-nx-package` skill `@plantbase/<name>` konvenciója szerint, ugyanúgy explicit kimondva, mint `@plantbase/db` A2-ben).
 - Egyelőre üres, csak egy `index.ts` placeholder export (`export const VERSION = '0.0.0'` vagy hasonló) — a valódi agent-logika a B) részben kerül bele.
