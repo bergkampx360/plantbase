@@ -14,7 +14,9 @@ Részletek: [`docs/brs-plantbase.md`](docs/brs-plantbase.md) (üzleti igény, RO
 
 ## Állapot
 
-A teljes implementációs terv (A) rész: környezet; B) rész: agent-logika) elkészült — `docs/implementation-plan.md`. A `plantbase ask "<kérdés>"` valódi LLM-hívással SQL-t generál és futtat a `products` katalóguson (`runSql`), szükség esetén a `listCategories` toolt is használja, és a `--show-prompt` kapcsolóval a teljes üzenet-előzmény is megjeleníthető. Futtatás és tesztelés: ld. lent.
+A teljes implementációs terv (A) rész: környezet; B) rész: agent-logika) elkészült — `docs/implementation-plan-1.md`. A `plantbase ask "<kérdés>"` valódi LLM-hívással SQL-t generál és futtat a `products` katalóguson (`runSql`), szükség esetén a `listCategories` toolt is használja, és a `--show-prompt` kapcsolóval a teljes üzenet-előzmény is megjeleníthető. Futtatás és tesztelés: ld. lent.
+
+UX/DX fejlesztések terve (shortcut, kontextus-kezelés, olvashatóbb kimenet): `docs/implementation-plan-2.md`.
 
 ## Stack
 
@@ -24,16 +26,18 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 
 ## Dokumentáció
 
-| Dokumentum                                       | Miről szól                                                 |
-| ------------------------------------------------ | ---------------------------------------------------------- |
-| [`docs/brs-plantbase.md`](docs/brs-plantbase.md) | Üzleti igény, megoldás, scope, követelmények, ROI-keret    |
-| [`docs/roi.md`](docs/roi.md)                     | ROI-levezetés pénzben, 5 fős iroda szintjén                |
-| [`docs/stack.md`](docs/stack.md)                 | Tech stack, `products` séma                                |
-| [`docs/architektura.md`](docs/architektura.md)   | Tervezett fájlstruktúra, kulcs technológiai döntések       |
-| [`docs/konvenciok.md`](docs/konvenciok.md)       | Kódkonvenciók (naming, TypeScript, hibakezelés, tesztelés) |
-| [`docs/dev-workflow.md`](docs/dev-workflow.md)   | Git-szabályok, hookok, dokumentáció-frissítés              |
-| [`docs/system-prompt.md`](docs/system-prompt.md) | Az agent system promptja                                   |
-| [`CLAUDE.md`](CLAUDE.md)                         | Claude Code-nak szóló projekt-instrukciók                  |
+| Dokumentum                                                       | Miről szól                                                    |
+| ---------------------------------------------------------------- | ------------------------------------------------------------- |
+| [`docs/brs-plantbase.md`](docs/brs-plantbase.md)                 | Üzleti igény, megoldás, scope, követelmények, ROI-keret       |
+| [`docs/roi.md`](docs/roi.md)                                     | ROI-levezetés pénzben, 5 fős iroda szintjén                   |
+| [`docs/stack.md`](docs/stack.md)                                 | Tech stack, `products` séma                                   |
+| [`docs/architektura.md`](docs/architektura.md)                   | Tervezett fájlstruktúra, kulcs technológiai döntések          |
+| [`docs/konvenciok.md`](docs/konvenciok.md)                       | Kódkonvenciók (naming, TypeScript, hibakezelés, tesztelés)    |
+| [`docs/dev-workflow.md`](docs/dev-workflow.md)                   | Git-szabályok, hookok, dokumentáció-frissítés                 |
+| [`docs/system-prompt.md`](docs/system-prompt.md)                 | Az agent system promptja                                      |
+| [`docs/implementation-plan-1.md`](docs/implementation-plan-1.md) | Implementációs terv — környezet + agent-logika (A1–A7, B1–B5) |
+| [`docs/implementation-plan-2.md`](docs/implementation-plan-2.md) | Implementációs terv — UX/DX fejlesztések (C1–C3)              |
+| [`CLAUDE.md`](CLAUDE.md)                                         | Claude Code-nak szóló projekt-instrukciók                     |
 
 ## Helyi fejlesztői környezet
 
