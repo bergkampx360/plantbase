@@ -88,7 +88,7 @@ Context7-vel megerősítve (`/websites/pnpm_io`): a `pnpm run <script> <extra ar
 **Commit:** `feat: carry conversation history across turns in interactive mode`
 → **megállok, kérem a tesztelést.**
 
-### C3 — Kimeneti absztrakció + olvashatóság
+### C3 — Kimeneti absztrakció + olvashatóság ✅ KÉSZ
 
 - **Új `apps/cli/src/format-messages.ts`** — tiszta formázó-logika, mellékhatás nélkül:
   ```ts
