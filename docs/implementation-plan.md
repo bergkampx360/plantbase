@@ -144,7 +144,7 @@ Független a fenti mérföldkőtől — nem gátolja azt, és semmi más rész s
 **Commit:** `feat: CLI echo without LLM (Phase 1)`
 → **megállok, kérem a tesztelést.**
 
-### B2 — LLM, adatbázis nélkül
+### B2 — LLM, adatbázis nélkül ✅ KÉSZ
 
 - `packages/core`: **`askAgent(question: string): Promise<AskResult>`**, NEM egyszerű `Promise<string>` (ld. korábbi review: az FR5 `--show-prompt` csak akkor valósítható meg, ha a teljes üzenet-tömb is visszajut a hívóhoz, nem csak a végső válasz szövege):
   ```ts
