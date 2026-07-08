@@ -185,7 +185,7 @@ Független a fenti mérföldkőtől — nem gátolja azt, és semmi más rész s
 **Commit:** `feat: add listCategories tool bound into askAgent (Phase 4)`
 → **megállok, kérem a tesztelést.**
 
-### B5 — System prompt minőségi javítása
+### B5 — System prompt minőségi javítása ✅ KÉSZ
 
 `docs/system-prompt.md` tartalmi (nem csak mechanikus) módosítása, indoklással:
 
