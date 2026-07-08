@@ -13,7 +13,8 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@plantbase/db": ["./packages/db/src/index.ts"]
+      "@plantbase/db": ["./packages/db/src/index.ts"],
+      "@plantbase/core": ["./packages/core/src/index.ts"]
     }
   }
 }
