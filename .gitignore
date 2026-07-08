@@ -2,9 +2,15 @@
 .env.agent
 
 node_modules
+dist
 .nx/cache
 .nx/workspace-data
 .nx/migrate-runs
 .nx/polygraph
 .claude/worktrees
 .claude/settings.local.json
+
+vitest.config.*.timestamp*
+
+# generált Prisma Client — `pnpm --filter @plantbase/db run db:generate` állítja elő
+packages/db/src/generated
