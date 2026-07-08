@@ -25,7 +25,7 @@ A teljes A1–A7/B1–B5 terv elkészült és mergelve van, a `plantbase ask`/in
 
 ---
 
-### C1 — `pnpm run plantbase` shortcut
+### C1 — `pnpm run plantbase` shortcut ✅ KÉSZ
 
 Context7-vel megerősítve (`/websites/pnpm_io`): a `pnpm run <script> <extra args>` a szkript-string végéhez fűzi az extra argumentumokat (nincs szükség `--`-re), és `pnpm <script-name>` a `pnpm run <script-name>` rövidítése, amíg a névnek nincs ütközése beépített pnpm paranccsal.
 
