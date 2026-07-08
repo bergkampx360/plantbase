@@ -53,7 +53,7 @@ Mérföldkő: fut és tesztelhető a projekt — Nx workspace, `packages/db` sé
 **Teszt:** `pnpm install` hibamentes, `npx nx --version` válaszol, `npx nx graph` üres gráfot mutat.
 **Commit:** `chore: scaffold Nx + pnpm workspace`
 
-### A2 — `packages/db`: Prisma séma + migráció
+### A2 — `packages/db`: Prisma séma + migráció ✅ KÉSZ
 
 - **Előfeltétel:** `.env`-ben `DATABASE_URL` kitöltése (jelenleg csak `DATABASE_URL_READONLY` van beállítva) — a `docker-compose.yml` szerint `postgresql://plantbase:plantbase@localhost:5433/plantbase`.
 - `nx g @nx/js:lib packages/db --bundler=tsc --unitTestRunner=vitest`, `package.json` `name` mezője **`@plantbase/db`** (ezt a nevet használja minden további `pnpm --filter` parancs és workspace-import, konzisztensen).
