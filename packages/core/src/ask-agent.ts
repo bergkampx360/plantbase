@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { LIST_CATEGORIES_TOOL, listCategories } from './list-categories';
 import { logInteraction } from './log-interaction';
 import { RUN_SQL_TOOL, runSql } from './run-sql';
 import { SYSTEM_PROMPT } from './system-prompt';
@@ -19,7 +20,9 @@ export async function askAgent(question: string): Promise<AskResult> {
   // a kliens szándékosan itt jön létre, nem modul-szinten: a CLI induláskor
   // tölti be a .env-et (lásd apps/cli/src/main.ts), ami csak ezután fut le
   const client = new Anthropic();
-  const messages: Anthropic.MessageParam[] = [{ role: 'user', content: question }];
+  const messages: Anthropic.MessageParam[] = [
+    { role: 'user', content: question },
+  ];
   const tokenUsage = { inputTokens: 0, outputTokens: 0 };
   let generatedSql: string | undefined;
   let answer = '';
@@ -29,7 +32,7 @@ export async function askAgent(question: string): Promise<AskResult> {
       model: process.env['ANTHROPIC_MODEL'] ?? 'claude-haiku-4-5',
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
-      tools: [RUN_SQL_TOOL],
+      tools: [RUN_SQL_TOOL, LIST_CATEGORIES_TOOL],
       messages,
     });
 
@@ -52,22 +55,28 @@ export async function askAgent(question: string): Promise<AskResult> {
 
     const toolResults: Anthropic.ToolResultBlockParam[] = [];
     for (const toolUse of toolUseBlocks) {
-      if (toolUse.name !== 'runSql') {
+      if (toolUse.name === 'runSql') {
+        const input = toolUse.input as { query?: string };
+        generatedSql = input.query ?? generatedSql;
+      }
+
+      try {
+        let content: string;
+        switch (toolUse.name) {
+          case 'runSql':
+            content = await runSql(toolUse.input);
+            break;
+          case 'listCategories':
+            content = await listCategories(toolUse.input);
+            break;
+          default:
+            throw new Error(`Ismeretlen tool: ${toolUse.name}`);
+        }
         toolResults.push({
           type: 'tool_result',
           tool_use_id: toolUse.id,
-          content: `Ismeretlen tool: ${toolUse.name}`,
-          is_error: true,
+          content,
         });
-        continue;
-      }
-
-      const input = toolUse.input as { query?: string };
-      generatedSql = input.query ?? generatedSql;
-
-      try {
-        const content = await runSql(toolUse.input);
-        toolResults.push({ type: 'tool_result', tool_use_id: toolUse.id, content });
       } catch (error) {
         toolResults.push({
           type: 'tool_result',

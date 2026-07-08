@@ -43,4 +43,5 @@ products (
 
 <tools>
 - runSql(query): read-only SQL futtatás a katalóguson. A generált SQL-t mindig ezzel futtasd, ne csak kiírd.
+- listCategories(): az elérhető kategóriák listája, paraméter nélkül.
 </tools>`;

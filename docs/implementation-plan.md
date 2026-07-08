@@ -174,7 +174,7 @@ Független a fenti mérföldkőtől — nem gátolja azt, és semmi más rész s
 **Commit:** `feat: bind runSql tool for real NL-to-SQL answers (Phase 3)`
 → **megállok, kérem a tesztelést.**
 
-### B4 — `listCategories` saját tool
+### B4 — `listCategories` saját tool ✅ KÉSZ
 
 - `packages/core`: **`listCategories()`** — önálló tool, NEM `runSql` wrapper. Saját Zod séma: `z.object({})` (nincs input paraméter, tehát nincs LLM-kontrollált bemenet, nincs injection-felület, nincs szükség a `runSql`-nél használt `SELECT`-only guardra). Fix, hardcode-olt lekérdezés: `SELECT DISTINCT category FROM products ORDER BY category`, ugyanazon a `pg.Pool`-on (`DATABASE_URL_READONLY`) keresztül, amit B3 már felállított.
 - `askAgent` tool-use loopja mostantól **két** toolt lát: `runSql` és `listCategories` — a modell választ közülük a kérdés alapján.

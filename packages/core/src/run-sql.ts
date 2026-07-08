@@ -1,7 +1,5 @@
-import pg from 'pg';
 import { z } from 'zod';
-
-const { Pool } = pg;
+import { getPool } from './db-pool';
 
 const RunSqlInput = z.object({
   query: z.string().min(1),
@@ -22,13 +20,6 @@ export const RUN_SQL_TOOL = {
     required: ['query'],
   },
 };
-
-let pool: pg.Pool | undefined;
-
-function getPool(): pg.Pool {
-  pool ??= new Pool({ connectionString: process.env['DATABASE_URL_READONLY'] });
-  return pool;
-}
 
 export async function runSql(input: unknown): Promise<string> {
   const { query } = RunSqlInput.parse(input);
