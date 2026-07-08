@@ -1,6 +1,6 @@
 # Plantbase — UX/DX fejlesztési terv (C rész)
 
-> Kurzus-melléklet, az `docs/implementation-plan.md` (A1–A7, B1–B5) folytatása — külön dokumentumként, hogy az eredeti terv lezárt maradjon. Ugyanazt a stílust és git-workflow szabályt követi.
+> Kurzus-melléklet, az `docs/implementation-plan-1.md` (A1–A7, B1–B5) folytatása — külön dokumentumként, hogy az eredeti terv lezárt maradjon. Ugyanazt a stílust és git-workflow szabályt követi.
 
 ## Kontextus
 
@@ -17,7 +17,7 @@ A teljes A1–A7/B1–B5 terv elkészült és mergelve van, a `plantbase ask`/in
 - **Kimeneti absztrakció:** minden konzolra írás egyetlen modulon (`apps/cli/src/output.ts`) megy át — a `main.ts`-ben a jóváhagyás utáni állapotban nem marad közvetlen `console.log` hívás.
 - **Csomag-granularitás:** 3 önálló fázis (C1–C3), a projekt már rögzített szabálya szerint — saját branch, saját lokális commit, megállok tesztelésre, push/PR csak külön jóváhagyás után.
 
-## Git-workflow (átvéve `docs/implementation-plan.md`-ből, változatlanul)
+## Git-workflow (átvéve `docs/implementation-plan-1.md`-ből, változatlanul)
 
 1. Feature branch létrehozása fázisonként, implementáció, helyi commit.
 2. Megállok, kérem a tesztelést.
@@ -38,7 +38,7 @@ Context7-vel megerősítve (`/websites/pnpm_io`): a `pnpm run <script> <extra ar
   }
   ```
   Az `nx run cli:build` láncolása biztosítja, hogy a build mindig friss legyen — Nx cache miatt változatlan forrás esetén szinte azonnali.
-- Ezzel `pnpm run plantbase ask "Bla"` (vagy `pnpm plantbase ask "Bla"`) pontosan a kért szintaxist adja.
+- Ezzel `pnpm run plantbase ask "melyik a 3 legolcsóbb pozsgás növény raktáron?"` (vagy `pnpm plantbase ask "..."`) pontosan a kért szintaxist adja.
 - `README.md` "Futtatás és tesztelés" szakasza frissül: a shortcut kerül előre, a jelenlegi `node dist/apps/cli/main.js` forma alternatívaként marad.
 
 **Teszt:** `pnpm run plantbase ask "milyen kategóriák érhetők el?"` build+futtatás egy lépésben; másodszorra (változatlan forrás) gyorsabb (cache-hit); `pnpm run plantbase` (argumentum nélkül) interaktív módot indít.
@@ -114,7 +114,9 @@ Context7-vel megerősítve (`/websites/pnpm_io`): a `pnpm run <script> <extra ar
         return `🔧 ${block.name}(${JSON.stringify(block.input)})`;
       case 'tool_result': {
         const content =
-          typeof block.content === 'string' ? block.content : JSON.stringify(block.content);
+          typeof block.content === 'string'
+            ? block.content
+            : JSON.stringify(block.content);
         return `↩ eredmény: ${content}`;
       }
       default:
@@ -129,7 +131,10 @@ Context7-vel megerősítve (`/websites/pnpm_io`): a `pnpm run <script> <extra ar
 
   const SEPARATOR = '─'.repeat(60);
 
-  export function printTurn(result: AskResult, options?: { showPrompt?: boolean }): void {
+  export function printTurn(
+    result: AskResult,
+    options?: { showPrompt?: boolean },
+  ): void {
     console.log(SEPARATOR);
     if (options?.showPrompt) {
       console.log(formatMessages(result.messages));
