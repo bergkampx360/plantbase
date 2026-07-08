@@ -3,5 +3,6 @@ packages:
   - 'apps/*'
 allowBuilds:
   '@prisma/engines': true
+  esbuild: true
   nx: true
   prisma: true
