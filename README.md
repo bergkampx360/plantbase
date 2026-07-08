@@ -14,7 +14,7 @@ Részletek: [`docs/brs-plantbase.md`](docs/brs-plantbase.md) (üzleti igény, RO
 
 ## Állapot
 
-A) rész (környezet) kész: az Nx+pnpm workspace fut, `packages/db` Prisma sémával, migrációval és betöltött seed adattal (~30 növény), read-only DB szerepkör (`plantbase_ro`) él, `packages/core` váza létrejött, `apps/cli` elindul és `plantbase` parancsként globálisan elérhető (`plantbase ask "<kérdés>"` — egyelőre válasz nélkül, ez a B) részben kerül bele). A tényleges agent-logika (LLM-hívás, `runSql`) még nem készült el, ez a B) rész 3 fázisában valósul meg (`docs/implementation-plan.md`).
+A teljes implementációs terv (A) rész: környezet; B) rész: agent-logika) elkészült — `docs/implementation-plan.md`. A `plantbase ask "<kérdés>"` valódi LLM-hívással SQL-t generál és futtat a `products` katalóguson (`runSql`), szükség esetén a `listCategories` toolt is használja, és a `--show-prompt` kapcsolóval a teljes üzenet-előzmény is megjeleníthető. Futtatás és tesztelés: ld. lent.
 
 ## Stack
 
@@ -41,10 +41,40 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
    ```bash
    docker compose up -d
    ```
-2. **Env fájlok**: másold `.env.example` → `.env` és `.env.agent.example` → `.env.agent`, töltsd ki. Soha ne commitold őket (gitignore-olva vannak).
+2. **Env fájlok**: másold `.env.example` → `.env` és `.env.agent.example` → `.env.agent`, töltsd ki (`ANTHROPIC_API_KEY` is itt kell). Soha ne commitold őket (gitignore-olva vannak).
 3. **direnv**: a `.envrc` tölti be az env fájlokat — `.envrc` módosítása után mindig `direnv allow`.
-4. **DB read-only szerepkör**: a `db-role-setup` Claude Code skill állítja fel a `plantbase_ro` szerepkört, amin az agent `runSql` toolja kizárólag keresztül futhat (soha nem ír).
+4. **DB read-only szerepkör**: friss (üres) Postgres-volume esetén automatikusan létrejön; már létező volume-on a `db-role-setup` Claude Code skill állítja fel a `plantbase_ro` szerepkört, amin az agent `runSql` toolja kizárólag keresztül futhat (soha nem ír).
 5. **MCP szerverek** (`.mcp.json`, project scope): `github`, `context7`, `postgres` (read-only, `postgres-mcp --access-mode=restricted`), `prisma` (`npx prisma mcp`).
+
+## Futtatás és tesztelés
+
+```bash
+pnpm install                                          # workspace függőségek
+pnpm --filter @plantbase/db exec prisma migrate dev    # séma alkalmazása
+pnpm --filter @plantbase/db run db:seed                # ~30 növény betöltése
+pnpm exec nx run cli:build                             # plantbase CLI build
+
+node dist/apps/cli/main.js ask "milyen pozsgás növényeitek vannak raktáron?"
+# vagy interaktív mód:
+node dist/apps/cli/main.js
+```
+
+Globális `plantbase` parancsként (egyszeri lépés, utána bárhonnan futtatható):
+
+```bash
+cd dist/apps/cli && pnpm add -g .
+plantbase ask "<kérdés>"
+```
+
+A `--show-prompt` kapcsolóval a teljes üzenet-előzmény (LLM-hívások, tool-hívások, válaszok) is megjelenik. Minden interakció naplózva a `logs/` mappába (JSONL, nincs commitolva).
+
+Automatikus ellenőrzések (build, típusellenőrzés, teszt, lint minden csomagra):
+
+```bash
+pnpm exec nx run-many -t build,typecheck,test,lint
+```
+
+> Ez a szakasz a jelenlegi (B5 utáni) állapotot írja le. Ahogy a rendszer bővül (pl. új csomagok, deploy-lépések, futtatási módok), ezt a részt is bővíteni kell — ne hagyjuk elavulni.
 
 ## Fejlesztői workflow
 
