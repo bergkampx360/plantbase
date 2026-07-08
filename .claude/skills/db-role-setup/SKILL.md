@@ -20,20 +20,24 @@ Plantbase uses **two DB connections with two different roles** (docs/architektur
 ## Steps
 
 1. **Start Postgres** if it isn't running:
+
    ```bash
    docker compose up -d
    ```
 
 2. **Apply the Prisma migration** (read-write connection, from `packages/db`):
+
    ```bash
-   pnpm --filter db exec prisma migrate dev
+   pnpm --filter @plantbase/db exec prisma migrate dev
    ```
+
    If `packages/db` doesn't exist yet, use the `scaffold-nx-package` skill first to create it, then write/extend
    `prisma/schema.prisma` to match the `products` table in `docs/stack.md` before migrating.
 
 3. **Create or refresh the read-only role.** Put the SQL in
    `docker/postgres/initdb/01-readonly-role.sql` (this directory is mounted as Postgres `docker-entrypoint-initdb.d`,
    so it only auto-runs on a fresh volume — re-run it manually after schema changes on an existing volume):
+
    ```sql
    DO $$
    BEGIN
@@ -49,7 +53,9 @@ Plantbase uses **two DB connections with two different roles** (docs/architektur
    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO plantbase_ro;
    REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA public FROM plantbase_ro;
    ```
+
    Apply it manually against a running container with:
+
    ```bash
    docker compose exec -T postgres psql -U "$POSTGRES_USER" -d plantbase -f - < docker/postgres/initdb/01-readonly-role.sql
    ```
@@ -57,12 +63,14 @@ Plantbase uses **two DB connections with two different roles** (docs/architektur
 4. **Point env vars at the right role.** In `.env` (never commit):
    - `DATABASE_URL` → app/Prisma role (read-write, `plantbase`).
    - `DATABASE_URL_READONLY` → `plantbase_ro`.
-   These variable names are already documented in `.env.example` (no real values/passwords there).
+     These variable names are already documented in `.env.example` (no real values/passwords there).
 
 5. **Verify the role actually can't write** — this is the one check that matters:
+
    ```bash
    psql "$DATABASE_URL_READONLY" -c "INSERT INTO products (name) VALUES ('should fail');"
    ```
+
    Expect `ERROR: permission denied for table products`. If it succeeds, stop and fix the grants before
    wiring `runSql` to this connection.
 

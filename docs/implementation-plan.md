@@ -88,7 +88,7 @@ Ez konzisztens `docs/architektura.md` 6. döntésével ("A Prisma [séma, migrá
 **Teszt:** `pnpm --filter @plantbase/db run db:seed` kétszer egymás után lefuttatva sem hoz létre duplikátumot; `psql "$DATABASE_URL" -c "SELECT count(*) FROM products;"` → 30; néhány sor kézzel ellenőrizve (reális ár, létező faj).
 **Commit:** `feat: add packages/db/prisma/seed with idempotent products seed data (~30 plants)`
 
-### A4 — DB read-only szerepkör
+### A4 — DB read-only szerepkör ✅ KÉSZ
 
 - **Javítás ugyanebben a commitban:** `.claude/skills/db-role-setup/SKILL.md` 2. lépésében `pnpm --filter db exec prisma migrate dev` → `pnpm --filter @plantbase/db exec prisma migrate dev` — a skill jelenlegi bare `db` filtere nem találná meg az A2-ben `@plantbase/db`-re nevezett csomagot (a `scaffold-nx-package` skill `@plantbase/<name>` konvenciója az irányadó, ehhez igazítjuk a `db-role-setup`-ot).
 - A már meglévő **`db-role-setup`** Claude Code skill (a fenti javítással) futtatása: `docker/postgres/initdb/01-readonly-role.sql` létrehozása, `plantbase_ro` szerepkör grantekkel (csak SELECT), alkalmazás a futó konténeren.
