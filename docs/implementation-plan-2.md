@@ -88,7 +88,7 @@ Context7-vel megerősítve (`/websites/pnpm_io`): a `pnpm run <script> <extra ar
 **Commit:** `feat: carry conversation history across turns in interactive mode`
 → **megállok, kérem a tesztelést.**
 
-### C3 — Kimeneti absztrakció + olvashatóság
+### C3 — Kimeneti absztrakció + olvashatóság ✅ KÉSZ
 
 - **Új `apps/cli/src/format-messages.ts`** — tiszta formázó-logika, mellékhatás nélkül:
   ```ts
@@ -147,9 +147,10 @@ Context7-vel megerősítve (`/websites/pnpm_io`): a `pnpm run <script> <extra ar
   (A readline `rl.setPrompt('plantbase> ')`/`rl.prompt()` hívásai maradnak — azok nem `console.log`-ok, hanem a readline API része.)
   A kérdés kifejezett kiírása (`🙋 Te: ...`) azért kell, mert a build-kimenet zaja és a válasz között e nélkül nem egyértelmű, melyik kérdésre érkezett a válasz (ezt a user egy éles tesztnél konkrétan hiányolta).
 - `apps/cli/src/main.ts`: mind az `ask` parancs action-je (`printTurn(question, result, options)`), mind az interaktív mód `.then()`-je (`printTurn(question, result)`) ezt hívja a jelenlegi `console.log(result.answer)` / `console.log(JSON.stringify(...))` helyett.
+- **Kiegészítés (user visszajelzés alapján, ugyanezen a branchen):** a `--show-prompt` addig csak az `ask` parancson volt elérhető. `runInteractive(showPrompt = false)` mostantól paraméterként kapja meg, és a belépési pont (`process.argv`) felismeri a `pnpm run plantbase --show-prompt` (alparancs nélküli) hívást, ami így show-prompt móddal indítja az interaktív sessiont — minden kör kiírja a formázott üzenet-előzményt is.
 
-**Teszt:** `pnpm run plantbase ask "..." --show-prompt` → jól tagolt, olvasható kimenet, nem nyers JSON-blob, a kérdés (`🙋 Te:`) és a válasz (`🌱 Plantbase:`) egyértelműen elkülönül a build-zajtól; interaktív módban több kör vizuálisan jól elkülönül; `grep -n "console\." apps/cli/src/main.ts` nem ad találatot.
-**Commit:** `feat: improve console output readability (turn separators, formatted --show-prompt)`
+**Teszt:** `pnpm run plantbase ask "..." --show-prompt` → jól tagolt, olvasható kimenet, nem nyers JSON-blob, a kérdés (`🙋 Te:`) és a válasz (`🌱 Plantbase:`) egyértelműen elkülönül a build-zajtól; interaktív módban több kör vizuálisan jól elkülönül; `pnpm run plantbase --show-prompt` interaktív módban is minden körnél kiírja az üzenet-előzményt; `grep -n "console\." apps/cli/src/main.ts` nem ad találatot.
+**Commit:** `feat: improve console output readability (turn separators, formatted --show-prompt)` + `feat: support --show-prompt in interactive mode`
 → **megállok, kérem a tesztelést.**
 
 ---
@@ -167,13 +168,13 @@ Context7-vel megerősítve (`/websites/pnpm_io`): a `pnpm run <script> <extra ar
 - `apps/cli/src/main.ts` — `handleQuestion` history-paraméter, `runInteractive` state, `printTurn` hívások (C2+C3)
 - `apps/cli/src/format-messages.ts` — új (C3)
 - `apps/cli/src/output.ts` — új (C3)
-- `README.md` — "Futtatás és tesztelés" frissítése (C1)
+- `README.md` — "Futtatás és tesztelés" frissítése (C1, majd a `--show-prompt` interaktív módú kiegészítéssel C3)
 
 ## Verification
 
 - Minden fázis után: `pnpm exec nx run-many -t build,typecheck,test,lint` zöld.
 - C1: `pnpm run plantbase ask "..."` és `pnpm run plantbase` ténylegesen lefut.
 - C2: kétfordulós (és egy tool-eredményre hivatkozó harmadik) interaktív kérdés helyesen kezeli a kontextust.
-- C3: `--show-prompt` és a kör-elválasztók vizuálisan ellenőrizve olvashatóbbak; nincs közvetlen `console.log` a `main.ts`-ben.
+- C3: `--show-prompt` és a kör-elválasztók vizuálisan ellenőrizve olvashatóbbak; nincs közvetlen `console.log` a `main.ts`-ben; `pnpm run plantbase --show-prompt` interaktív módban is működik.
 
 Nincs több nyitott kérdés ebben a részben — implementáció kezdhető C1-gyel, jóváhagyás után.

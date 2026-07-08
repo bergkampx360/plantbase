@@ -4,6 +4,7 @@ import type { AskResult } from '@plantbase/core';
 import { Command } from 'commander';
 import { config as loadEnv } from 'dotenv';
 import { createInterface } from 'node:readline';
+import { printTurn } from './output';
 
 // a repo gyökerén lévő .env-et tölti be — a plantbase globálisan telepített
 // bináris nem örökli a direnv shell-integrációt, ezért ezt a CLI-nek magának
@@ -19,7 +20,7 @@ export async function handleQuestion(
   return askAgent(question, history);
 }
 
-async function runInteractive(): Promise<void> {
+async function runInteractive(showPrompt = false): Promise<void> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   let closed = false;
   rl.on('close', () => {
@@ -46,7 +47,7 @@ async function runInteractive(): Promise<void> {
       const question = pending.shift() as string;
       const result = await handleQuestion(question, history);
       history = result.messages;
-      console.log(result.answer);
+      printTurn(question, result, { showPrompt });
     }
     processing = false;
     if (!closed) {
@@ -70,8 +71,12 @@ async function runInteractive(): Promise<void> {
   return new Promise((resolve) => rl.on('close', resolve));
 }
 
-if (process.argv.length <= 2) {
+const cliArgs = process.argv.slice(2);
+
+if (cliArgs.length === 0) {
   runInteractive();
+} else if (cliArgs.length === 1 && cliArgs[0] === '--show-prompt') {
+  runInteractive(true);
 } else {
   const program = new Command();
 
@@ -86,10 +91,7 @@ if (process.argv.length <= 2) {
     )
     .action(async (question: string, options: { showPrompt?: boolean }) => {
       const result = await handleQuestion(question);
-      console.log(result.answer);
-      if (options.showPrompt) {
-        console.log(JSON.stringify(result.messages, null, 2));
-      }
+      printTurn(question, result, options);
     });
 
   program.parse();

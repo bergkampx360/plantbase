@@ -76,7 +76,7 @@ cd dist/apps/cli && pnpm add -g .
 plantbase ask "<kérdés>"
 ```
 
-A `--show-prompt` kapcsolóval a teljes üzenet-előzmény (LLM-hívások, tool-hívások, válaszok) is megjelenik. Minden interakció naplózva a `logs/` mappába (JSONL, nincs commitolva).
+A `--show-prompt` kapcsolóval a teljes üzenet-előzmény (LLM-hívások, tool-hívások, válaszok) is megjelenik — az `ask` parancson (`... ask "<kérdés>" --show-prompt`) és interaktív módban is (`pnpm run plantbase --show-prompt`). Minden interakció naplózva a `logs/` mappába (JSONL, nincs commitolva).
 
 Automatikus ellenőrzések (build, típusellenőrzés, teszt, lint minden csomagra):
 
