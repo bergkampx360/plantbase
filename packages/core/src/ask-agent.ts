@@ -16,11 +16,15 @@ export type AskResult = {
 
 const MAX_TOOL_ITERATIONS = 5;
 
-export async function askAgent(question: string): Promise<AskResult> {
+export async function askAgent(
+  question: string,
+  history: Anthropic.MessageParam[] = [],
+): Promise<AskResult> {
   // a kliens szándékosan itt jön létre, nem modul-szinten: a CLI induláskor
   // tölti be a .env-et (lásd apps/cli/src/main.ts), ami csak ezután fut le
   const client = new Anthropic();
   const messages: Anthropic.MessageParam[] = [
+    ...history,
     { role: 'user', content: question },
   ];
   const tokenUsage = { inputTokens: 0, outputTokens: 0 };
