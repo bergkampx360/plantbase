@@ -67,7 +67,7 @@ Mérföldkő: fut és tesztelhető a projekt — Nx workspace, `packages/db` sé
 **Teszt:** a migráció lefut hiba nélkül; `psql "$DATABASE_URL" -c "\d products"` mutatja az összes oszlopot, `latin_name`-en unique indexet is.
 **Commit:** `feat: add packages/db with products schema and migration`
 
-### A3 — Seed adat (~30 növény), `packages/db/prisma/seed/` alatt
+### A3 — Seed adat (~30 növény), `packages/db/prisma/seed/` alatt ✅ KÉSZ
 
 A `packages/db` csomagon belül, a séma mellett — **3 fájl**:
 
