@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "plantbase": "nx run cli:build && node dist/apps/cli/main.js"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@nx/esbuild": "23.0.1",

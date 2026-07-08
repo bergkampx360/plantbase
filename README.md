@@ -56,11 +56,17 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 pnpm install                                          # workspace függőségek
 pnpm --filter @plantbase/db exec prisma migrate dev    # séma alkalmazása
 pnpm --filter @plantbase/db run db:seed                # ~30 növény betöltése
-pnpm exec nx run cli:build                             # plantbase CLI build
 
-node dist/apps/cli/main.js ask "milyen pozsgás növényeitek vannak raktáron?"
+pnpm run plantbase ask "milyen pozsgás növényeitek vannak raktáron?"
 # vagy interaktív mód:
-node dist/apps/cli/main.js
+pnpm run plantbase
+```
+
+A `pnpm run plantbase` (röviden: `pnpm plantbase`) mindig build-eli a CLI-t, mielőtt futtatja — Nx cache miatt változatlan forrás esetén ez szinte azonnali. Alternatívaként, ha nem szeretnéd a shortcut-ot használni:
+
+```bash
+pnpm exec nx run cli:build
+node dist/apps/cli/main.js ask "<kérdés>"
 ```
 
 Globális `plantbase` parancsként (egyszeri lépés, utána bárhonnan futtatható):
@@ -78,7 +84,7 @@ Automatikus ellenőrzések (build, típusellenőrzés, teszt, lint minden csomag
 pnpm exec nx run-many -t build,typecheck,test,lint
 ```
 
-> Ez a szakasz a jelenlegi (B5 utáni) állapotot írja le. Ahogy a rendszer bővül (pl. új csomagok, deploy-lépések, futtatási módok), ezt a részt is bővíteni kell — ne hagyjuk elavulni.
+> Ez a szakasz a jelenlegi állapotot írja le. Ahogy a rendszer bővül (pl. új csomagok, deploy-lépések, futtatási módok), ezt a részt is bővíteni kell — ne hagyjuk elavulni.
 
 ## Fejlesztői workflow
 
