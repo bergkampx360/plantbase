@@ -4,6 +4,7 @@ import type { AskResult } from '@plantbase/core';
 import { Command } from 'commander';
 import { config as loadEnv } from 'dotenv';
 import { createInterface } from 'node:readline';
+import { printTurn } from './output';
 
 // a repo gyökerén lévő .env-et tölti be — a plantbase globálisan telepített
 // bináris nem örökli a direnv shell-integrációt, ezért ezt a CLI-nek magának
@@ -46,7 +47,7 @@ async function runInteractive(): Promise<void> {
       const question = pending.shift() as string;
       const result = await handleQuestion(question, history);
       history = result.messages;
-      console.log(result.answer);
+      printTurn(question, result);
     }
     processing = false;
     if (!closed) {
@@ -86,10 +87,7 @@ if (process.argv.length <= 2) {
     )
     .action(async (question: string, options: { showPrompt?: boolean }) => {
       const result = await handleQuestion(question);
-      console.log(result.answer);
-      if (options.showPrompt) {
-        console.log(JSON.stringify(result.messages, null, 2));
-      }
+      printTurn(question, result, options);
     });
 
   program.parse();
