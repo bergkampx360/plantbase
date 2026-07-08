@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { askAgent } from '@plantbase/core';
+import type { AskResult } from '@plantbase/core';
 import { Command } from 'commander';
 import { config as loadEnv } from 'dotenv';
 import { createInterface } from 'node:readline';
@@ -9,9 +10,8 @@ import { createInterface } from 'node:readline';
 // kell megtennie induláskor, mielőtt az askAgent bármelyik Anthropic-hívása lefutna
 loadEnv();
 
-export async function handleQuestion(question: string): Promise<string> {
-  const result = await askAgent(question);
-  return result.answer;
+export async function handleQuestion(question: string): Promise<AskResult> {
+  return askAgent(question);
 }
 
 async function runInteractive(): Promise<void> {
@@ -34,7 +34,7 @@ async function runInteractive(): Promise<void> {
     // "exit" sor ne zárja be a readline-t egy még függőben lévő kérdés alatt
     rl.pause();
     handleQuestion(question)
-      .then((answer) => console.log(answer))
+      .then((result) => console.log(result.answer))
       .finally(() => {
         if (!closed) {
           rl.resume();
@@ -56,8 +56,13 @@ if (process.argv.length <= 2) {
   program
     .command('ask')
     .argument('<question>', 'a kérdésed a növény-katalógusról')
-    .action(async (question: string) => {
-      console.log(await handleQuestion(question));
+    .option('--show-prompt', 'a teljes üzenet-tömb kiírása a válasz mellett (FR5)')
+    .action(async (question: string, options: { showPrompt?: boolean }) => {
+      const result = await handleQuestion(question);
+      console.log(result.answer);
+      if (options.showPrompt) {
+        console.log(JSON.stringify(result.messages, null, 2));
+      }
     });
 
   program.parse();
