@@ -107,7 +107,7 @@ Ez konzisztens `docs/architektura.md` 6. döntésével ("A Prisma [séma, migrá
 **Teszt:** `pnpm nx run core:build` sikeres; `pnpm nx run core:test` **ténylegesen lefut és zöld** (a placeholder teszt miatt, nem csak azért, mert a target létezik).
 **Commit:** `chore: scaffold packages/core with placeholder test`
 
-### A6 — `apps/cli` váz (üres CLI elindul, `plantbase` parancsként elérhető)
+### A6 — `apps/cli` váz (üres CLI elindul, `plantbase` parancsként elérhető) ✅ KÉSZ
 
 - `nx g @nx/node:application apps/cli`, `package.json` `name` mezője **`@plantbase/cli`** (ua. konvenció).
 - Commander belőve: `plantbase ask <kérdés>` parancs, ami egyelőre semmit sem csinál a válasszal (pl. `console.log('TODO')`), `--help`/`--version` működik.
