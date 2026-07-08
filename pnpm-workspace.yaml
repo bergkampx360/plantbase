@@ -6,3 +6,4 @@ allowBuilds:
   esbuild: true
   nx: true
   prisma: true
+  unrs-resolver: true

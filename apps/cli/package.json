@@ -1,0 +1,11 @@
+{
+  "name": "@plantbase/cli",
+  "version": "0.0.1",
+  "private": true,
+  "bin": {
+    "plantbase": "./main.js"
+  },
+  "dependencies": {
+    "commander": "^15.0.0"
+  }
+}
