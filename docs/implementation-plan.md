@@ -134,7 +134,7 @@ Független a fenti mérföldkőtől — nem gátolja azt, és semmi más rész s
 
 # B) rész — 5 implementációs fázis (réteg rétegre)
 
-### B1 — CLI echo, LLM nélkül
+### B1 — CLI echo, LLM nélkül ✅ KÉSZ
 
 - `apps/cli`: **közös kezelőfüggvény** (`handleQuestion(question: string): Promise<string>` a `main.ts`-ben) — B1-ben ez még csak echo (pl. `Ezt mondtad: "<kérdés>"`), DE ezt hívja mind az `ask <kérdés>` parancs, MIND az interaktív mód (`node:readline`) minden beolvasott sora. Ez a közös pont szándékos: így B2-től nem kell külön-külön bekötni a két felületet — egy helyen frissítve mindkettő automatikusan ugyanazt a képességet kapja (`docs/brs-plantbase.md` FR1: az `ask` parancs és az interaktív mód ugyanannak a képességnek két bejárata, nem két külön funkció). Az interaktív mód `exit`-re kilép.
 - **Interaktív mód indítási mechanizmusa (Commander-specifikus, Context7-vel ellenőrizve):** a Commander alapból **súgót ír ki**, ha egy programnak subcommandjai vannak (itt: `ask`) és nem kap subcommandot — NEM esik át automatikusan egy egyéni fallback-kezelőre. A régi `.command('*')` deprecate-elt minta helyett explicit `process.argv.length <= 2` ellenőrzés kerül `program.parse()` **elé** a `main.ts`-ben: ha nincs semmilyen argumentum, elindul az interaktív readline loop (soronként `handleQuestion`-t hívva) `program.parse()` meghívása nélkül; egyébként a Commander a szokásos módon dolgozza fel az `ask` subcommandot (ami szintén `handleQuestion`-t hívja).
