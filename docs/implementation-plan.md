@@ -163,7 +163,7 @@ Független a fenti mérföldkőtől — nem gátolja azt, és semmi más rész s
 **Commit:** `feat: wire CLI to LLM without DB access (Phase 2)`
 → **megállok, kérem a tesztelést.**
 
-### B3 — SQL-es interakció (`runSql` tool)
+### B3 — SQL-es interakció (`runSql` tool) ✅ KÉSZ
 
 - `packages/core`: `runSql(query: string)` — a tool-hívásból érkező inputot (rendszer-határ, megbízhatatlan LLM-kimenet) egy Zod séma validálja először (`z.object({ query: z.string().min(1) }).parse(input)`, `docs/konvenciok.md`: "Validáció a rendszer-határokon (Zod), fail-fast"), majd egy egyszerű `SELECT`-only guard ellenőrzi a query string elejét, végül `pg.Pool` fut a `DATABASE_URL_READONLY`-val, paraméterezett futtatással.
 - `askAgent` kibővítve a teljes kézzel írt tool-use loop-ra: a `docs/system-prompt.md` teljes promptja, `runSql` tool-definícióval, `while` ciklus `tool_use` → `runSql` → `tool_result` → újra hívás → végleges válasz. Az `AskResult` (B2) egy `generatedSql?: string` mezővel bővül (kényelmi kivonat a `messages`-ből, a JSONL loghoz — maga a SQL a `messages` tömb `tool_use` blokkjában is megtalálható, de a FR4 explicit külön mezőt kér).
