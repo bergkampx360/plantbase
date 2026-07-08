@@ -6,6 +6,7 @@
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
     "tslib": "^2.3.0",
     "vitest": "~4.1.0"
   }

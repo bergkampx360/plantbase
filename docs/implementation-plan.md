@@ -34,7 +34,7 @@ Az Anthropic TypeScript SDK-t (kézi tool-use loop, `client.messages.create`, to
 
 ## Rögzített technikai döntések
 
-- **Modell (lezárt döntés, `docs/roi.md` alapján):** alapértelmezetten **`claude-sonnet-5`**. A `docs/roi.md` 5.2-es szakasza kizárólag Haiku 4.5-re ($0,52/hó) és Sonnet 5-re ($1,55/hó) számolt havi API-költséget — mindkettő elhanyagolható a kimutatott haszonhoz képest, tehát a költség nem megkülönböztető szempont. Emiatt a két ténylegesen költségzett modell közül a jobb minőségűt (Sonnet 5) választjuk alapértelmezettnek — ez közel Opus-szintű minőséget ad az NL→SQL fordításhoz és a tool-use loophoz, a Haiku-nál megbízhatóbban. `ANTHROPIC_MODEL` env-változóval felülírható (pl. vissza Haiku 4.5-re, ha valaha mégis a költség válna szemponttá).
+- **Modell (lezárt döntés, felülvizsgálva):** alapértelmezetten **`claude-haiku-4-5`**. A user explicit kérése: az OpenAI `gpt-4o-mini`-hez hasonló kategóriájú (gyors, olcsó, kisebb) Anthropic modellt válasszunk — ez a Claude-kínálatban a Haiku tier-nek felel meg, nem a korábban választott Sonnet tier-nek. A `docs/roi.md` 5.2-es szakasza már korábban is költségezte a Haiku 4.5-öt ($0,52/hó, Sonnet 5 mellett $1,55/hó) — mindkettő elhanyagolható a kimutatott haszonhoz képest, tehát a költség itt sem megkülönböztető szempont, a döntést a kategória-preferencia vezérli. `ANTHROPIC_MODEL` env-változóval felülírható (pl. `claude-sonnet-5`-re, ha minőségi okból mégis szükség lenne rá).
 - **Csomagnév:** a `packages/db` csomag `package.json`-jában a `name` mező `@plantbase/db` — ezt a nevet használja minden `pnpm --filter` parancs és workspace-import is (lásd A2/A3, korábban ez a terv `pnpm --filter db`-t és `@plantbase/db`-t vegyesen, egymással összeférhetetlenül használta).
 - **Tool-use loop:** kézzel írt `while` ciklus (`client.messages.create`), NEM a beta `toolRunner()` helper — ez szándékos, hogy a mechanika látható maradjon (`architektura.md` 3. döntés).
 - **`runSql` kapcsolat:** `pg` (`node-postgres`) `Pool`, `DATABASE_URL_READONLY`-val — NEM Prisma Clienten keresztül (Prisma csak `packages/db`-ben, séma/migráció/seedhez; `architektura.md` 2. döntés).
@@ -144,7 +144,7 @@ Független a fenti mérföldkőtől — nem gátolja azt, és semmi más rész s
 **Commit:** `feat: CLI echo without LLM (Phase 1)`
 → **megállok, kérem a tesztelést.**
 
-### B2 — LLM, adatbázis nélkül
+### B2 — LLM, adatbázis nélkül ✅ KÉSZ
 
 - `packages/core`: **`askAgent(question: string): Promise<AskResult>`**, NEM egyszerű `Promise<string>` (ld. korábbi review: az FR5 `--show-prompt` csak akkor valósítható meg, ha a teljes üzenet-tömb is visszajut a hívóhoz, nem csak a végső válasz szövege):
   ```ts
@@ -208,7 +208,7 @@ A commit/PR leírás tartalmazza a fenti indoklást explicit (nem csak a diffet)
 ## Lezárt döntések (korábbi nyitott kérdések)
 
 1. **Seed-adat feloldása:** jóváhagyva — A3-ban egyszer legenerálom a BRS specifikációja szerint, utána fixnek kezelem (ld. "Kontextus" fent).
-2. **Modellválasztás:** `docs/roi.md` alapján lezárva — alapértelmezett modell `claude-sonnet-5` (ld. "Rögzített technikai döntések" szakasz fent).
+2. **Modellválasztás:** felülvizsgálva — alapértelmezett modell `claude-haiku-4-5` (gpt-4o-mini-hez hasonló kategória, ld. "Rögzített technikai döntések" szakasz fent).
 3. **Commit/PR-granularitás:** jóváhagyva — mind a 12 rész (A1–A7, B1–B5) külön commit **és** külön PR (ld. "Git-workflow" szakasz fent).
 
 ## A kurzus-követelmények lefedettsége

@@ -1,9 +1,17 @@
 #!/usr/bin/env node
+import { askAgent } from '@plantbase/core';
 import { Command } from 'commander';
+import { config as loadEnv } from 'dotenv';
 import { createInterface } from 'node:readline';
 
+// a repo gyökerén lévő .env-et tölti be — a plantbase globálisan telepített
+// bináris nem örökli a direnv shell-integrációt, ezért ezt a CLI-nek magának
+// kell megtennie induláskor, mielőtt az askAgent bármelyik Anthropic-hívása lefutna
+loadEnv();
+
 export async function handleQuestion(question: string): Promise<string> {
-  return `Ezt mondtad: "${question}"`;
+  const result = await askAgent(question);
+  return result.answer;
 }
 
 async function runInteractive(): Promise<void> {
