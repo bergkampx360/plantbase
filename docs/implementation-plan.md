@@ -120,7 +120,7 @@ Ez konzisztens `docs/architektura.md` 6. döntésével ("A Prisma [séma, migrá
 
 **A) rész mérföldköve ezzel kész**: workspace fut, DB-séma+seed betöltve, read-only szerepkör él, `packages/core` és `apps/cli` váza létezik, a CLI elindul.
 
-### A7 — Harmadik marketplace plugin (`commit-commands`)
+### A7 — Harmadik marketplace plugin (`commit-commands`) ✅ KÉSZ
 
 Független a fenti mérföldkőtől — nem gátolja azt, és semmi más rész sem gátolja őt —, de a Part A-hoz tartozik, mert tooling/config-jellegű, nem agent-implementáció.
 
