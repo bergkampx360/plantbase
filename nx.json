@@ -52,5 +52,6 @@
         "testMode": "watch"
       }
     }
-  ]
+  ],
+  "analytics": false
 }

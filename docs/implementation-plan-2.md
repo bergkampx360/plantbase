@@ -25,7 +25,7 @@ A teljes A1–A7/B1–B5 terv elkészült és mergelve van, a `plantbase ask`/in
 
 ---
 
-### C1 — `pnpm run plantbase` shortcut
+### C1 — `pnpm run plantbase` shortcut ✅ KÉSZ
 
 Context7-vel megerősítve (`/websites/pnpm_io`): a `pnpm run <script> <extra args>` a szkript-string végéhez fűzi az extra argumentumokat (nincs szükség `--`-re), és `pnpm <script-name>` a `pnpm run <script-name>` rövidítése, amíg a névnek nincs ütközése beépített pnpm paranccsal.
 
@@ -77,7 +77,7 @@ Context7-vel megerősítve (`/websites/pnpm_io`): a `pnpm run <script> <extra ar
   handleQuestion(question, history)
     .then((result) => {
       history = result.messages;
-      // C3: printTurn(result)
+      // C3: printTurn(question, result)
     })
     .finally(() => { ... });
   ```
@@ -132,21 +132,23 @@ Context7-vel megerősítve (`/websites/pnpm_io`): a `pnpm run <script> <extra ar
   const SEPARATOR = '─'.repeat(60);
 
   export function printTurn(
+    question: string,
     result: AskResult,
     options?: { showPrompt?: boolean },
   ): void {
     console.log(SEPARATOR);
+    console.log(`🙋 Te: ${question}`);
     if (options?.showPrompt) {
       console.log(formatMessages(result.messages));
-      console.log(SEPARATOR);
     }
     console.log(`🌱 Plantbase: ${result.answer}`);
   }
   ```
   (A readline `rl.setPrompt('plantbase> ')`/`rl.prompt()` hívásai maradnak — azok nem `console.log`-ok, hanem a readline API része.)
-- `apps/cli/src/main.ts`: mind az `ask` parancs action-je, mind az interaktív mód `.then()`-je `printTurn(result, options)`-t hív a jelenlegi `console.log(result.answer)` / `console.log(JSON.stringify(...))` helyett.
+  A kérdés kifejezett kiírása (`🙋 Te: ...`) azért kell, mert a build-kimenet zaja és a válasz között e nélkül nem egyértelmű, melyik kérdésre érkezett a válasz (ezt a user egy éles tesztnél konkrétan hiányolta).
+- `apps/cli/src/main.ts`: mind az `ask` parancs action-je (`printTurn(question, result, options)`), mind az interaktív mód `.then()`-je (`printTurn(question, result)`) ezt hívja a jelenlegi `console.log(result.answer)` / `console.log(JSON.stringify(...))` helyett.
 
-**Teszt:** `pnpm run plantbase ask "..." --show-prompt` → jól tagolt, olvasható kimenet, nem nyers JSON-blob; interaktív módban több kör vizuálisan jól elkülönül; `grep -n "console\." apps/cli/src/main.ts` nem ad találatot.
+**Teszt:** `pnpm run plantbase ask "..." --show-prompt` → jól tagolt, olvasható kimenet, nem nyers JSON-blob, a kérdés (`🙋 Te:`) és a válasz (`🌱 Plantbase:`) egyértelműen elkülönül a build-zajtól; interaktív módban több kör vizuálisan jól elkülönül; `grep -n "console\." apps/cli/src/main.ts` nem ad találatot.
 **Commit:** `feat: improve console output readability (turn separators, formatted --show-prompt)`
 → **megállok, kérem a tesztelést.**
 
