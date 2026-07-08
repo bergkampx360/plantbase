@@ -45,7 +45,7 @@ Context7-vel megerősítve (`/websites/pnpm_io`): a `pnpm run <script> <extra ar
 **Commit:** `feat: add pnpm run plantbase shortcut for build+run`
 → **megállok, kérem a tesztelést.**
 
-### C2 — Kontextus-kezelés (interaktív módban)
+### C2 — Kontextus-kezelés (interaktív módban) ✅ KÉSZ
 
 - `packages/core/src/ask-agent.ts` — új opcionális `history` paraméter:
   ```ts
