@@ -14,9 +14,11 @@ Részletek: [`docs/brs-plantbase.md`](docs/brs-plantbase.md) (üzleti igény, RO
 
 ## Állapot
 
-A teljes implementációs terv (A) rész: környezet; B) rész: agent-logika) elkészült — `docs/implementation-plan-1.md`. A `plantbase ask "<kérdés>"` valódi LLM-hívással SQL-t generál és futtat a `products` katalóguson (`runSql`), szükség esetén a `listCategories` toolt is használja, és a `--show-prompt` kapcsolóval a teljes üzenet-előzmény is megjeleníthető. Futtatás és tesztelés: ld. lent.
+A teljes implementációs terv elkészült és mergelve:
 
-UX/DX fejlesztések terve (shortcut, kontextus-kezelés, olvashatóbb kimenet): `docs/implementation-plan-2.md`.
+- **A–B rész** (`docs/implementation-plan-1.md`): környezet + agent-logika. A `plantbase ask "<kérdés>"` valódi LLM-hívással SQL-t generál és futtat a `products` katalóguson (`runSql`), szükség esetén a `listCategories` toolt is használja.
+- **C rész** (`docs/implementation-plan-2.md`): UX/DX fejlesztések (shortcut, kontextus-kezelés, olvashatóbb kimenet, `--show-prompt` interaktív módban is).
+- **D rész** (`docs/implementation-plan-3.md`): `runSql` guard szigorítása (pontosvessző + blacklist), tesztek (`run-sql.spec.ts`, `list-categories.spec.ts`, 10 zöld teszt), plugin-választások összefoglalója (`docs/plugin-valasztasok.md`).
 
 ## Stack
 
@@ -37,6 +39,8 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 | [`docs/system-prompt.md`](docs/system-prompt.md)                 | Az agent system promptja                                      |
 | [`docs/implementation-plan-1.md`](docs/implementation-plan-1.md) | Implementációs terv — környezet + agent-logika (A1–A7, B1–B5) |
 | [`docs/implementation-plan-2.md`](docs/implementation-plan-2.md) | Implementációs terv — UX/DX fejlesztések (C1–C3)              |
+| [`docs/implementation-plan-3.md`](docs/implementation-plan-3.md) | Implementációs terv — guard szigorítás, tesztek, doc (D1–D3)  |
+| [`docs/plugin-valasztasok.md`](docs/plugin-valasztasok.md)       | Marketplace plugin és MCP szerver választások indoklása       |
 | [`CLAUDE.md`](CLAUDE.md)                                         | Claude Code-nak szóló projekt-instrukciók                     |
 
 ## Helyi fejlesztői környezet
