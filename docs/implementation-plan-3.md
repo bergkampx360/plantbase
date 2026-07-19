@@ -33,7 +33,7 @@ bevezető commit-üzenetekben él, nincs egy helyen összegyűjtve.
 
 ---
 
-### D1 — `runSql` guard szigorítása (pontosvessző-tiltás + blacklist)
+### D1 — `runSql` guard szigorítása (pontosvessző-tiltás + blacklist) ✅ KÉSZ
 
 - `packages/core/src/run-sql.ts`: a jelenlegi `SELECT`-ellenőrzés mellé:
   - pontosvessző-tiltás (statement-stacking ellen)
