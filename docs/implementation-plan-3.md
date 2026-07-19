@@ -45,7 +45,7 @@ nem demonstrálható értelmesen teszt nélkül — TDD: piros → zöld).
 **Commit:** `fix: harden runSql guard against multi-statement and mutating queries`
 → **megállok, kérem a tesztelést.**
 
-### D2 — Teszt-lefedettség: `run-sql` guard + `listCategories`
+### D2 — Teszt-lefedettség: `run-sql` guard + `listCategories` ✅ KÉSZ
 
 - Új `packages/core/src/run-sql.spec.ts` (mockolt `getPool`):
   - elutasítja a nem `SELECT`-tel kezdődő query-t
