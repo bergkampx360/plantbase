@@ -63,7 +63,7 @@ nem demonstrálható értelmesen teszt nélkül — TDD: piros → zöld).
 **Commit:** `test: add coverage for runSql guard and listCategories`
 → **megállok, kérem a tesztelést.**
 
-### D3 — Plugin-választások összefoglalója
+### D3 — Plugin-választások összefoglalója ✅ KÉSZ
 
 - Új `docs/plugin-valasztasok.md`: rövid (fejlesztésenként 1-2 mondatos) összefoglaló arról, miért
   került be az egyes marketplace plugin/MCP szerver, hivatkozva a bevezető commitra
