@@ -35,6 +35,8 @@
 - Egy teszt egy dolgot ellenőrizzen; beszédes nevek ("should ... when ...").
 - Determinista, izolált tesztek; ne függj külső/globális állapottól vagy időzítéstől.
 - Cél: 80%+ lefedettség.
+- Plantbase-specifikus stratégia (mi számít unit/integration/E2E-nek itt, coverage-kikényszerítés
+  státusza): `docs/testing-strategy.md`.
 
 ## Fájlszervezés
 

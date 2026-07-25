@@ -29,18 +29,19 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 
 ## Dokumentáció
 
-| Dokumentum                                                       | Miről szól                                                                        |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [`docs/brs-plantbase.md`](docs/brs-plantbase.md)                 | Üzleti igény, megoldás, scope, követelmények, ROI-keret                           |
-| [`docs/roi.md`](docs/roi.md)                                     | ROI-levezetés pénzben, 5 fős iroda szintjén                                       |
-| [`docs/stack.md`](docs/stack.md)                                 | Tech stack, `products` séma                                                       |
-| [`docs/architektura.md`](docs/architektura.md)                   | Tervezett fájlstruktúra, kulcs technológiai döntések                              |
-| [`docs/konvenciok.md`](docs/konvenciok.md)                       | Kódkonvenciók (naming, TypeScript, hibakezelés, tesztelés)                        |
-| [`docs/dev-workflow.md`](docs/dev-workflow.md)                   | Git-szabályok, hookok, dokumentáció-frissítés                                     |
-| [`docs/system-prompt.md`](docs/system-prompt.md)                 | Az agent system promptja                                                          |
-| [`docs/implementation/STATUS.md`](docs/implementation/STATUS.md) | Implementációs tervek státusz-indexe (kanonikus, innen linkelve minden rész-terv) |
-| [`docs/plugin-valasztasok.md`](docs/plugin-valasztasok.md)       | Marketplace plugin és MCP szerver választások indoklása                           |
-| [`CLAUDE.md`](CLAUDE.md)                                         | Claude Code-nak szóló projekt-instrukciók                                         |
+| Dokumentum                                                       | Miről szól                                                                          |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| [`docs/brs-plantbase.md`](docs/brs-plantbase.md)                 | Üzleti igény, megoldás, scope, követelmények, ROI-keret                             |
+| [`docs/roi.md`](docs/roi.md)                                     | ROI-levezetés pénzben, 5 fős iroda szintjén                                         |
+| [`docs/stack.md`](docs/stack.md)                                 | Tech stack, `products` séma                                                         |
+| [`docs/architektura.md`](docs/architektura.md)                   | Tervezett fájlstruktúra, kulcs technológiai döntések                                |
+| [`docs/konvenciok.md`](docs/konvenciok.md)                       | Kódkonvenciók (naming, TypeScript, hibakezelés, tesztelés)                          |
+| [`docs/testing-strategy.md`](docs/testing-strategy.md)           | Plantbase-specifikus automata tesztelési stratégia (unit/integration/E2E, coverage) |
+| [`docs/dev-workflow.md`](docs/dev-workflow.md)                   | Git-szabályok, hookok, dokumentáció-frissítés                                       |
+| [`docs/system-prompt.md`](docs/system-prompt.md)                 | Az agent system promptja                                                            |
+| [`docs/implementation/STATUS.md`](docs/implementation/STATUS.md) | Implementációs tervek státusz-indexe (kanonikus, innen linkelve minden rész-terv)   |
+| [`docs/plugin-valasztasok.md`](docs/plugin-valasztasok.md)       | Marketplace plugin és MCP szerver választások indoklása                             |
+| [`CLAUDE.md`](CLAUDE.md)                                         | Claude Code-nak szóló projekt-instrukciók                                           |
 
 ## Helyi fejlesztői környezet
 
