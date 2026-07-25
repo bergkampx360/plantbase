@@ -68,7 +68,7 @@ helyettesítés (`''`). Ez az egyseges módszer, amely szimpla stringeket (`'...
 **Commit**: `fix: mask string literals before keyword checking in runSql guard`
 → **megállok, kérem a tesztelést.**
 
-### E2 — `runSql` guard: záró pontosvessző normalizálás ⏳ NYITOTT
+### E2 — `runSql` guard: záró pontosvessző normalizálás ✅ KÉSZ
 
 **Cél**: `SELECT * FROM products;` engedélyezése, miközben `SELECT * FROM products; DROP TABLE` továbbra tiltott marad.
 

@@ -29,16 +29,17 @@ export async function runSql(input: unknown): Promise<string> {
   const trimmed = query.trim();
 
   const masked = trimmed.replace(/['"`]([^'"`]|\\.)*['"`]/g, "''");
+  const withoutTrailingSemicolon = masked.replace(/;\s*$/, '');
 
-  if (!/^select\b/i.test(masked)) {
+  if (!/^select\b/i.test(withoutTrailingSemicolon)) {
     throw new Error('Csak SELECT lekérdezés engedélyezett.');
   }
-  if (masked.includes(';')) {
+  if (withoutTrailingSemicolon.includes(';')) {
     throw new Error(
       'Pontosvesszővel elválasztott több lekérdezés nem engedélyezett.',
     );
   }
-  if (FORBIDDEN_KEYWORDS.test(masked)) {
+  if (FORBIDDEN_KEYWORDS.test(withoutTrailingSemicolon)) {
     throw new Error('A lekérdezés tiltott kulcsszót tartalmaz.');
   }
 

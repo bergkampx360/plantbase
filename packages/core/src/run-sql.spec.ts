@@ -99,4 +99,31 @@ describe('runSql', () => {
     );
     expect(result).toBe(JSON.stringify([{ id: 1, status: 'drop_zone' }]));
   });
+
+  it('allows a single trailing semicolon', async () => {
+    queryMock.mockResolvedValue({ rows: [{ id: 1, name: 'Monstera' }] });
+
+    const result = await runSql({ query: 'SELECT * FROM products;' });
+
+    expect(queryMock).toHaveBeenCalledWith('SELECT * FROM products;');
+    expect(result).toBe(JSON.stringify([{ id: 1, name: 'Monstera' }]));
+  });
+
+  it('allows a trailing semicolon followed by whitespace', async () => {
+    queryMock.mockResolvedValue({ rows: [{ id: 1, name: 'Monstera' }] });
+
+    const result = await runSql({ query: 'SELECT * FROM products;  \n' });
+
+    expect(queryMock).toHaveBeenCalledWith('SELECT * FROM products;');
+    expect(result).toBe(JSON.stringify([{ id: 1, name: 'Monstera' }]));
+  });
+
+  it('still rejects a semicolon followed by another statement', async () => {
+    await expect(
+      runSql({ query: 'SELECT * FROM products; DROP TABLE products' }),
+    ).rejects.toThrow(
+      'Pontosvesszővel elválasztott több lekérdezés nem engedélyezett.',
+    );
+    expect(queryMock).not.toHaveBeenCalled();
+  });
 });
