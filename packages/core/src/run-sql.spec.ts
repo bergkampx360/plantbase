@@ -27,23 +27,26 @@ describe('runSql', () => {
   });
 
   it('rejects queries that do not start with SELECT', async () => {
-    await expect(runSql({ query: 'UPDATE products SET price = 0' })).rejects.toThrow(
-      'Csak SELECT lekérdezés engedélyezett.',
-    );
+    await expect(
+      runSql({ query: 'UPDATE products SET price = 0' }),
+    ).rejects.toThrow('Csak SELECT lekérdezés engedélyezett.');
     expect(queryMock).not.toHaveBeenCalled();
   });
 
   it('rejects multi-statement queries separated by a semicolon', async () => {
     await expect(
       runSql({ query: 'SELECT * FROM products; DROP TABLE products' }),
-    ).rejects.toThrow('Pontosvesszővel elválasztott több lekérdezés nem engedélyezett.');
+    ).rejects.toThrow(
+      'Pontosvesszővel elválasztott több lekérdezés nem engedélyezett.',
+    );
     expect(queryMock).not.toHaveBeenCalled();
   });
 
   it('rejects queries containing a blacklisted keyword even without a semicolon', async () => {
     await expect(
       runSql({
-        query: "SELECT * FROM products WHERE name = 'x' AND EXISTS (DELETE FROM products)",
+        query:
+          "SELECT * FROM products WHERE name = 'x' AND EXISTS (DELETE FROM products)",
       }),
     ).rejects.toThrow('A lekérdezés tiltott kulcsszót tartalmaz.');
     expect(queryMock).not.toHaveBeenCalled();
@@ -52,9 +55,13 @@ describe('runSql', () => {
   it('does not false-positive on column names containing a blacklisted substring', async () => {
     queryMock.mockResolvedValue({ rows: [{ insert_date: '2026-01-01' }] });
 
-    const result = await runSql({ query: 'SELECT insert_date FROM products LIMIT 1' });
+    const result = await runSql({
+      query: 'SELECT insert_date FROM products LIMIT 1',
+    });
 
-    expect(queryMock).toHaveBeenCalledWith('SELECT insert_date FROM products LIMIT 1');
+    expect(queryMock).toHaveBeenCalledWith(
+      'SELECT insert_date FROM products LIMIT 1',
+    );
     expect(result).toBe(JSON.stringify([{ insert_date: '2026-01-01' }]));
   });
 
@@ -62,5 +69,34 @@ describe('runSql', () => {
     await expect(runSql({ query: '' })).rejects.toThrow();
     await expect(runSql({})).rejects.toThrow();
     expect(queryMock).not.toHaveBeenCalled();
+  });
+
+  it('allows blacklisted keywords inside string literals', async () => {
+    queryMock.mockResolvedValue({ rows: [{ name: 'test plant' }] });
+
+    const result = await runSql({
+      query: "SELECT * FROM products WHERE name LIKE '%insert%'",
+    });
+
+    expect(queryMock).toHaveBeenCalledWith(
+      "SELECT * FROM products WHERE name LIKE '%insert%'",
+    );
+    expect(result).toBe(JSON.stringify([{ name: 'test plant' }]));
+  });
+
+  it('allows multiple blacklisted keywords in string literals', async () => {
+    queryMock.mockResolvedValue({
+      rows: [{ id: 1, status: 'drop_zone' }],
+    });
+
+    const result = await runSql({
+      query:
+        "SELECT * FROM products WHERE id IN ('1', 'drop') AND status = 'delete'",
+    });
+
+    expect(queryMock).toHaveBeenCalledWith(
+      "SELECT * FROM products WHERE id IN ('1', 'drop') AND status = 'delete'",
+    );
+    expect(result).toBe(JSON.stringify([{ id: 1, status: 'drop_zone' }]));
   });
 });

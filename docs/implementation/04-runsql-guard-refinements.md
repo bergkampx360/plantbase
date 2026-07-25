@@ -43,7 +43,7 @@ helyettesítés (`''`). Ez az egyseges módszer, amely szimpla stringeket (`'...
 
 ---
 
-### E1 — `runSql` guard: tartalommaszkolás (string-literálatok kizárása) ⏳ NYITOTT
+### E1 — `runSql` guard: tartalommaszkolás (string-literálatok kizárása) ✅ KÉSZ
 
 **Cél**: SQL string-literálatok kizárása a kulcsszó-vizsgálatból, hogy a `WHERE name LIKE '%insert%'` engedélyezett legyen.
 

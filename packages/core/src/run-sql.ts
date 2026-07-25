@@ -28,15 +28,17 @@ export async function runSql(input: unknown): Promise<string> {
   const { query } = RunSqlInput.parse(input);
   const trimmed = query.trim();
 
-  if (!/^select\b/i.test(trimmed)) {
+  const masked = trimmed.replace(/['"`]([^'"`]|\\.)*['"`]/g, "''");
+
+  if (!/^select\b/i.test(masked)) {
     throw new Error('Csak SELECT lekérdezés engedélyezett.');
   }
-  if (trimmed.includes(';')) {
+  if (masked.includes(';')) {
     throw new Error(
       'Pontosvesszővel elválasztott több lekérdezés nem engedélyezett.',
     );
   }
-  if (FORBIDDEN_KEYWORDS.test(trimmed)) {
+  if (FORBIDDEN_KEYWORDS.test(masked)) {
     throw new Error('A lekérdezés tiltott kulcsszót tartalmaz.');
   }
 
