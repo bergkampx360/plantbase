@@ -72,8 +72,32 @@ docs/
     └── api.md             tool/CLI felület (ask, runSql)
 ```
 
+**Ezek a fájlok jelenleg még nem léteznek** — nem csak leírás, hanem tényleges elvárás: amikor egy
+változás releváns rájuk (új domain-fogalom → `ddd/glossary.md`/`model.md`; infra/architektúra/API
+felület módosul → `tech/infra.md`/`architecture.md`/`api.md`), a `ddd-audit` skill létrehozza vagy
+frissíti őket. Nem maradhatnak tartósan csak aspirációként a diagramban.
+
 ## Dokumentáció-frissítés
 
-A `/docs` frissítését a **`ddd-audit` skill** végzi (git-history → docs), külön, igény szerint futtatva. NEM készítünk doc-freshness ellenőrző scriptet és Stop hookot az elején. A CI-alapú változat a 4. órán jön (always-on / CI/CD).
+A `/docs` frissítését a **`ddd-audit` skill** végzi (git-history → docs). Ez **nem "igény szerint"
+opcionális** többé, hanem kötelező lépés **minden PR nyitása előtt** (ld. `CLAUDE.md`): a skill
+megvizsgálja a branch változásait, és ha bármelyik docs-fájl (`README.md`-t is beleértve) elavulttá
+vált, azt **külön `docs:` commitban**, a push/PR-nyitás előtt frissíteni kell.
 
-A gyökér **`README.md`** is ide tartozik: kulcs változásoknál (új `packages/`/`apps/` létrejötte, stack-váltás, workflow-szabály változása — pl. squash-merge policy) frissíteni kell, ugyanúgy manuálisan/igény szerint, nem automatizált hookkal.
+NEM készítünk automatizált doc-freshness Stop hookot — a `ddd-audit` skill kézzel/explicit
+futtatott ellenőrzés marad, de a _mikor kell futtatni_ mostantól rögzített szabály, nem esetleges.
+A CI-alapú változat a 4. órán jön (always-on / CI/CD).
+
+## Egy aktív feladat szabálya
+
+Egyszerre csak egy feladaton dolgozunk lokálisan. Új feature branch nyitása / új feladat
+elkezdése **előtt** ellenőrizni kell (`git status`, `git branch --no-merged main`), van-e már
+nyitott munka-branch (commitolatlan változás, vagy main-hez képest még nem mergelt branch). Ha
+igen: megállok, megnevezem a branchet és az állapotát, és explicit rákérdezek, hogy azt
+folytassuk, fejezzük be előbb, vagy szándékosan párhuzamosan induljon egy másik. Új munka soha
+nem indulhat csendben egy már nyitott branch felett.
+
+## Implementációs terv-dokumentáció
+
+Ld. `docs/implementation/STATUS.md` — ez a kanonikus státusz-index, a rész-tervek fájlstruktúrája
+és az új-fájl-nyitás szabálya is ott van rögzítve (nem itt duplikálva).

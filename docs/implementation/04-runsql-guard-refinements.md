@@ -1,12 +1,12 @@
 # Plantbase — runSql-guard finomítások, záró pontosvessző-kezelés, ask-agent integrációs teszt (E rész)
 
-> Kurzus-melléklet, az `implementation-plan-1.md` (A–B), `implementation-plan-2.md` (C) és `implementation-plan-3.md` (D) folytatása —
+> Kurzus-melléklet, az `01-environment-and-agent-core.md` (A–B), `02-ux-dx-improvements.md` (C) és `03-runsql-guard-hardening.md` (D) folytatása —
 > külön dokumentumként, hogy a korábbi tervek lezárt maradjanak. Ugyanazt a stílust és git-workflow
-> szabályt követi.
+> szabályt követi. Státusz: `docs/implementation/STATUS.md`.
 
 ## Kontextus
 
-Az `implementation-plan-3.md` D1–D3 fázisai elkészültek: a `runSql` guard szigorított, tesztek futnak. Azonban
+Az `03-runsql-guard-hardening.md` D1–D3 fázisai elkészültek: a `runSql` guard szigorított, tesztek futnak. Azonban
 a terv kihagyott három finomítást, amelyek biztonságot és felhasználói élményt javítanak:
 
 1. **Tartalommaszkolás (string-literálatok kizárása)**: A jelenlegi blacklist regex (`\b(insert|...)\b`) minden
@@ -26,8 +26,8 @@ a terv kihagyott három finomítást, amelyek biztonságot és felhasználói é
 ## Rögzített döntések
 
 - **Tartalommaszkolás-mintázat**: `/['"`]([^'"`]|\\.)*['"`]/` regex az SQL stringek kinyeréséhez, majd placeholder-rel
-  helyettesítés (`''`). Ez az egyseges módszer, amely szimpla stringeket (`'...'`), dupla stringeket (`"..."`),
-  és escape-elt karaktereket (`\'`, `\"`) kezel.
+helyettesítés (`''`). Ez az egyseges módszer, amely szimpla stringeket (`'...'`), dupla stringeket (`"..."`),
+és escape-elt karaktereket (`\'`, `\"`) kezel.
 - **Pontosvessző normalizálás**: `trimmed.replace(/;\s*$/, '')` — csak trailing semicolon eltávolítás. Az eredményt
   vizsgálni: ha még van `;`, akkor multi-statement.
 - **Ask-agent teszt**: Mock az Anthropic SDK `messages.create()` metódusára, hogy kontrollált tool-hívási szekvenciát
@@ -128,6 +128,7 @@ Vitest `describe` blokk az `askAgent` függvényre:
    - Validáció: `messages.length >= 6` (U, A1, U, A2, U, A3)
 
 **Teszt futtatás**:
+
 - `pnpm exec nx run core:test -- ask-agent.spec.ts`
 - Mockolás: `vi.mock('@anthropic-ai/sdk')` (SDK imports)
 - Pool mock: már létezik a `vi.mock('./db-pool')` az egyéb tesztekben, ez is kell

@@ -1,6 +1,6 @@
 # Plantbase — UX/DX fejlesztési terv (C rész)
 
-> Kurzus-melléklet, az `docs/implementation-plan-1.md` (A1–A7, B1–B5) folytatása — külön dokumentumként, hogy az eredeti terv lezárt maradjon. Ugyanazt a stílust és git-workflow szabályt követi.
+> Kurzus-melléklet, az `docs/implementation/01-environment-and-agent-core.md` (A1–A7, B1–B5) folytatása — külön dokumentumként, hogy az eredeti terv lezárt maradjon. Ugyanazt a stílust és git-workflow szabályt követi. Státusz: `docs/implementation/STATUS.md`.
 
 ## Kontextus
 
@@ -17,7 +17,7 @@ A teljes A1–A7/B1–B5 terv elkészült és mergelve van, a `plantbase ask`/in
 - **Kimeneti absztrakció:** minden konzolra írás egyetlen modulon (`apps/cli/src/output.ts`) megy át — a `main.ts`-ben a jóváhagyás utáni állapotban nem marad közvetlen `console.log` hívás.
 - **Csomag-granularitás:** 3 önálló fázis (C1–C3), a projekt már rögzített szabálya szerint — saját branch, saját lokális commit, megállok tesztelésre, push/PR csak külön jóváhagyás után.
 
-## Git-workflow (átvéve `docs/implementation-plan-1.md`-ből, változatlanul)
+## Git-workflow (átvéve `docs/implementation/01-environment-and-agent-core.md`-ből, változatlanul)
 
 1. Feature branch létrehozása fázisonként, implementáció, helyi commit.
 2. Megállok, kérem a tesztelést.
