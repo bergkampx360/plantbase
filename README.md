@@ -14,12 +14,12 @@ Részletek: [`docs/brs-plantbase.md`](docs/brs-plantbase.md) (üzleti igény, RO
 
 ## Állapot
 
-A teljes implementációs terv elkészült és mergelve:
-
-- **A–B rész** (`docs/implementation-plan-1.md`): környezet + agent-logika. A `plantbase ask "<kérdés>"` valódi LLM-hívással SQL-t generál és futtat a `products` katalóguson (`runSql`), szükség esetén a `listCategories` toolt is használja.
-- **C rész** (`docs/implementation-plan-2.md`): UX/DX fejlesztések (shortcut, kontextus-kezelés, olvashatóbb kimenet, `--show-prompt` interaktív módban is).
-- **D rész** (`docs/implementation-plan-3.md`): `runSql` guard szigorítása (pontosvessző + blacklist), tesztek (`run-sql.spec.ts`, `list-categories.spec.ts`, 10 zöld teszt), plugin-választások összefoglalója (`docs/plugin-valasztasok.md`).
-- **E rész** (`docs/implementation-plan-4.md`): `runSql` guard finomítások (string-literálatok maszkolása, záró pontosvessző normalizálása), ask-agent integrationális teszt (tool-error handling).
+Részletes, mindig friss állapot: [`docs/implementation/STATUS.md`](docs/implementation/STATUS.md)
+(a `ddd-audit` skill tartja karban minden PR előtt). Röviden: A–D rész kész és mergelve — a
+`plantbase ask "<kérdés>"` valódi LLM-hívással SQL-t generál és futtat a `products` katalóguson
+(`runSql`), szükség esetén a `listCategories` toolt is használja, UX/DX fejlesztésekkel
+(shortcut, kontextus-kezelés, olvashatóbb kimenet) és szigorított `runSql` guarddal. Az E rész
+(`runSql` guard finomítások, ask-agent integrationális teszt) még tervezve, nincs implementálva.
 
 ## Stack
 
@@ -29,21 +29,19 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 
 ## Dokumentáció
 
-| Dokumentum                                                       | Miről szól                                                       |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------- |
-| [`docs/brs-plantbase.md`](docs/brs-plantbase.md)                 | Üzleti igény, megoldás, scope, követelmények, ROI-keret          |
-| [`docs/roi.md`](docs/roi.md)                                     | ROI-levezetés pénzben, 5 fős iroda szintjén                      |
-| [`docs/stack.md`](docs/stack.md)                                 | Tech stack, `products` séma                                      |
-| [`docs/architektura.md`](docs/architektura.md)                   | Tervezett fájlstruktúra, kulcs technológiai döntések             |
-| [`docs/konvenciok.md`](docs/konvenciok.md)                       | Kódkonvenciók (naming, TypeScript, hibakezelés, tesztelés)       |
-| [`docs/dev-workflow.md`](docs/dev-workflow.md)                   | Git-szabályok, hookok, dokumentáció-frissítés                    |
-| [`docs/system-prompt.md`](docs/system-prompt.md)                 | Az agent system promptja                                         |
-| [`docs/implementation-plan-1.md`](docs/implementation-plan-1.md) | Implementációs terv — környezet + agent-logika (A1–A7, B1–B5)    |
-| [`docs/implementation-plan-2.md`](docs/implementation-plan-2.md) | Implementációs terv — UX/DX fejlesztések (C1–C3)                 |
-| [`docs/implementation-plan-3.md`](docs/implementation-plan-3.md) | Implementációs terv — guard szigorítás, tesztek, doc (D1–D3)     |
-| [`docs/implementation-plan-4.md`](docs/implementation-plan-4.md) | Implementációs terv — guard finomítások, ask-agent teszt (E1–E3) |
-| [`docs/plugin-valasztasok.md`](docs/plugin-valasztasok.md)       | Marketplace plugin és MCP szerver választások indoklása          |
-| [`CLAUDE.md`](CLAUDE.md)                                         | Claude Code-nak szóló projekt-instrukciók                        |
+| Dokumentum                                                       | Miről szól                                                                          |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| [`docs/brs-plantbase.md`](docs/brs-plantbase.md)                 | Üzleti igény, megoldás, scope, követelmények, ROI-keret                             |
+| [`docs/roi.md`](docs/roi.md)                                     | ROI-levezetés pénzben, 5 fős iroda szintjén                                         |
+| [`docs/stack.md`](docs/stack.md)                                 | Tech stack, `products` séma                                                         |
+| [`docs/architektura.md`](docs/architektura.md)                   | Tervezett fájlstruktúra, kulcs technológiai döntések                                |
+| [`docs/konvenciok.md`](docs/konvenciok.md)                       | Kódkonvenciók (naming, TypeScript, hibakezelés, tesztelés)                          |
+| [`docs/testing-strategy.md`](docs/testing-strategy.md)           | Plantbase-specifikus automata tesztelési stratégia (unit/integration/E2E, coverage) |
+| [`docs/dev-workflow.md`](docs/dev-workflow.md)                   | Git-szabályok, hookok, dokumentáció-frissítés                                       |
+| [`docs/system-prompt.md`](docs/system-prompt.md)                 | Az agent system promptja                                                            |
+| [`docs/implementation/STATUS.md`](docs/implementation/STATUS.md) | Implementációs tervek státusz-indexe (kanonikus, innen linkelve minden rész-terv)   |
+| [`docs/plugin-valasztasok.md`](docs/plugin-valasztasok.md)       | Marketplace plugin és MCP szerver választások indoklása                             |
+| [`CLAUDE.md`](CLAUDE.md)                                         | Claude Code-nak szóló projekt-instrukciók                                           |
 
 ## Helyi fejlesztői környezet
 

@@ -1,7 +1,8 @@
 # Plantbase — runSql-guard szigorítás, teszt-lefedettség, plugin-döntések (D rész)
 
-> Kurzus-melléklet, az `implementation-plan-1.md` (A–B) és `implementation-plan-2.md` (C) folytatása —
+> Kurzus-melléklet, az `01-environment-and-agent-core.md` (A–B) és `02-ux-dx-improvements.md` (C) folytatása —
 > külön dokumentumként, hogy a korábbi tervek lezárt maradjanak. Ugyanazt a stílust és git-workflow
+> szabályt követi. Státusz: `docs/implementation/STATUS.md`.
 > szabályt követi.
 
 ## Kontextus
