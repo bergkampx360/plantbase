@@ -94,7 +94,7 @@ helyettesítés (`''`). Ez az egyseges módszer, amely szimpla stringeket (`'...
 **Commit**: `fix: allow trailing semicolon in runSql queries`
 → **megállok, kérem a tesztelést.**
 
-### E3 — Ask-agent szintű integrationális teszt ⏳ NYITOTT
+### E3 — Ask-agent szintű integrationális teszt ✅ KÉSZ
 
 **Cél**: Az agent-loop robusztus volta a tool-hibákkal szemben — egy hibás tool-hívás ne töri el az loopot.
 

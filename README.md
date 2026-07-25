@@ -15,11 +15,11 @@ Részletek: [`docs/brs-plantbase.md`](docs/brs-plantbase.md) (üzleti igény, RO
 ## Állapot
 
 Részletes, mindig friss állapot: [`docs/implementation/STATUS.md`](docs/implementation/STATUS.md)
-(a `ddd-audit` skill tartja karban minden PR előtt). Röviden: A–D rész kész és mergelve — a
+(a `ddd-audit` skill tartja karban minden PR előtt). Röviden: A–E rész kész és mergelve — a
 `plantbase ask "<kérdés>"` valódi LLM-hívással SQL-t generál és futtat a `products` katalóguson
 (`runSql`), szükség esetén a `listCategories` toolt is használja, UX/DX fejlesztésekkel
-(shortcut, kontextus-kezelés, olvashatóbb kimenet) és szigorított `runSql` guarddal. Az E rész
-(`runSql` guard finomítások, ask-agent integrationális teszt) még tervezve, nincs implementálva.
+(shortcut, kontextus-kezelés, olvashatóbb kimenet), szigorított és finomított `runSql` guarddal
+(string-literál-maszkolás, záró pontosvessző kezelése), ask-agent integrationális teszttel.
 
 ## Stack
 
