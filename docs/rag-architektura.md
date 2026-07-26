@@ -5,7 +5,7 @@
 > forrásait, és — a HF3 saját, névvel nevezett elvárása szerint — hogyan kerülnénk el a
 > **változatlan** dokumentumok felesleges újra-vektorizálását. **Ez a dokumentum tisztán terv, nem
 > kód** — a benne leírt `KnowledgeSource` tábla és sync-logika NEM létezik a jelenlegi kódban
-> (F1–F7), ld. "Kimarad" lent.
+> (F1–F8 — ez a dokumentum, F8, maga sem implementál kódot, csak megtervezi), ld. "Kimarad" lent.
 
 ## A jelenlegi állapot és a hiányzó rész
 
