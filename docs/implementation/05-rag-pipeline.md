@@ -26,7 +26,7 @@ Minden fázis: saját branch → implementáció+teszt → doc-lezáró commit �
 
 A fázisbontás finomabb szemcséjű, mint az A–E részeknél megszokott átlag — egy fázis egy dolog, hogy a `docs/testing-strategy.md` réteg-elvárásai (pl. séma-változásnál `db-role-setup`, új toolnál unit teszt ugyanabban a fázisban) mindig egyértelműen egy-egy fázishoz köthetők legyenek.
 
-### F1 — Környezet-előkészítés (docker + függőségek) ⏳ NYITOTT
+### F1 — Környezet-előkészítés (docker + függőségek) ✅ KÉSZ
 
 - `docker-compose.yml`: `postgres:17-alpine` → `pgvector/pgvector:0.8.5-pg17` (verzió-rögzített tag, ellenőrizve a Docker Hubon — a floating `pg17` helyett a reprodukálhatóság miatt).
 - npm függőségek: `ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic` (`packages/core`).
