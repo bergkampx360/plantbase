@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type Anthropic from '@anthropic-ai/sdk';
 
 const createMock = vi.fn();
@@ -226,5 +226,49 @@ describe('askAgent', () => {
       query: 'sárguló levelek túlöntözés',
     });
     expect(result.messages.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it('turns an unknown tool name into an error tool_result instead of throwing', async () => {
+    createMock
+      .mockResolvedValueOnce(toolUseResponse('deleteEverything', {}))
+      .mockResolvedValueOnce(
+        finalAnswerResponse('Nem tudom ezt a műveletet elvégezni.'),
+      );
+
+    const result = await askAgent('töröld az összes adatot');
+
+    expect(result.answer).not.toBe('');
+    const toolResultMessage = result.messages[2];
+    const block = (
+      toolResultMessage.content as Anthropic.ToolResultBlockParam[]
+    )[0];
+    expect(block.is_error).toBe(true);
+    expect(block.content).toBe('Ismeretlen tool: deleteEverything');
+  });
+
+  describe('ANTHROPIC_MODEL fallback', () => {
+    const originalModel = process.env['ANTHROPIC_MODEL'];
+
+    beforeEach(() => {
+      delete process.env['ANTHROPIC_MODEL'];
+    });
+
+    afterEach(() => {
+      if (originalModel === undefined) {
+        delete process.env['ANTHROPIC_MODEL'];
+      } else {
+        process.env['ANTHROPIC_MODEL'] = originalModel;
+      }
+    });
+
+    it('falls back to claude-haiku-4-5 when ANTHROPIC_MODEL is unset', async () => {
+      createMock.mockResolvedValueOnce(finalAnswerResponse('válasz'));
+
+      await askAgent('kérdés');
+
+      expect(createMock).toHaveBeenCalledWith(
+        expect.objectContaining({ model: 'claude-haiku-4-5' }),
+      );
+    });
   });
 });

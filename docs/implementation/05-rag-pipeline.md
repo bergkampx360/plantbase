@@ -20,7 +20,7 @@ A 6. órai házifeladat (HF3) egy működő RAG-pipeline-t kér: saját tudásb�
 
 ---
 
-## F rész — Fázisok (F1–F10)
+## F rész — Fázisok (F1–F11)
 
 Minden fázis: saját branch → implementáció+teszt → doc-lezáró commit → `ddd-audit` → megállok tesztelésre → push/PR/merge csak explicit jóváhagyás után.
 
@@ -161,11 +161,41 @@ hiányzó automatizált ellenőrzés a `SYSTEM_PROMPT`-ra:
 **Commit:** `test: add system prompt content and docs-sync regression tests`
 → **megállok, kérem a tesztelést.**
 
+### F11 — Coverage-alapú tesztelési rések lezárása ✅ KÉSZ
+
+`npx vitest run --coverage` (`packages/core`) futtatásával derült ki: 94%/86%/91%
+(stmt/branch/func) volt az összesített lefedettség, konkrét, nevesíthető résekkel. Pótolt tesztek:
+
+- `packages/core/src/log-interaction.spec.ts` (ÚJ fájl) — a `logInteraction` (a `--show-prompt`/
+  audit-naplózás mögötti logika) korábban **0%-on** állt, mert az `ask-agent.spec.ts` mindig
+  mockolta. Most: `mkdir` a `logs/` mappára `recursive: true`-val, `appendFile` egy időbélyeges
+  `.jsonl` fájlba, a tartalom valid JSON és a bemenő log-objektummal egyezik, `mkdir` az
+  `appendFile` előtt fut.
+- `ask-agent.spec.ts` — új teszt az "ismeretlen tool" ágra (`default: throw` a switch-ben, eddig
+  soha nem hívott branch) — `is_error: true` tool-result lesz belőle, nem crash; plusz egy teszt az
+  `ANTHROPIC_MODEL` env-fallback ágra (`?? 'claude-haiku-4-5'`), ami eddig sosem futott (a `.env`
+  mindig beállítja tesztfutáskor).
+- `hyde.spec.ts` — ugyanaz az `ANTHROPIC_MODEL`-fallback teszt a HyDE-hívásra.
+- `chunk.spec.ts` — 3 új eset: frontmatter-sor kettőspont nélkül (`continue`-ág), `title` jelen de
+  `category` hiányzik (a `!title || !category` jobb oldalának izolált ága), és üres/whitespace-only
+  szöveg a `packIntoTokenChunks`-ban.
+
+**Tudatosan kihagyva**: `db-pool.ts` (20% — vékony `pg.Pool`-wrapper, nincs benne érdemi logika,
+minden fogyasztója mockolja, mint a projekt más infra-wrappereit sem teszteljük külön); a
+`chunk.ts` `packIntoTokenChunks` végi `if (current.length > 0)` ága (strukturálisan elérhetetlen —
+a ciklus után `current` sosem lehet üres, ha egyáltalán lefutott, az üres-input eset korábban,
+külön ellenőrzéssel visszatér).
+
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld; `npx vitest run --coverage`
+(`packages/core`): 98%/92%/94% (stmt/branch/func), 66 teszt (előtte 57).
+**Commit:** `test: close coverage gaps found in log-interaction, ask-agent, hyde, chunk`
+→ **megállok, kérem a tesztelést.**
+
 ---
 
-## G rész — Webes chat felület (F1–F10 UTÁN, külön ütemezve)
+## G rész — Webes chat felület (F1–F11 UTÁN, külön ütemezve)
 
-**Prioritás:** a HF3 leadási része (F1–F10) **előbb** készül el, CLI-n keresztül demonstrálva. A G rész ezután, külön fázissorozat — nem kockáztatjuk a határidős leadást.
+**Prioritás:** a HF3 leadási része (F1–F11) **előbb** készül el, CLI-n keresztül demonstrálva. A G rész ezután, külön fázissorozat — nem kockáztatjuk a határidős leadást.
 
 **Cél:** webes chat UI, stream-elt válasz, kattintható válasz → agent/tool-hívás-nyomkövetés, DB-alapú kontextus, "új chat" gomb, korábbi beszélgetések listája.
 
