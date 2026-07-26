@@ -117,8 +117,12 @@ kóddal. A `knowledge-store.ts` meglévő függvényei (`insertChunks`, `searchC
 kontextus. Ha ez a terv implementálódik, a `deleteChunksBySource`/`insertChunks`/`knowledge_sources`-upsert
 lépéseknek egy közösen kicsatolt `pg.PoolClient`-et kellene elfogadniuk (`pool.connect()` → `BEGIN`
 → lépések a client-en → `COMMIT`/`ROLLBACK` hiba esetén → `release()`), nem Prisma
-`$transaction`-nal — a RAG-alrendszer tudatosan Prisma nélkül, nyers `pg`-vel megy
-(`docs/architektura.md`, 2. döntés).
+`$transaction`-nal. Ennek két oka van: (1) architekturális elv — a RAG-alrendszer tudatosan Prisma
+nélkül, nyers `pg`-vel megy (`docs/architektura.md`, 2. döntés); (2) technikai kényszer — a
+`schema.prisma`-ban az `embedding` oszlop `Unsupported("vector(1536)")`, amit a Prisma Client
+eleve nem tud típusosan lekérdezni/írni, tehát bármi, ami az embeddinget érinti, Prisma mellett is
+nyers SQL-re (`$queryRaw`/`$executeRaw`) szorulna — a jelenlegi, közvetlen `pg`-használat emiatt
+amúgy sem kerülhető el, nem csak preferencia kérdése.
 
 ### Globális ág: pipeline-verzió-migráció (ritka esemény, nem per-fájl)
 
