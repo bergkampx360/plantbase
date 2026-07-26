@@ -76,6 +76,24 @@ termel 0 chunkot (minden cikknek van kereshető tartalma a zaj-szűrés után).
 
 ---
 
+## Multi-provider routing
+
+A pipeline **két különböző LLM/embedding-providert** használ, tudatos szereposztással:
+
+| Lépés                 | Provider  | Modell                   | Miért ez                                                                                                                                                                                                                 |
+| --------------------- | --------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Embedding             | OpenAI    | `text-embedding-3-small` | Iparágilag bevett, ár/minőség arányban erős embedding-modell.                                                                                                                                                            |
+| Rerank                | OpenAI    | `gpt-4.1-mini`           | A rerankhez strukturált kimenet kell (pontszám chunkonként) — az `ai` SDK `generateObject`-je ehhez OpenAI-oldalon illeszkedik jól a projektben már használt zod-sémákkal.                                               |
+| HyDE                  | Anthropic | `claude-haiku-4-5`       | Ugyanaz a szöveg-generálási feladat (hipotetikus válasz írása), mint amit az `askAgent` már csinál — nincs ok külön providerre váltani egy olyan lépésnél, ami nem strukturált kimenetet, hanem szabad szöveget generál. |
+| askAgent végső válasz | Anthropic | `claude-haiku-4-5`       | Az `askAgent` már eleve Anthropic-alapú (`docs/architektura.md`, 3. döntés) — a RAG-réteg ebbe illeszkedik, nem vezet be egy harmadik providert erre a lépésre.                                                          |
+
+**A tényleges elv**: OpenAI a **struktúra/pontosság**-igényes lépéseknél (embedding-vektor,
+pontszám-JSON), Anthropic a **szöveg-generálásnál** (hipotetikus válasz, végső válasz) — ez adja
+a valódi multi-provider orchestration-t, nem egy tetszőleges szétosztás. Részletes indoklás:
+`docs/implementation/05-rag-pipeline.md`, "Rögzített döntések" 2. pont.
+
+---
+
 ## Golden set — visszakeresés-minőség (F7)
 
 > `packages/core/src/rag/golden-set.ts` (`pnpm --filter @plantbase/core run golden-set`) —

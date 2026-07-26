@@ -25,6 +25,15 @@ F rész (RAG, HF3) is kész: a `plantbase ask` gondozási kérdésekre a `search
 forráshivatkozással; golden-set kiértékelés, karbantartási architektúra-terv és költségbecslés is
 elkészült — ld. [`docs/rag-pipeline.md`](docs/rag-pipeline.md), [`docs/rag-architektura.md`](docs/rag-architektura.md).
 
+### Költség (RAG)
+
+Valós mért adatból (nem becslés — ld. [`docs/rag-pipeline.md`](docs/rag-pipeline.md#költségbecslés-f9) a módszertanért):
+
+- **Ingest (a teljes tudásbázis vektorizálása, egyszeri)**: 202 cikk → 768 chunk, 218 676 token → **≈$0,0044** (kb. 1,7 Ft).
+- **Egy kérdés a teljes pipeline-nal** (HyDE-hívás + embedding + rerank + válasz): **≈$0,0067** (egyszeri `searchKnowledge`-hívással), önreflektáló újrahívással **≈$0,0224**.
+
+Aktuális (2026. júliusi) árazással: Anthropic `claude-haiku-4-5` ($1/$5 per 1M token be-/kimenet), OpenAI `text-embedding-3-small` ($0,02/1M token), OpenAI `gpt-4.1-mini` ($0,40/$1,60 per 1M token).
+
 ## Stack
 
 TypeScript (strict), Nx monorepo, pnpm, Node LTS · PostgreSQL (docker-compose, lokális) + Prisma · Anthropic SDK, kézzel írt tool-use loop (nincs agent-framework) · Zod · Commander + readline (CLI) · Vitest, ESLint + Prettier
@@ -93,6 +102,12 @@ plantbase ask "<kérdés>"
 ```
 
 A `--show-prompt` kapcsolóval a teljes üzenet-előzmény (LLM-hívások, tool-hívások, válaszok) is megjelenik — az `ask` parancson (`... ask "<kérdés>" --show-prompt`) és interaktív módban is (`pnpm run plantbase --show-prompt`). Minden interakció naplózva a `logs/` mappába (JSONL, nincs commitolva).
+
+**RAG golden-set kiértékelés** (reprodukálható, `docs/rag-pipeline.md` "Golden set" szakaszának alapja) — nyers vektorkeresés vs. teljes HyDE+rerank pipeline összevetése a 8 tesztkérdésre, valós DB/API-hívásokkal:
+
+```bash
+pnpm --filter @plantbase/core run golden-set
+```
 
 Automatikus ellenőrzések (build, típusellenőrzés, teszt, lint minden csomagra):
 
