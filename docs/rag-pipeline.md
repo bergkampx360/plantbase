@@ -76,6 +76,24 @@ termel 0 chunkot (minden cikknek van kereshető tartalma a zaj-szűrés után).
 
 ---
 
+## Multi-provider routing
+
+A pipeline **két különböző LLM/embedding-providert** használ, tudatos szereposztással:
+
+| Lépés                 | Provider  | Modell                   | Miért ez                                                                                                                                                                                                                 |
+| --------------------- | --------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Embedding             | OpenAI    | `text-embedding-3-small` | Iparágilag bevett, ár/minőség arányban erős embedding-modell.                                                                                                                                                            |
+| Rerank                | OpenAI    | `gpt-4.1-mini`           | A rerankhez strukturált kimenet kell (pontszám chunkonként) — az `ai` SDK `generateObject`-je ehhez OpenAI-oldalon illeszkedik jól a projektben már használt zod-sémákkal.                                               |
+| HyDE                  | Anthropic | `claude-haiku-4-5`       | Ugyanaz a szöveg-generálási feladat (hipotetikus válasz írása), mint amit az `askAgent` már csinál — nincs ok külön providerre váltani egy olyan lépésnél, ami nem strukturált kimenetet, hanem szabad szöveget generál. |
+| askAgent végső válasz | Anthropic | `claude-haiku-4-5`       | Az `askAgent` már eleve Anthropic-alapú (`docs/architektura.md`, 3. döntés) — a RAG-réteg ebbe illeszkedik, nem vezet be egy harmadik providert erre a lépésre.                                                          |
+
+**A tényleges elv**: OpenAI a **struktúra/pontosság**-igényes lépéseknél (embedding-vektor,
+pontszám-JSON), Anthropic a **szöveg-generálásnál** (hipotetikus válasz, végső válasz) — ez adja
+a valódi multi-provider orchestration-t, nem egy tetszőleges szétosztás. Részletes indoklás:
+`docs/implementation/05-rag-pipeline.md`, "Rögzített döntések" 2. pont.
+
+---
+
 ## Golden set — visszakeresés-minőség (F7)
 
 > `packages/core/src/rag/golden-set.ts` (`pnpm --filter @plantbase/core run golden-set`) —
@@ -165,3 +183,63 @@ A válasz PASS: a generikus tanácsot egyértelműen "általános alapelvekként
 > 🌱 _"Sajnos a tudásbázisban **nincs megfelelő információ a hidroponikus EC/pH értékek konkrét optimalizálásáról**. [...] szakosított hidroponikus tudásbázisra van szükséged."_
 
 Mindkét kör után a válasz **továbbra sem talált specifikusan releváns tartalmat**, és ezt az agent őszintén kimondta — ez tehát nem "gyenge→jobb" javulást bizonyít, hanem egy **második, iteratív negatív-tesztet**: a mechanizmus (kétszeri hívás, más megfogalmazással) működik, de az eredmény attól függ, hogy a hiány megfogalmazási (reformulálással javítható) vagy valódi tartalmi hiány (reformulálással sem javítható) — ez utóbbi esetben a helyes viselkedés éppen a kitartó, de végül őszinte elutasítás, nem egy erőltetett "jobb" válasz. Ezt a jelenséget a HF3 saját, a rerank-átrendezésre vonatkozó megengedő logikájával analóg módon dokumentáljuk: ha a kívánt ív nem jelenik meg természetesen, ezt magyarázattal együtt rögzítjük, nem szimulált eredménnyel pótoljuk.
+
+---
+
+## Költségbecslés (F9)
+
+> Módszertan: minden szám vagy **valós mért adat** (a `logs/` mappa tényleges `tokenUsage`-a,
+> illetve egy élesben lefuttatott HyDE/embedding/rerank hívás valós `usage`-a), vagy ebből
+> számított — nincs benne hüvelykujj-szabály-becslés. Az árak **aktuális, 2026. júliusi
+> web-keresésből** származnak, nem képzésadatból (linkek lent).
+
+### Árazás (2026-07-26, hivatalos/aggregált források)
+
+| Modell                          | Szerep                       | Ár                                              |
+| ------------------------------- | ---------------------------- | ----------------------------------------------- |
+| Anthropic `claude-haiku-4-5`    | HyDE + askAgent végső válasz | $1,00 / 1M input token, $5,00 / 1M output token |
+| OpenAI `text-embedding-3-small` | embedding                    | $0,02 / 1M token                                |
+| OpenAI `gpt-4.1-mini`           | rerank                       | $0,40 / 1M input token, $1,60 / 1M output token |
+
+Forrás: [Anthropic — Claude Haiku 4.5 pricing (OpenRouter-tükrözve)](https://openrouter.ai/anthropic/claude-haiku-4.5),
+[OpenAI — text-embedding-3-small pricing](https://openrouter.ai/openai/text-embedding-3-small),
+[OpenAI — GPT-4.1 mini pricing](https://inworld.ai/models/openai-gpt-4-1-mini) — mindegyik legalább
+két független forrásból keresztellenőrizve.
+
+### Ingest-összköltség (egyszeri)
+
+A 768 chunk **valós, DB-ben tárolt** tartalmán mérve (`js-tiktoken`, `cl100k_base` — ugyanaz az
+encoding, mint a `chunk.ts`-ben): **218 676 token** összesen (átlag 284,7 token/chunk).
+
+- 218 676 token × $0,02 / 1M = **$0,0044** (kb. 1,7 Ft, 380 Ft/$ árfolyamon) — egyszeri,
+  elhanyagolható.
+
+### Egy kérdés költsége
+
+Egy valós, éles hívással mérve (`Miért sárgulnak a leveleim?` kérdésre, a teljes pipeline-on
+végigfuttatva):
+
+| Lépés                                                | Modell                 | Input token | Output token | Költség       |
+| ---------------------------------------------------- | ---------------------- | ----------- | ------------ | ------------- |
+| HyDE                                                 | claude-haiku-4-5       | 102         | 169          | $0,000947     |
+| Embedding                                            | text-embedding-3-small | 179         | –            | $0,0000036    |
+| Rerank                                               | gpt-4.1-mini           | 3 451       | 86           | $0,001518     |
+| askAgent (system prompt + tool-loop + végső válasz)¹ | claude-haiku-4-5       | 2 778       | 288          | $0,004218     |
+| **Összesen (1 `searchKnowledge`-hívás)**             |                        |             |              | **≈ $0,0067** |
+
+¹ Az askAgent-sor **nem** ebből az egy hívásból, hanem a `logs/` mappa 5 db, valós, egyszeri
+`searchKnowledge`-hívást tartalmazó (2 üzenetes) interakciójának **átlaga** (`tokenUsage`,
+JSONL-naplózás, `docs/architektura.md` 4. döntés) — ez reprezentatívabb egy egyetlen mért
+példánynál.
+
+**Önreflektáló retry eset** (2 `searchKnowledge`-hívás egy kérdésben — a `logs/` mappa 4 db,
+6 üzenetes interakciójának átlaga az askAgent-részre, a HyDE/embed/rerank duplázva): input
+≈13 387 / output ≈808 token az askAgent-hurokban → **≈ $0,0224 összesen** egy ilyen kérdésre.
+
+### Havi vetítés és a `docs/roi.md` keresztellenőrzése
+
+A `docs/roi.md` 5.2 szakasza (150 kérdés/hó, `runSql`-alapú, RAG nélkül készült) becslése
+(~$0,52/hó) most a fenti, mért RAG-adatokkal frissül — ld. ott. **Konklúzió: az "elhanyagolható"
+állítás továbbra is igaz** — a legrosszabb esetben (mind a 150 havi kérdés `searchKnowledge`-en
+menne át) is csak **≈$1,00/hó** (kb. 380 Ft/hó, 380 Ft/$ árfolyamon), szemben az 1,8M Ft/év Hard
+haszonnal — részletek: `docs/roi.md`, 5.2 szakasz.

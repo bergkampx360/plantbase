@@ -20,6 +20,19 @@ Részletes, mindig friss állapot: [`docs/implementation/STATUS.md`](docs/implem
 (`runSql`), szükség esetén a `listCategories` toolt is használja, UX/DX fejlesztésekkel
 (shortcut, kontextus-kezelés, olvashatóbb kimenet), szigorított és finomított `runSql` guarddal
 (string-literál-maszkolás, záró pontosvessző kezelése), ask-agent integrationális teszttel.
+F rész (RAG, HF3) is kész: a `plantbase ask` gondozási kérdésekre a `searchKnowledge` toollal
+(HyDE + rerank pipeline) a 202 vendorolt gondozási cikk chunkolt/embeddelt tudásbázisából válaszol,
+forráshivatkozással; golden-set kiértékelés, karbantartási architektúra-terv és költségbecslés is
+elkészült — ld. [`docs/rag-pipeline.md`](docs/rag-pipeline.md), [`docs/rag-architektura.md`](docs/rag-architektura.md).
+
+### Költség (RAG)
+
+Valós mért adatból (nem becslés — ld. [`docs/rag-pipeline.md`](docs/rag-pipeline.md#költségbecslés-f9) a módszertanért):
+
+- **Ingest (a teljes tudásbázis vektorizálása, egyszeri)**: 202 cikk → 768 chunk, 218 676 token → **≈$0,0044** (kb. 1,7 Ft).
+- **Egy kérdés a teljes pipeline-nal** (HyDE-hívás + embedding + rerank + válasz): **≈$0,0067** (egyszeri `searchKnowledge`-hívással), önreflektáló újrahívással **≈$0,0224**.
+
+Aktuális (2026. júliusi) árazással: Anthropic `claude-haiku-4-5` ($1/$5 per 1M token be-/kimenet), OpenAI `text-embedding-3-small` ($0,02/1M token), OpenAI `gpt-4.1-mini` ($0,40/$1,60 per 1M token).
 
 ## Stack
 
@@ -41,6 +54,13 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 | [`docs/system-prompt.md`](docs/system-prompt.md)                 | Az agent system promptja                                                            |
 | [`docs/implementation/STATUS.md`](docs/implementation/STATUS.md) | Implementációs tervek státusz-indexe (kanonikus, innen linkelve minden rész-terv)   |
 | [`docs/plugin-valasztasok.md`](docs/plugin-valasztasok.md)       | Marketplace plugin és MCP szerver választások indoklása                             |
+| [`docs/rag-pipeline.md`](docs/rag-pipeline.md)                   | RAG chunking-stratégia, golden-set kiértékelés, költségbecslés (F4/F7/F9)           |
+| [`docs/rag-architektura.md`](docs/rag-architektura.md)           | RAG karbantartási architektúra-terv (hash-alapú sync, F8)                           |
+| [`docs/ddd/glossary.md`](docs/ddd/glossary.md)                   | Ubiquitous language (termék-katalógus + RAG domain fogalmak)                        |
+| [`docs/ddd/model.md`](docs/ddd/model.md)                         | Entitások, value objectek, aggregátumok                                             |
+| [`docs/tech/infra.md`](docs/tech/infra.md)                       | Postgres/pgvector infra, a két DB-kapcsolat (RO/RW)                                 |
+| [`docs/tech/architecture.md`](docs/tech/architecture.md)         | `packages/core`/`apps/cli` felosztás, `rag/` réteg                                  |
+| [`docs/tech/api.md`](docs/tech/api.md)                           | Tool/CLI felület (`ask`, `runSql`, `listCategories`, `searchKnowledge`)             |
 | [`CLAUDE.md`](CLAUDE.md)                                         | Claude Code-nak szóló projekt-instrukciók                                           |
 
 ## Helyi fejlesztői környezet
@@ -82,6 +102,12 @@ plantbase ask "<kérdés>"
 ```
 
 A `--show-prompt` kapcsolóval a teljes üzenet-előzmény (LLM-hívások, tool-hívások, válaszok) is megjelenik — az `ask` parancson (`... ask "<kérdés>" --show-prompt`) és interaktív módban is (`pnpm run plantbase --show-prompt`). Minden interakció naplózva a `logs/` mappába (JSONL, nincs commitolva).
+
+**RAG golden-set kiértékelés** (reprodukálható, `docs/rag-pipeline.md` "Golden set" szakaszának alapja) — nyers vektorkeresés vs. teljes HyDE+rerank pipeline összevetése a 8 tesztkérdésre, valós DB/API-hívásokkal:
+
+```bash
+pnpm --filter @plantbase/core run golden-set
+```
 
 Automatikus ellenőrzések (build, típusellenőrzés, teszt, lint minden csomagra):
 
