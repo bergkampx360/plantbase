@@ -1,6 +1,10 @@
-# Plantbase — RAG-pipeline és webes chat (F és G rész)
+# Plantbase — RAG-pipeline (F rész)
 
 > Kurzus-melléklet, az `01-environment-and-agent-core.md` (A–B), `02-ux-dx-improvements.md` (C), `03-runsql-guard-hardening.md` (D) és `04-runsql-guard-refinements.md` (E) után — külön dokumentumként, hogy az eddigi tervek lezárt maradjanak. Ugyanazt a stílust és git-workflow szabályt követi. Státusz: `docs/implementation/STATUS.md`.
+>
+> **A G rész (webes chat felület) F lezárása után külön fájlba került**: `06-web-chat.md` — mert
+> ez a fájl (F1–F11) lezárult, és az "Új rész indításának szabálya" (`STATUS.md`) szerint egy
+> lezárt fájlba nem kerül új munka.
 
 ## Kontextus — F rész: RAG-pipeline (HF3 házifeladat)
 
@@ -193,31 +197,6 @@ külön ellenőrzéssel visszatér).
 
 ---
 
-## G rész — Webes chat felület (F1–F11 UTÁN, külön ütemezve)
-
-**Prioritás:** a HF3 leadási része (F1–F11) **előbb** készül el, CLI-n keresztül demonstrálva. A G rész ezután, külön fázissorozat — nem kockáztatjuk a határidős leadást.
-
-**Cél:** webes chat UI, stream-elt válasz, kattintható válasz → agent/tool-hívás-nyomkövetés, DB-alapú kontextus, "új chat" gomb, korábbi beszélgetések listája.
-
-**Döntések:**
-
-- **Agent-loop átáll az AI SDK-ra** (`streamText`+`tools`) a teljes `askAgent`-ben — felülírja `docs/architektura.md` 3. döntését (indoklás: pedagógiai cél már teljesült CLI-n; web a termék-minőséget célozza).
-- **CLI megmarad** párhuzamosan (`docs/architektura.md` 1. döntése).
-- **Stack:** Express 5 + React 19 + Vite + Tailwind + shadcn/ui; streaming-protokoll szöveg-delta + `data-tool`/`data-agent` típusok. **Elnevezés-eltérés:** a `docs/architektura.md` fájlstruktúra-diagramja jelenleg `apps/api`-t jelöl a jövőbeli backend nevének — a G-rész itt tudatosan `apps/server`-re nevezi át (Express-konvenció, nem REST-only API, hanem streaming-szerver is), ezt a `docs/architektura.md`-ben G1-nél kell majd tükrözni.
-- **Thread-perzisztencia:** DB az igazságforrás, kliens új üzenetet + `threadId`-t küld; új chat = `threadId` nélkül (régi a DB-ben marad).
-
-### G1–G7 vázlat (részletezés F lezárása után)
-
-- **G1:** `askAgent` → AI SDK `streamText`+`tools`; toolok újrakötése; `ask-agent.spec.ts` frissítés.
-- **G2:** `apps/server` scaffold (Express + `/api/chat`).
-- **G3:** Prisma Thread/Message + `/api/threads` router.
-- **G4:** `apps/web` scaffold (React + `useChat`).
-- **G5:** Tool-kártya komponensek (`data-tool`/`data-agent`).
-- **G6:** "Új chat" gomb + history lista.
-- **G7:** Tesztek + docs.
-
----
-
 ## Kritikus fájlok (F)
 
 - `packages/core/src/rag/{chunk,embed,hyde,rerank,retrieve,knowledge-store}.ts` + specek
@@ -232,6 +211,8 @@ külön ellenőrzéssel visszatér).
 - `docs/tech/architecture.md`, `docs/tech/api.md` (F6, első létrehozásuk — teljes core/apps felület + `rag/` réteg, teljes tool-felület + `searchKnowledge`)
 - `docs/system-prompt.md` (F6, a `searchKnowledge` tool + grounding-szabályok bekerülése)
 - `.claude/skills/db-role-setup/SKILL.md` (F6, a `searchKnowledge` mint második RO-fogyasztó megemlítése)
+- `packages/core/src/system-prompt.spec.ts` (F10, ÚJ — grounding-szabály tartalom-asszerciók + `docs/system-prompt.md` szinkron-ellenőrzés)
+- `packages/core/src/log-interaction.spec.ts` (F11, ÚJ — a `logInteraction` korábban 0%-os lefedettségű logikájára)
 - `README.md` (F9, "Dokumentáció" táblázat + "Futtatás és tesztelés" bővítése)
 - `docs/testing-strategy.md` (F5, F6 — "Mockolási konvenció" bővítése az `ai`/`@ai-sdk/openai`/`@ai-sdk/anthropic` mockokkal)
 - `docs/roi.md` (F9, 5.2 szakasz keresztellenőrzése a RAG-költségekkel)
@@ -246,6 +227,8 @@ külön ellenőrzéssel visszatér).
 - F7: golden set eredménytáblázat (nyers vs. teljes pipeline mindkét kérdésre) + negatív teszt átmegy; a rerank-átrendezési példa (vagy annak hiányának indoklása) dokumentálva.
 - F8: Mermaid-ábra renderelődik ÉS a statikus export-fájl (`docs/rag-architektura.assets/adatfolyam.png`) létezik és megnyitható.
 - F9: költségszámok a README-ben, aktuális árazásra hivatkozva.
+- F10: `system-prompt.spec.ts` zöld, benne a `docs/system-prompt.md`/`SYSTEM_PROMPT` szinkron-teszt is.
+- F11: `npx vitest run --coverage` (`packages/core`) a dokumentált 98%/92%/94%-ot mutatja (vagy jobbat), a felsorolt konkrét résekre (log-interaction, ask-agent ismeretlen-tool/env-fallback, hyde env-fallback, chunk edge case-ek) írt tesztekkel.
 
 ## Kimarad (tudatosan, F körben NEM)
 

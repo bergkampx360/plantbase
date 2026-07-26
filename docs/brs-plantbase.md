@@ -53,7 +53,7 @@ Benne (v1):
 Kívül (későbbi órák):
 
 - Rendelés/bevétel adat, írás vagy módosítás.
-- Web felület (a G rész, `docs/implementation/05-rag-pipeline.md`, tervezi ezt — a HF3-on
+- Web felület (a G rész, `docs/implementation/06-web-chat.md`, tervezi ezt — a HF3-on
   túlmutató, külön ütemezett munka) és voice felület.
 - Több felhasználó, jogosultságkezelés.
 
