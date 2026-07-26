@@ -64,7 +64,7 @@ A fázisbontás finomabb szemcséjű, mint az A–E részeknél megszokott átla
 **Commit:** `chore: vendor plant care knowledge articles from course repo`
 → **megállok, kérem a tesztelést.**
 
-### F4 — Chunking-stratégia + unit tesztek ⏳ NYITOTT
+### F4 — Chunking-stratégia + unit tesztek ✅ KÉSZ
 
 - `packages/core/src/rag/chunk.ts` — H2-határon vágás, kontextus-prefix, token-méretezés, mondat-átfedés.
 - `packages/core/src/rag/chunk.spec.ts` — unit tesztek (H2-vágás, mérethatár-csomagolás, kontextus-prefix, mondat-átfedés).
