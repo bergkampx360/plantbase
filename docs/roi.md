@@ -6,18 +6,18 @@
 
 A `brs-plantbase.md`-ből átvéve (1 fő szintjén), és a pénzbeli számításhoz szükséges új feltevésekkel kiegészítve:
 
-| Paraméter | Érték | Forrás |
-|---|---|---|
-| Iroda mérete | 5 lakberendező | user megadta |
-| Ügyfél/hó/fő | 5 | BRS |
-| Szoba/ügyfél | 3 | BRS |
-| **Havi szoba-mennyiség (iroda)** | **75 szoba/hó** (900/év) | számított: 5 fő × 5 ügyfél × 3 szoba |
-| Kézi idő/szoba | 10–15 perc, átlag **12,5 perc** | BRS |
-| Agent idő/szoba | **5 perc** (KPI) | BRS |
-| Betöltött órabér (lakberendező) | **6.000 Ft/óra** | becslés — nincs tényleges adat, ±25% érzékenységi sávval kezelve |
-| Átlagos csomag-érték/szoba | **25.000 Ft** | becslés — ld. levezetés a 3. pont alatt |
-| "Olcsóbb kosár" megtakarítás | **5%** | BRS szerint Hard, de a legbizonytalanabb szám — ±50% sávval kezelve |
-| Query/szoba (API-költséghez) | ~2 kérdés/szoba | becslés, a multistep NL→SQL loop miatt |
+| Paraméter                        | Érték                           | Forrás                                                              |
+| -------------------------------- | ------------------------------- | ------------------------------------------------------------------- |
+| Iroda mérete                     | 5 lakberendező                  | user megadta                                                        |
+| Ügyfél/hó/fő                     | 5                               | BRS                                                                 |
+| Szoba/ügyfél                     | 3                               | BRS                                                                 |
+| **Havi szoba-mennyiség (iroda)** | **75 szoba/hó** (900/év)        | számított: 5 fő × 5 ügyfél × 3 szoba                                |
+| Kézi idő/szoba                   | 10–15 perc, átlag **12,5 perc** | BRS                                                                 |
+| Agent idő/szoba                  | **5 perc** (KPI)                | BRS                                                                 |
+| Betöltött órabér (lakberendező)  | **6.000 Ft/óra**                | becslés — nincs tényleges adat, ±25% érzékenységi sávval kezelve    |
+| Átlagos csomag-érték/szoba       | **25.000 Ft**                   | becslés — ld. levezetés a 3. pont alatt                             |
+| "Olcsóbb kosár" megtakarítás     | **5%**                          | BRS szerint Hard, de a legbizonytalanabb szám — ±50% sávval kezelve |
+| Query/szoba (API-költséghez)     | ~2 kérdés/szoba                 | becslés, a multistep NL→SQL loop miatt                              |
 
 ## 2. Hard ROI — Időmegtakarítás
 
@@ -51,27 +51,41 @@ Számítás:
 
 Fejlesztői idő becslése (kurzus-jellegű, saját fejlesztés): ~60 óra × 15.000 Ft/óra (szerződéses fejlesztői órabér) = **900.000 Ft egyszeri**.
 
-### 5.2 Havi üzemeltetési költség (Anthropic API)
+### 5.2 Havi üzemeltetési költség (Anthropic + OpenAI API)
 
-Hivatalos Anthropic árazás (2026. júliusi állapot):
+Hivatalos/aggregált árazás (2026. július 26-i web-keresésből, ld. `docs/rag-pipeline.md`
+"Költségbecslés (F9)" szakasz a forrásokért):
 
-| Modell | Input $/1M token | Output $/1M token |
-|---|---|---|
-| Claude Haiku 4.5 | $1,00 | $5,00 |
-| Claude Sonnet 5 | $3,00 | $15,00 |
+| Modell                          | Szerep                                                      | Input $/1M token | Output $/1M token |
+| ------------------------------- | ----------------------------------------------------------- | ---------------- | ----------------- |
+| Claude Haiku 4.5                | `runSql`/`listCategories` loop, HyDE, askAgent végső válasz | $1,00            | $5,00             |
+| Claude Sonnet 5                 | (alternatíva Haiku helyett)                                 | $3,00            | $15,00            |
+| OpenAI `text-embedding-3-small` | RAG embedding                                               | $0,02            | –                 |
+| OpenAI `gpt-4.1-mini`           | RAG rerank                                                  | $0,40            | $1,60             |
 
-Becsült token-felhasználás (rövid system prompt + séma-kontextus + 2-lépéses tool-use loop: LLM → `runSql` → LLM):
+**Katalógus-kérdés (`runSql`, RAG nélkül)** — becsült token-felhasználás (rövid system prompt +
+séma-kontextus + 2-lépéses tool-use loop: LLM → `runSql` → LLM):
 
 - ~2 kérdés/szoba × 75 szoba/hó = **150 kérdés/hó**
 - Kérdésenként ~2 LLM-hívás → input ~2.200 token, output ~250 token összesen/kérdés (becslés, nincs mért adat)
 - Havi összesen: ~0,33M input token, ~0,0375M output token
+- Haiku 4.5: 0,33×$1,00 + 0,0375×$5,00 ≈ **$0,52/hó** | Sonnet 5: ≈ **$1,55/hó**
 
-| Modell | Havi becsült költség |
-|---|---|
-| Haiku 4.5 | 0,33×$1,00 + 0,0375×$5,00 ≈ **$0,52/hó** |
-| Sonnet 5 | 0,33×$3,00 + 0,0375×$15,00 ≈ **$1,55/hó** |
+**RAG-kérdés (`searchKnowledge`) — valós mért adattal frissítve (F9, `docs/rag-pipeline.md`
+"Költségbecslés" szakasz)**: egy kérdés (HyDE + embedding + rerank + askAgent végső válasz)
+**≈$0,0067** (egyszeri `searchKnowledge`-hívással), valós logolt/mért `tokenUsage`-ból számolva,
+nem becslésből. **Legrosszabb eset** (mind a 150 havi kérdés RAG-utas, egyszeri hívással): 150 ×
+$0,0067 ≈ **$1,00/hó**. Ha ráadásul mind a 150 kérdés **önreflektáló újrahívást** is kiváltana
+(kétszeri `searchKnowledge`-hívás, ≈$0,0224/kérdés — a legpesszimistább, valóban minden hívást
+kétszerező eset): 150 × $0,0224 ≈ **$3,36/hó** — még ez is elhanyagolható.
 
-**Mindkét esetben elhanyagolható** (kb. 200–600 Ft/hó, 380 Ft/$ árfolyamon) — nem befolyásolja érdemben a megtérülést. Nincs extra felhő-DB költség (lokális docker-compose Postgres, `stack.md`).
+**A valós havi költség e két szám között van** (attól függően, a 150 kérdésből mennyi
+katalógus- vs. gondozási kérdés) — **$0,52/hó és $1,00/hó között**, Haiku 4.5-tel.
+
+**Mindhárom esetben elhanyagolható** (kb. 200–400 Ft/hó, 380 Ft/$ árfolyamon) — nem befolyásolja
+érdemben a megtérülést. Az ingest egyszeri költsége (202 cikk → 768 chunk embeddelése) **$0,0044**
+(kb. 1,7 Ft), egyszeri, gyakorlatilag nulla. Nincs extra felhő-DB költség (lokális docker-compose
+Postgres, `stack.md`; a pgvector-kiterjesztés sem jár külön díjjal).
 
 ## 6. Nettó megtérülés (alapeset)
 
@@ -84,11 +98,11 @@ Becsült token-felhasználás (rövid system prompt + séma-kontextus + 2-lépé
 
 A két legbizonytalanabb paraméter (órabér, kosár-megtakarítás %) ±25–50%-os sávban:
 
-| Szcenárió | Órabér | Kosár-megtakarítás | Éves Hard haszon | Megtérülési idő |
-|---|---|---|---|---|
-| Alacsony | 4.500 Ft/óra | 2,5% | 1.068.750 Ft | ~10,1 hónap |
-| **Alapeset** | 6.000 Ft/óra | 5% | **1.800.000 Ft** | **~6 hónap** |
-| Magas | 7.500 Ft/óra | 7,5% | 2.531.250 Ft | ~4,3 hónap |
+| Szcenárió    | Órabér       | Kosár-megtakarítás | Éves Hard haszon | Megtérülési idő |
+| ------------ | ------------ | ------------------ | ---------------- | --------------- |
+| Alacsony     | 4.500 Ft/óra | 2,5%               | 1.068.750 Ft     | ~10,1 hónap     |
+| **Alapeset** | 6.000 Ft/óra | 5%                 | **1.800.000 Ft** | **~6 hónap**    |
+| Magas        | 7.500 Ft/óra | 7,5%               | 2.531.250 Ft     | ~4,3 hónap      |
 
 ## 8. Soft haszon (nem forintosított, BRS szerint)
 

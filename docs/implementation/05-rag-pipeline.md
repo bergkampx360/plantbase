@@ -130,7 +130,7 @@ A fázisbontás finomabb szemcséjű, mint az A–E részeknél megszokott átla
 **Commit:** `docs: add RAG architecture and maintenance plan with diagram`
 → **megállok, kérem a tesztelést.**
 
-### F9 — Költségbecslés + README + STATUS lezárás ⏳ NYITOTT
+### F9 — Költségbecslés + README + STATUS lezárás ✅ KÉSZ
 
 - Ingest összköltség (202 cikk × átlag chunk-szám × embedding-ár).
 - Egy kérdés költsége (HyDE + embedding + rerank + válasz).

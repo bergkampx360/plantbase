@@ -20,6 +20,10 @@ Részletes, mindig friss állapot: [`docs/implementation/STATUS.md`](docs/implem
 (`runSql`), szükség esetén a `listCategories` toolt is használja, UX/DX fejlesztésekkel
 (shortcut, kontextus-kezelés, olvashatóbb kimenet), szigorított és finomított `runSql` guarddal
 (string-literál-maszkolás, záró pontosvessző kezelése), ask-agent integrationális teszttel.
+F rész (RAG, HF3) is kész: a `plantbase ask` gondozási kérdésekre a `searchKnowledge` toollal
+(HyDE + rerank pipeline) a 202 vendorolt gondozási cikk chunkolt/embeddelt tudásbázisából válaszol,
+forráshivatkozással; golden-set kiértékelés, karbantartási architektúra-terv és költségbecslés is
+elkészült — ld. [`docs/rag-pipeline.md`](docs/rag-pipeline.md), [`docs/rag-architektura.md`](docs/rag-architektura.md).
 
 ## Stack
 
@@ -41,6 +45,13 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 | [`docs/system-prompt.md`](docs/system-prompt.md)                 | Az agent system promptja                                                            |
 | [`docs/implementation/STATUS.md`](docs/implementation/STATUS.md) | Implementációs tervek státusz-indexe (kanonikus, innen linkelve minden rész-terv)   |
 | [`docs/plugin-valasztasok.md`](docs/plugin-valasztasok.md)       | Marketplace plugin és MCP szerver választások indoklása                             |
+| [`docs/rag-pipeline.md`](docs/rag-pipeline.md)                   | RAG chunking-stratégia, golden-set kiértékelés, költségbecslés (F4/F7/F9)           |
+| [`docs/rag-architektura.md`](docs/rag-architektura.md)           | RAG karbantartási architektúra-terv (hash-alapú sync, F8)                           |
+| [`docs/ddd/glossary.md`](docs/ddd/glossary.md)                   | Ubiquitous language (termék-katalógus + RAG domain fogalmak)                        |
+| [`docs/ddd/model.md`](docs/ddd/model.md)                         | Entitások, value objectek, aggregátumok                                             |
+| [`docs/tech/infra.md`](docs/tech/infra.md)                       | Postgres/pgvector infra, a két DB-kapcsolat (RO/RW)                                 |
+| [`docs/tech/architecture.md`](docs/tech/architecture.md)         | `packages/core`/`apps/cli` felosztás, `rag/` réteg                                  |
+| [`docs/tech/api.md`](docs/tech/api.md)                           | Tool/CLI felület (`ask`, `runSql`, `listCategories`, `searchKnowledge`)             |
 | [`CLAUDE.md`](CLAUDE.md)                                         | Claude Code-nak szóló projekt-instrukciók                                           |
 
 ## Helyi fejlesztői környezet
