@@ -40,7 +40,20 @@ egy külön RW poolon fut, és sosem az agent útján hívódik.
 `ask-agent.ts` a modell-providert (`anthropic(...)`) nem modul-szinten, hanem `askAgent()`
 hívásonként hozza létre.
 
-Később (nem most): `apps/server`, `apps/web` (G rész, `docs/implementation/06-web-chat.md`).
+Később (nem most): `apps/web` (G rész, `docs/implementation/06-web-chat.md`).
+
+## `apps/server` — HTTP belépési pont (G2)
+
+Egyetlen `POST /api/chat` route (`apps/server/src/main.ts`). **Nem** az `askAgent()`-en keresztül
+megy — a CLI-vel csak a `packages/core/src/index.ts` építőelemeit osztja meg (tool-definíciók,
+`SYSTEM_PROMPT`, `resolveModel`), egy saját, önálló `streamText`-hívást épít belőlük, streamelő
+fogyasztással (`result.pipeUIMessageStreamToResponse(res)`). Az env-betöltés (`dotenv`) ugyanúgy a
+belépési ponton, indulás előtt történik, mint a CLI-nél (`apps/cli/src/main.ts` mintája) — a
+globálisan/CI-ban futtatott szerver-folyamat sem örökli a direnv-et.
+
+Nincs közvetlen DB-hozzáférés `apps/server`-ben (sem RO, sem RW pool) — az adat-elérés a
+`packages/core`-ból importált tool-okon (`RUN_SQL_TOOL` stb.) keresztül megy, ugyanúgy, mint a
+CLI-nél.
 
 ## `packages/db` — Prisma lib
 
