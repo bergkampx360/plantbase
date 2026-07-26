@@ -63,13 +63,22 @@ explicit elválasztja a kettőt (gondozási/egészségügyi kérdés → `search
 A tool-ok pontos, agentnek adott leírása és használati szabálya: `docs/system-prompt.md` (szó
 szerint szinkronban a `packages/core/src/system-prompt.ts` `SYSTEM_PROMPT` konstansával).
 
-## HTTP: `POST /api/chat` (`apps/server`, G2)
+## HTTP: `POST /api/chat` (`apps/server`, G2–G3)
 
-Body: `{ "question": string }` (hiányzó/üres `question`-re `400`). **Nem** az `askAgent()`-en
-keresztül megy — `apps/server/src/main.ts` egy saját, önálló `streamText`-hívást épít a
-`packages/core`-ból exportált tool-okból (`RUN_SQL_TOOL`/`LIST_CATEGORIES_TOOL`/
+Body: `{ "question": string, "threadId"?: number }` (hiányzó/üres `question`-re `400`). **Nem** az
+`askAgent()`-en keresztül megy — `apps/server/src/main.ts` egy saját, önálló `streamText`-hívást
+épít a `packages/core`-ból exportált tool-okból (`RUN_SQL_TOOL`/`LIST_CATEGORIES_TOOL`/
 `SEARCH_KNOWLEDGE_TOOL`), `SYSTEM_PROMPT`-ból és `resolveModel()`-ből — a CLI és a szerver két külön
 Node-folyamat, csak az építőelemeket osztják meg, nem egy hívást.
+
+**Thread-kezelés (G3)**: ha `threadId` hiányzik vagy érvénytelen, egy új `Thread` nyílik; ha
+megadott és létező, a korábbi kör(ök) `Message`-ei betöltődnek és a `streamText` `messages`
+tömbjének elejére kerülnek — enélkül a modell nem tudna a korábbi körökre hivatkozva válaszolni,
+csak a mentés léteznék, a beszélgetés-folytonosság a válaszban nem. A user-kérdés azonnal mentve
+(még a `streamText`-hívás előtt); a végleges asszisztens-válasz a `streamText` `onFinish`
+callbackjében mentve (ez fut le, amikor a teljes, több lépéses válasz és minden tool-végrehajtás
+lezárult, nem lépésenként). A `threadId`-t egy `X-Thread-Id` response header adja vissza —
+streamelt válasznál ez az egyszerű csatorna erre.
 
 Válasz: streamelt AI SDK UI-message stream (`result.pipeUIMessageStreamToResponse(res)`,
 Server-Sent Events). A natív `tool-input-start`/`tool-input-available`/`tool-output-available`
@@ -79,3 +88,11 @@ ami ezt fogyasztaná; ha G5 (tool-kártya UI) konkrét igénye ezt indokolja, ot
 
 CORS: `CORS_ORIGIN` env-változó (alapértelmezett `http://localhost:5173`, a jövőbeli `apps/web`
 Vite dev-szerveréhez, G4). Port: `PORT` env-változó (alapértelmezett `3001`).
+
+## HTTP: `GET /api/threads`, `GET /api/threads/:id` (`apps/server`, G3)
+
+`GET /api/threads` — a `Thread`-ek listája (`id`, `createdAt`, `updatedAt`), `updatedAt` szerint
+csökkenő sorrendben (legutóbb aktív szál elöl).
+
+`GET /api/threads/:id` — egy `Thread` a hozzá tartozó `Message`-ekkel (`createdAt` szerint
+növekvő sorrendben). Érvénytelen (nem szám) `id` → `400`; nem létező `id` → `404`.

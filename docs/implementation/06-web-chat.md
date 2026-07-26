@@ -209,24 +209,52 @@ streamelve).
 **Commit:** `feat: scaffold apps/server with streaming /api/chat endpoint`
 → megállok, kérem a tesztelést.
 
-### G3 — Prisma `Thread`/`Message` + `/api/threads` router ⏳ NYITOTT
+### G3 — Prisma `Thread`/`Message` + `/api/threads` router ✅ KÉSZ
 
 - `packages/db/prisma/schema.prisma`: új `Thread` (`id Int @id @default(autoincrement())`,
-  `createdAt`/`updatedAt` `@map`-elve) és `Message` (`id`, `threadId @map("thread_id")`, `role`,
-  `content`, `createdAt`) modell, a `KnowledgeChunk` mező-stílusát követve, `@@map` snake_case
-  táblanévvel, doksi-hivatkozó kommenttel.
-- Migráció generálása; **nem** kell `db-role-setup` skill újrafuttatás (ezek RW-only táblák, az
-  agent RO-útja nem éri el őket).
-- `GET /api/threads` (lista), `GET /api/threads/:id` (üzenetekkel együtt); `POST /api/chat` (G2)
-  bővítése: minden kör után a kérdés+válasz perzisztálása a `threadId`-hez (vagy új `Thread`
-  létrehozása, ha nincs `threadId`).
-- `docs/ddd/model.md` bővítése a `Thread`/`Message` entitásokkal.
+  `createdAt`/`updatedAt` `@map`-elve, `updatedAt` `@updatedAt` direktívával) és `Message` (`id`,
+  `threadId @map("thread_id")`, `role String`, `content`, `createdAt`) modell, `Thread`↔`Message`
+  1:N reláció, a `KnowledgeChunk` mező-stílusát követve, `@@map` snake_case táblanévvel,
+  doksi-hivatkozó kommenttel.
+- Migráció generálva és lefuttatva (`pnpm --filter @plantbase/db exec prisma migrate dev --name
+add_thread_message`); **nem** kellett `db-role-setup` skill újrafuttatás (ezek RW-only táblák, az
+  agent RO-útja nem éri el őket — a skill szövege is megerősítette, hogy kizárólag a
+  `products`/`knowledge_chunks` RO-grantra vonatkozik).
+- `packages/db/src/index.ts`: `Thread`/`Message` típusok exportálva a `Product` mintájára.
+- `GET /api/threads` (lista, `updatedAt` desc), `GET /api/threads/:id` (üzenetekkel, `createdAt`
+  asc; 400 érvénytelen, 404 nem létező id-re); `POST /api/chat` (G2) bővítve: minden kör után a
+  kérdés+válasz perzisztálása a `threadId`-hez (vagy új `Thread` létrehozása, ha nincs érvényes
+  `threadId`), `threadId` `X-Thread-Id` response header-ben visszaadva.
+- **Kézi teszt közben talált, útközben javított hiányosság**: az első verzió csak mentette a
+  kör(öke)t, de nem töltötte be a korábbiakat a `streamText`-hívás `messages` tömbjébe — a
+  `threadId`-folytonosság így csak a DB-ben létezett volna, a modell válaszaiban nem (egy
+  második, a szál kontextusára épülő kérdésre a modell visszakérdezett volna, ahelyett hogy
+  értelmezte volna a korábbi kört). Javítva: a korábbi `Message`-ek (ha van érvényes `threadId`)
+  betöltődnek, mielőtt az új user-üzenet perzisztálódna, és bekerülnek a `streamText` `messages`
+  tömbjének elejére.
+- **Váratlanul talált és javított, G3-tól független, meglévő infrastrukturális hiba**: a
+  `packages/core`, `packages/db`, `apps/cli`, `apps/server` mind az **azonos, literális**
+  `outDir: ../../dist/out-tsc` értéket használták a `tsconfig.lib.json`/`tsconfig.app.json`
+  fájljaikban — mivel mindegyik két szinttel a repo-gyökér alatt van, ez ugyanarra az abszolút
+  mappára oldódott fel mindegyiknél, így pl. `packages/core/src/index.ts` és
+  `packages/db/src/index.ts` ugyanoda (`dist/out-tsc/src/index.d.ts`) emittálódott, egymást
+  felülírva. Ez idáig rejtve maradt, mert egyetlen projekt sem hivatkozott EGYSZERRE `core`-ra ÉS
+  `db`-re — `apps/server` (G3-mal, `@plantbase/db` hozzáadásával) az első ilyen. Javítva: minden
+  érintett `outDir` projekt-specifikus alkönyvtárra váltva (`dist/out-tsc/packages/core`,
+  `.../packages/db`, `.../apps/cli`, `.../apps/server`).
+- `docs/ddd/model.md` bővítve egy "Chat domain" szakasszal (`Thread`/`Message`, aggregátum-határ,
+  kapcsolat a `logs/` JSONL-naplózással).
+- `docs/tech/api.md`, `docs/tech/architecture.md` bővítve a `threadId`/`X-Thread-Id` mechanizmussal
+  és az `apps/server` új, közvetlen Prisma-hozzáférésével.
 
-**Teszt:** migráció lefut tiszta DB-n; `pnpm exec nx run-many -t build,typecheck,test,lint` zöld;
-kézi teszt: két egymást követő `/api/chat` hívás ugyanazzal a `threadId`-vel, `GET
-/api/threads/:id` visszaadja mindkét kört. **CLI-regresszió**: `packages/db` séma-változás után
-`plantbase ask "..."` továbbra is működik (a `runSql`/`searchKnowledge` RO-útja nem érinti az új
-táblákat, de ezt explicit ellenőrizni kell, nem csak feltételezni).
+**Teszt:** migráció lefutott a helyi docker-compose Postgresen; `pnpm exec nx run-many -t
+build,typecheck,test,lint` zöld (két egymást követő tiszta futtatással is stabil, a fenti
+outDir-javítás után). **CLI-regresszió**: `plantbase ask "..."` a séma-változás után is működik
+(valós API-hívással ellenőrizve). Kézi, valós API-hívásos teszt: két egymást követő `/api/chat`
+hívás ugyanazzal a `threadId`-vel — a második válasz ténylegesen az első kör kontextusára épült
+(pl. "mennyibe kerül a legolcsóbb?" helyesen a korábban említett kaktuszokra vonatkozott, nem
+kért vissza kategóriát); `GET /api/threads` és `GET /api/threads/:id` mindkét kört visszaadta
+helyes sorrendben; érvénytelen/nem létező id-kre 400/404.
 **Commit:** `feat: add Thread/Message persistence and /api/threads router`
 → megállok, kérem a tesztelést.
 
