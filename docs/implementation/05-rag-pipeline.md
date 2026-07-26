@@ -266,6 +266,14 @@ külön ellenőrzéssel visszatér).
 
 ### G1 — `askAgent` átállítása AI SDK `streamText`+`tools`-ra ⏳ NYITOTT
 
+**Context7-ellenőrzés kötelező G1 elején, kódolás előtt** (`docs/architektura.md` 7. döntése —
+ismeretlen lib előtt Context7): a `streamText`, az AI SDK `tool()` helper és a `stopWhen`/
+`stepCountIs` többlépéses tool-use mechanizmus **ebben a repóban most kerül először production-kódba**
+— eddig az `ai` SDK csak egylövéses hívásokra volt használva (`generateText`/`embedMany`/
+`generateObject`, a RAG-rétegben). A lenti bullet-ök (a pontos hívás-alak, a `tools`-rekord
+formátuma, a hiba-kezelés tényleges viselkedése) a Context7-ellenőrzés **után**, annak fényében
+pontosítandók/igazítandók — jelen forma egy tervezett, nem véglegesített API-alak.
+
 - `packages/core/src/run-sql.ts`, `list-categories.ts`, `search-knowledge.ts`: a párhuzamos
   zod+raw-`input_schema` pár helyett egyetlen AI SDK `tool({ description, inputSchema: ZodSchema,
 execute })` export minden toolhoz; a belső `.parse()` hívások elhagyása (AI SDK már típusos inputot ad).
