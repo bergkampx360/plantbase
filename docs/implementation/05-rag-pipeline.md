@@ -120,7 +120,7 @@ A fázisbontás finomabb szemcséjű, mint az A–E részeknél megszokott átla
 **Commit:** `test: add golden set and demonstrate pipeline effectiveness`
 → **megállok, kérem a tesztelést.**
 
-### F8 — `docs/rag-architektura.md` (karbantartási spec + ábra) ⏳ NYITOTT
+### F8 — `docs/rag-architektura.md` (karbantartási spec + ábra) ✅ KÉSZ
 
 - Terv (nem kód): dokumentum-változás észlelése (**explicit** kitérve arra is, hogy a **nem változott** dokumentumok ne vektorizálódjanak újra — ez a HF3 szövege szerint külön nevesített elvárás, nem csak általános "változás-észlelés"), új dokumentum kezelése, törölt dokumentum **chunkjainak** kezelése, újraindexelés triggere.
 - Beágyazott Mermaid-ábra: forrás → változásérzékelés → chunk → embed → tárolás, törlés/módosítás útja.
