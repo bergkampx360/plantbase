@@ -211,6 +211,8 @@ külön ellenőrzéssel visszatér).
 - `docs/tech/architecture.md`, `docs/tech/api.md` (F6, első létrehozásuk — teljes core/apps felület + `rag/` réteg, teljes tool-felület + `searchKnowledge`)
 - `docs/system-prompt.md` (F6, a `searchKnowledge` tool + grounding-szabályok bekerülése)
 - `.claude/skills/db-role-setup/SKILL.md` (F6, a `searchKnowledge` mint második RO-fogyasztó megemlítése)
+- `packages/core/src/system-prompt.spec.ts` (F10, ÚJ — grounding-szabály tartalom-asszerciók + `docs/system-prompt.md` szinkron-ellenőrzés)
+- `packages/core/src/log-interaction.spec.ts` (F11, ÚJ — a `logInteraction` korábban 0%-os lefedettségű logikájára)
 - `README.md` (F9, "Dokumentáció" táblázat + "Futtatás és tesztelés" bővítése)
 - `docs/testing-strategy.md` (F5, F6 — "Mockolási konvenció" bővítése az `ai`/`@ai-sdk/openai`/`@ai-sdk/anthropic` mockokkal)
 - `docs/roi.md` (F9, 5.2 szakasz keresztellenőrzése a RAG-költségekkel)
@@ -225,6 +227,8 @@ külön ellenőrzéssel visszatér).
 - F7: golden set eredménytáblázat (nyers vs. teljes pipeline mindkét kérdésre) + negatív teszt átmegy; a rerank-átrendezési példa (vagy annak hiányának indoklása) dokumentálva.
 - F8: Mermaid-ábra renderelődik ÉS a statikus export-fájl (`docs/rag-architektura.assets/adatfolyam.png`) létezik és megnyitható.
 - F9: költségszámok a README-ben, aktuális árazásra hivatkozva.
+- F10: `system-prompt.spec.ts` zöld, benne a `docs/system-prompt.md`/`SYSTEM_PROMPT` szinkron-teszt is.
+- F11: `npx vitest run --coverage` (`packages/core`) a dokumentált 98%/92%/94%-ot mutatja (vagy jobbat), a felsorolt konkrét résekre (log-interaction, ask-agent ismeretlen-tool/env-fallback, hyde env-fallback, chunk edge case-ek) írt tesztekkel.
 
 ## Kimarad (tudatosan, F körben NEM)
 
