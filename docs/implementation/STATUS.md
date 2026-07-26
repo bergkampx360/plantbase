@@ -9,7 +9,7 @@ minden más docs-fájl **ide hivatkozzon vissza**, ne duplikálja a táblázatot
 | C    | [`02-ux-dx-improvements.md`](02-ux-dx-improvements.md)                 | C1–C3          | ✅ Kész    |
 | D    | [`03-runsql-guard-hardening.md`](03-runsql-guard-hardening.md)         | D1–D3          | ✅ Kész    |
 | E    | [`04-runsql-guard-refinements.md`](04-runsql-guard-refinements.md)     | E1–E3          | ✅ Kész    |
-| F    | [`05-rag-pipeline.md`](05-rag-pipeline.md)                             | F1–F10         | ⏳ Nyitott |
+| F    | [`05-rag-pipeline.md`](05-rag-pipeline.md)                             | F1–F10         | ✅ Kész    |
 | G    | [`05-rag-pipeline.md`](05-rag-pipeline.md)                             | G1–G7 (vázlat) | ⏳ Nyitott |
 
 ## Új rész indításának szabálya
