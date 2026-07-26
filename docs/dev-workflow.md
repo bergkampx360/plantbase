@@ -88,6 +88,11 @@ NEM készítünk automatizált doc-freshness Stop hookot — a `ddd-audit` skill
 futtatott ellenőrzés marad, de a _mikor kell futtatni_ mostantól rögzített szabály, nem esetleges.
 A CI-alapú változat a 4. órán jön (always-on / CI/CD).
 
+Ez az implementációs terv-dokumentumok (`docs/implementation/NN-*.md`) fázisaira is érvényes: egy
+fázis leírásában szereplő **"Commit:" sor csak az implementációs commitot jelöli** — a docs-frissítés
+(ha a fázis érint dokumentált területet) mindig **plusz, külön** `docs:` commit, még akkor is, ha a
+fázis-leírás csak egyetlen Commit sort listáz.
+
 ## Egy aktív feladat szabálya
 
 Egyszerre csak egy feladaton dolgozunk lokálisan. Új feature branch nyitása / új feladat

@@ -3,8 +3,13 @@
 Elv: iparági best practice, legfrissebb STABIL verzió (se cutting-edge, se elavult).
 
 - Nyelv / monorepo: TypeScript (strict), Nx, pnpm, Node LTS
-- DB: PostgreSQL lokálisan docker-compose-ban (OrbStack futtatja), Prisma (ORM: séma, migráció, seed, typed query). Helyben dolgozunk, nincs felhő-DB.
+- DB: PostgreSQL lokálisan docker-compose-ban (OrbStack futtatja), image `pgvector/pgvector:0.8.5-pg17`
+  (pgvector extension a RAG tudásbázis embeddingjeihez), Prisma (ORM: séma, migráció, seed, typed
+  query). Helyben dolgozunk, nincs felhő-DB.
 - Agent: Anthropic SDK (hivatalos kliens, nem nyers HTTP) + saját tool-use loop, agent-framework nélkül. Zod (validáció)
+- RAG (`packages/core/src/rag`, scope-olt kivétel — ld. `docs/architektura.md`): Vercel `ai` SDK +
+  `@ai-sdk/openai` (embedding, rerank) + `@ai-sdk/anthropic` (HyDE) — csak az egylövéses
+  RAG-hívásokra, az `askAgent` tool-use loopját nem érinti.
 - CLI: commander + node:readline
 - Tooling: Vitest, ESLint + Prettier, tsx
 - Eszköz: Zed, gh CLI
