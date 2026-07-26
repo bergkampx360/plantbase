@@ -51,6 +51,13 @@ hibalehetőséget.
 szüksége. Emiatt, ellentétben a `knowledge_chunks`-szal, ennek a táblának **nem** kellene RO
 `SELECT`-jogot adni a `db-role-setup` skillben, ha ez a terv implementálódik.
 
+**Hiányzó függvény, ha implementálódik**: a `knowledge-store.ts` jelenleg csak `insertChunks`,
+`searchChunks` és `clearKnowledge` (a TELJES tábla ürítése) függvényeket ismer — egyik sem alkalmas
+egyetlen forrás chunkjainak szelektív törlésére. A sync-algoritmushoz egy új
+`deleteChunksBySource(source: string): Promise<void>` függvény kellene (`DELETE FROM
+knowledge_chunks WHERE source = $1`, a RW poolon), amit a VÁLTOZOTT és TÖRÖLT ágak egyaránt
+használnának.
+
 ### Miért a teljes fájlon fut a hash, nem csak a body-n
 
 A `chunk.ts` a cikk `title`-jét belesüti minden chunk `content`-jébe kontextus-prefixként (F4, 3. döntés) — tehát ha **csak** a frontmatter `title`-je változik (a body nem), az embeddelt szöveg
@@ -83,16 +90,17 @@ tároltForrások = SELECT source, contentHash FROM knowledge_sources
 ÚJ         — forrásfájlokban van, tároltForrások-ban nincs
              → chunkArticle + embedTexts + insertChunks + INSERT INTO knowledge_sources
 VÁLTOZOTT  — mindkettőben van, de a hash eltér
-             → [TRANZAKCIÓ: DELETE FROM knowledge_chunks WHERE source=? →
+             → [TRANZAKCIÓ: deleteChunksBySource(source) →
                 chunkArticle + embedTexts + insertChunks (újra) →
                 UPDATE knowledge_sources SET contentHash=?, chunkCount=?, embeddingModel=?,
                 chunkingVersion=?, lastIndexedAt=now() WHERE source=?]
 VÁLTOZATLAN — mindkettőben van, hash egyezik
              → SKIP, nincs újra-embeddelés (ez a HF3 explicit elvárása)
 TÖRÖLT     — tároltForrások-ban van, forrásfájlokban nincs
-             → [TRANZAKCIÓ: DELETE FROM knowledge_chunks WHERE source=? →
+             → [TRANZAKCIÓ: deleteChunksBySource(source) →
                 DELETE FROM knowledge_sources WHERE source=?]
-             (ON DELETE CASCADE esetén az első DELETE lépés automatikus lenne)
+             (ON DELETE CASCADE esetén a deleteChunksBySource hívás elhagyható lenne, a
+             DELETE FROM knowledge_sources automatikusan kaszkádolna a chunkokra)
 ```
 
 Minden delete+reinsert+hash-frissítés lépéssorozat **egy tranzakcióban** fut — ha a sync script
@@ -121,14 +129,16 @@ flowchart TD
     C -->|"hash eltér"| F["VÁLTOZOTT"]
     C -->|"forrás ismert, fájl hiányzik"| G["TÖRÖLT"]
 
-    D --> H["chunkArticle"]
-    F --> H
+    F --> F2["deleteChunksBySource - régi chunkok törlése, tranzakcióban"]
+    F2 --> H["chunkArticle"]
+    D --> H
+
     H --> I["embedTexts"]
     I --> J["insertChunks + knowledge_sources upsert - tranzakcióban"]
 
     E --> K["SKIP - nincs újra-embeddelés"]
 
-    G --> L["DELETE knowledge_chunks + DELETE knowledge_sources - tranzakcióban"]
+    G --> L["deleteChunksBySource + DELETE knowledge_sources - tranzakcióban"]
 ```
 
 Renderelt, statikus export (a HF3 szó szerinti "screenshot/export a repóba" mellékletéhez):
