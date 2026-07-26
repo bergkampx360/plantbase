@@ -18,14 +18,19 @@
 
 ## Két DB-kapcsolat, két jog (`docs/architektura.md`, 2. döntés)
 
-| Kapcsolat              | Env var                 | Szerepkör       | Jog                          | Ki használja                                   |
-| ----------------------- | ------------------------ | ---------------- | ----------------------------- | ------------------------------------------------ |
-| Read-write              | `DATABASE_URL`           | `plantbase`       | teljes (séma/migráció/seed)  | Prisma (`packages/db`)                          |
-| Read-only               | `DATABASE_URL_READONLY`  | `plantbase_ro`    | csak `SELECT`                | agent `runSql` tool (`packages/core`), F6-tól a `searchKnowledge` tool is |
+| Kapcsolat  | Env var                 | Szerepkör      | Jog                         | Ki használja                                                                                                                                                                           |
+| ---------- | ----------------------- | -------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Read-write | `DATABASE_URL`          | `plantbase`    | teljes (séma/migráció/seed) | Prisma (`packages/db`); F5-től a RAG-ingest RW poolja is (`packages/core/src/db-pool.ts` `getWritePool()`, `packages/core/src/rag/knowledge-store.ts` `insertChunks`/`clearKnowledge`) |
+| Read-only  | `DATABASE_URL_READONLY` | `plantbase_ro` | csak `SELECT`               | agent `runSql` tool (`packages/core`), F6-tól a `searchKnowledge` tool is                                                                                                              |
 
 A `plantbase_ro` szerepkör fizikailag képtelen írni (nem csak app-szinten korlátozott) —
 `REVOKE INSERT, UPDATE, DELETE, TRUNCATE` az összes táblán. A pontos SQL és a
 provisioning-lépések: `.claude/skills/db-role-setup/SKILL.md`.
+
+A `getWritePool()` a Prisma-val megegyező `DATABASE_URL`-t használja, de attól **különálló** `pg`
+pool — nem a Prisma-kliensen ír. Kizárólag az ingest-script (`packages/core/src/rag/ingest.ts`)
+hívja `insertChunks`/`clearKnowledge`-en keresztül; az agent (`askAgent`, `searchKnowledge` tool)
+sosem éri el, csak a RO poolt (`getPool()`) — ez tartja meg az NFR1 elvet (docs/architektura.md, 2. döntés) a RAG tudásbázisra is.
 
 ### Fontos csapda: `prisma migrate reset` törli a RO-jogokat
 

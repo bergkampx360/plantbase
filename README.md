@@ -60,6 +60,7 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 pnpm install                                          # workspace függőségek
 pnpm --filter @plantbase/db exec prisma migrate dev    # séma alkalmazása
 pnpm --filter @plantbase/db run db:seed                # ~30 növény betöltése
+pnpm --filter @plantbase/core run ingest-knowledge      # 202 gondozási cikk chunkolása + embeddelése
 
 pnpm run plantbase ask "milyen pozsgás növényeitek vannak raktáron?"
 # vagy interaktív mód:
