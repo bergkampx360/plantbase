@@ -103,10 +103,22 @@ TÖRÖLT     — tároltForrások-ban van, forrásfájlokban nincs
              DELETE FROM knowledge_sources automatikusan kaszkádolna a chunkokra)
 ```
 
-Minden delete+reinsert+hash-frissítés lépéssorozat **egy tranzakcióban** fut — ha a sync script
-félbeszakadna (crash) a `DELETE FROM knowledge_chunks` és az újra-`INSERT` között, tranzakció
-nélkül a tudásbázis inkonzisztens állapotban maradna (hiányzó chunkok egy forráshoz, vagy egy
-`knowledge_sources` sor, aminek a hash-e nem egyezik a ténylegesen tárolt tartalommal).
+Minden `deleteChunksBySource` + `insertChunks` + `knowledge_sources` upsert lépéssorozat **egy
+tranzakcióban** fut (ÚJ-nál a delete lépés nélkül, de az `insertChunks` + `knowledge_sources`
+INSERT párja ugyanígy egy tranzakció) — ha a sync script félbeszakadna (crash) a törlés és az
+újra-beszúrás között, tranzakció nélkül a tudásbázis inkonzisztens állapotban maradna (hiányzó
+chunkok egy forráshoz, vagy egy `knowledge_sources` sor, aminek a hash-e nem egyezik a ténylegesen
+tárolt tartalommal).
+
+**Fontos implementációs korlát**: ez a tranzakció-garancia **nem** adott automatikusan a jelenlegi
+kóddal. A `knowledge-store.ts` meglévő függvényei (`insertChunks`, `searchChunks`,
+`clearKnowledge`) mindegyike önállóan hívja a `getWritePool().query(...)`-t — egy `pg.Pool`
+`.query()` hívásai különböző kapcsolatokat is kaphatnak, nincs köztük megosztott tranzakciós
+kontextus. Ha ez a terv implementálódik, a `deleteChunksBySource`/`insertChunks`/`knowledge_sources`-upsert
+lépéseknek egy közösen kicsatolt `pg.PoolClient`-et kellene elfogadniuk (`pool.connect()` → `BEGIN`
+→ lépések a client-en → `COMMIT`/`ROLLBACK` hiba esetén → `release()`), nem Prisma
+`$transaction`-nal — a RAG-alrendszer tudatosan Prisma nélkül, nyers `pg`-vel megy
+(`docs/architektura.md`, 2. döntés).
 
 ### Globális ág: pipeline-verzió-migráció (ritka esemény, nem per-fájl)
 
