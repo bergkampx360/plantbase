@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { LIST_CATEGORIES_TOOL, listCategories } from './list-categories';
 import { logInteraction } from './log-interaction';
 import { RUN_SQL_TOOL, runSql } from './run-sql';
+import { SEARCH_KNOWLEDGE_TOOL, searchKnowledge } from './search-knowledge';
 import { SYSTEM_PROMPT } from './system-prompt';
 
 export type AskResult = {
@@ -36,7 +37,7 @@ export async function askAgent(
       model: process.env['ANTHROPIC_MODEL'] ?? 'claude-haiku-4-5',
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
-      tools: [RUN_SQL_TOOL, LIST_CATEGORIES_TOOL],
+      tools: [RUN_SQL_TOOL, LIST_CATEGORIES_TOOL, SEARCH_KNOWLEDGE_TOOL],
       messages,
     });
 
@@ -72,6 +73,9 @@ export async function askAgent(
             break;
           case 'listCategories':
             content = await listCategories(toolUse.input);
+            break;
+          case 'searchKnowledge':
+            content = await searchKnowledge(toolUse.input);
             break;
           default:
             throw new Error(`Ismeretlen tool: ${toolUse.name}`);
