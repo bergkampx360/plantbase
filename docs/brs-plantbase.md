@@ -45,11 +45,16 @@ Benne (v1):
 - A `products` katalógus feletti természetes nyelvű kérdés-válasz.
 - Read-only adat-elérés.
 - CLI felület: `ask` parancs + interaktív mód.
+- **Gondozási tanácsadás (RAG, F rész, HF3-tól kiegészítés)**: az agent egy külön tudásbázisból
+  (gondozási cikkek, `packages/db/prisma/seed/knowledge/`) is tud kérdésre válaszolni, forrásra
+  hivatkozva. Ez kiegészíti, nem helyettesíti a katalógus-Q&A-t — ugyanaz a CLI felület, egy új
+  tool (`searchKnowledge`) az agentben.
 
 Kívül (későbbi órák):
 
 - Rendelés/bevétel adat, írás vagy módosítás.
-- Web és voice felület.
+- Web felület (a G rész, `docs/implementation/05-rag-pipeline.md`, tervezi ezt — a HF3-on
+  túlmutató, külön ütemezett munka) és voice felület.
 - Több felhasználó, jogosultságkezelés.
 
 ## 4. Követelmények
@@ -61,6 +66,9 @@ Kívül (későbbi órák):
 - **FR3, Válasz:** a lekérdezés eredményéből természetes nyelvű választ ad.
 - **FR4, Naplózás:** minden interakciót logol (`logs/<timestamp>.jsonl`): system prompt, üzenetek, generált SQL, eredmény, válasz, token-felhasználás.
 - **FR5, Átláthatóság:** `--show-prompt` mód, amely kiírja a teljes üzenet-tömböt.
+- **FR6, Gondozási tanácsadás (RAG):** az agent a `searchKnowledge` toolon keresztül a gondozási
+  cikk-tudásbázisból is válaszol, forrásra hivatkozva; ha nincs releváns találat, ezt explicit
+  kimondja, nem fabrikál választ (`docs/implementation/05-rag-pipeline.md`, F rész).
 
 ### Nem-funkcionális (NFR)
 

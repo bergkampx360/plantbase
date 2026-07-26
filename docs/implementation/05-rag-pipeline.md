@@ -42,7 +42,7 @@ A fázisbontás finomabb szemcséjű, mint az A–E részeknél megszokott átla
 **Commit:** `feat: add pgvector image and AI SDK dependencies`
 → **megállok, kérem a tesztelést.**
 
-### F2 — DB-séma: `knowledge_chunks` + RO/RW szétválasztás ⏳ NYITOTT
+### F2 — DB-séma: `knowledge_chunks` + RO/RW szétválasztás ✅ KÉSZ
 
 - `packages/db/prisma/schema.prisma`: `previewFeatures = ["postgresqlExtensions"]`, `datasource.extensions = [vector]`, új `KnowledgeChunk` modell (`source, title, category, chunk_index, content, embedding Unsupported("vector(1536)")?`).
 - Migráció generálása (`CREATE EXTENSION vector` + `knowledge_chunks` tábla).

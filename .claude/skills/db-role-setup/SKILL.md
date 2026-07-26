@@ -16,6 +16,12 @@ Plantbase uses **two DB connections with two different roles** (docs/architektur
 - First time setting up the local DB (docker-compose Postgres is empty).
 - After adding/changing a table or column in `packages/db/prisma/schema.prisma`.
 - After recreating the docker volume (`docker compose down -v`).
+- After `prisma migrate reset` (or any drift-triggered reset) on an existing volume — it drops
+  and recreates the entire `public` schema, which wipes the RO role's `USAGE`/`SELECT` grants
+  even though the role itself survives. The `docker-entrypoint-initdb.d` script does NOT rerun
+  in this case (it only runs once, on a genuinely fresh volume), so step 3 below must be applied
+  manually every time. Verify with step 5 before assuming the agent's `runSql`/`searchKnowledge`
+  tools still work after a reset.
 
 ## Steps
 
