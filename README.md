@@ -36,7 +36,7 @@ Aktuális (2026. júliusi) árazással: Anthropic `claude-haiku-4-5` ($1/$5 per 
 
 ## Stack
 
-TypeScript (strict), Nx monorepo, pnpm, Node LTS · PostgreSQL (docker-compose, lokális) + Prisma · Anthropic SDK, kézzel írt tool-use loop (nincs agent-framework) · Zod · Commander + readline (CLI) · Vitest, ESLint + Prettier
+TypeScript (strict), Nx monorepo, pnpm, Node LTS · PostgreSQL (docker-compose, lokális) + Prisma · Vercel AI SDK (`streamText` + `tool()`, G1 óta), Anthropic + OpenAI providerek · Zod · Commander + readline (CLI) · Vitest, ESLint + Prettier
 
 Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 
@@ -135,4 +135,4 @@ plantbase/
 └── docs/           dokumentáció (ld. fent)
 ```
 
-Később (nem most): `apps/api`, `apps/web`. Részletek: [`docs/architektura.md`](docs/architektura.md).
+Később (nem most): `apps/server`, `apps/web`. Részletek: [`docs/architektura.md`](docs/architektura.md).

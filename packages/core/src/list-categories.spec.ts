@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getPool } from './db-pool';
-import { listCategories } from './list-categories';
+import { LIST_CATEGORIES_TOOL, listCategories } from './list-categories';
 
 vi.mock('./db-pool', () => ({
   getPool: vi.fn(),
@@ -45,5 +45,18 @@ describe('listCategories', () => {
 
     expect(queryMock).toHaveBeenCalled();
     expect(result).toBe(JSON.stringify(['kaktusz']));
+  });
+});
+
+describe('LIST_CATEGORIES_TOOL.execute', () => {
+  it('catches a thrown error and returns it as a plain string instead of throwing', async () => {
+    queryMock.mockRejectedValue(new Error('DB elérhetetlen'));
+
+    const output = await LIST_CATEGORIES_TOOL.execute?.(
+      {},
+      { toolCallId: 'test', messages: [] },
+    );
+
+    expect(output).toBe('DB elérhetetlen');
   });
 });

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('./rag/retrieve', () => ({ retrieve: vi.fn() }));
 
 import { retrieve } from './rag/retrieve';
-import { searchKnowledge } from './search-knowledge';
+import { SEARCH_KNOWLEDGE_TOOL, searchKnowledge } from './search-knowledge';
 
 const mockedRetrieve = vi.mocked(retrieve);
 
@@ -43,5 +43,18 @@ describe('searchKnowledge', () => {
     await expect(searchKnowledge({ query: '' })).rejects.toThrow();
     await expect(searchKnowledge({})).rejects.toThrow();
     expect(mockedRetrieve).not.toHaveBeenCalled();
+  });
+});
+
+describe('SEARCH_KNOWLEDGE_TOOL.execute', () => {
+  it('catches a retrieve() rejection and returns it as a plain string instead of throwing', async () => {
+    mockedRetrieve.mockRejectedValue(new Error('embedding hívás sikertelen'));
+
+    const output = await SEARCH_KNOWLEDGE_TOOL.execute?.(
+      { query: 'sárgul a levél' },
+      { toolCallId: 'test', messages: [] },
+    );
+
+    expect(output).toBe('embedding hívás sikertelen');
   });
 });
