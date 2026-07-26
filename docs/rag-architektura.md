@@ -173,3 +173,7 @@ Renderelt, statikus export (a HF3 szó szerinti "screenshot/export a repóba" me
 - **Forrás-átnevezés felismerése** (hash-egyezés más fájlnév alatt = rename, nem törlés+új) — a
   jelen tervben egy átnevezés TÖRÖLT+ÚJ párként kezelődne (felesleges, de nem hibás
   újra-embeddelés) — elfogadott egyszerűsítés, mivel a vendorolt cikkek (F3) ritkán nevezik át.
+- **Az `ingest.ts` jövőbeli sorsa nyitott kérdés** — ez a terv nem dönti el, hogy a sync-script
+  teljesen leváltaná-e a jelenlegi teljes-wipe `ingest.ts`-t, vagy az megmaradna egy külön,
+  tudatosan választható "teljes újraépítés" módként (pl. egy flaggel) a sync mellett —
+  implementáció-részlet, nem architektúra-döntés.
