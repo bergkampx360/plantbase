@@ -1,8 +1,9 @@
-# Plantbase — RAG chunking-stratégia
+# Plantbase — RAG-pipeline: chunking-stratégia és visszakeresés-minőség
 
 > A HF3 (F rész, `docs/implementation/05-rag-pipeline.md`) által megkövetelt, saját, indokolt
-> chunking-döntés leírása. A teljes fázisbontás és git-workflow ott van; ez a dokumentum csak a
-> `packages/core/src/rag/chunk.ts` mögötti indoklást rögzíti.
+> chunking-döntés (F4) és a golden-set kiértékelés (F7) leírása. A teljes fázisbontás és
+> git-workflow ott van; ez a dokumentum a `packages/core/src/rag/chunk.ts` mögötti indoklást ÉS a
+> teljes keresési pipeline (`hyde.ts`/`rerank.ts`/`retrieve.ts`) mért hatékonyságát rögzíti.
 
 ## A forrás-adat tényleges szerkezete (nem feltételezés — a 202 vendorolt cikken lemérve)
 
@@ -72,3 +73,95 @@ termel 0 chunkot (minden cikknek van kereshető tartalma a zaj-szűrés után).
 - `packages/core/src/rag/chunk.spec.ts` — a fenti 5 döntés mindegyikére unit teszt, valós
   mintaszövegekre alapozva (H2-vágás, mérethatár-csomagolás, kontextus-prefix, mondat-átfedés,
   zaj-kiszűrés).
+
+---
+
+## Golden set — visszakeresés-minőség (F7)
+
+> `packages/core/src/rag/golden-set.ts` (`pnpm --filter @plantbase/core run golden-set`) —
+> egyszeri kiértékelő szkript, nincs saját `.spec.ts`-je (ld. `docs/testing-strategy.md`).
+> A lenti eredmények egy konkrét, valós futásból származnak (768 chunkos korpusz, éles
+> `OPENAI_API_KEY`/`ANTHROPIC_API_KEY`).
+
+### Módszertan és óvintézkedések
+
+- **Modellek**: HyDE — Anthropic `claude-haiku-4-5` (a futás idején tényleges `.env`
+  `ANTHROPIC_MODEL` értéke, nem csak a kódbeli fallback); Rerank — OpenAI `gpt-4.1-mini`
+  (`RERANK_MODEL`, `rerank.ts`); Embedding — OpenAI `text-embedding-3-small` (`EMBEDDING_MODEL`,
+  `embed.ts`). Ezek konkrét, jelen pillanatban élő értékek — modellváltás után a lenti számok nem
+  reprodukálhatók ugyanígy.
+- **Nem-determinizmus**: a HyDE és a rerank LLM-hívás, tehát ugyanaz a kérdés más futásban más
+  pontszámot/sorrendet adhat (ezt korábban, F6 manuális tesztjénél is megfigyeltük). A lenti
+  táblázat egy pillanatkép, nem garantált, bitre-pontosan reprodukálható eredmény.
+- **Nyers vs. rerank előtti/utáni**: a "nyers" oszlop a literal kérdés embeddjéből, közvetlenül
+  `TOP_N` (4) találatot kér (nincs utána szűkítő lépés). A "pipeline" oszlop **egyetlen**
+  HyDE-hívásból számolt jelölt-halmazon (mind a `CANDIDATE_LIMIT`, 10 jelölt) mutatja a rerank
+  előtti (distance) és utáni (score) sorrendet — szándékosan **nem** két külön `retrieve()`-hívás
+  eredménye, mert az két különböző (nem-determinisztikus) HyDE-választ jelentene, és a "mit
+  rendezett át a rerank" kérdés csak közös jelölt-halmazon értelmezhető.
+- **A `distance` és a `score` nem közös skála** — az egyik minél kisebb, annál jobb (koszinusz-
+  távolság), a másik minél nagyobb (0–10 LLM-pontszám). A nyers-oszlop `distance`-e sem vethető
+  össze közvetlenül a pipeline-oszlop `distance`-ével, mert más embeddingből jönnek (literal
+  kérdés vs. HyDE-válasz).
+- **A `score` kérdések között sem egy kalibrált abszolút skála** — egy adott kérdésen belül
+  rangsorol jelölteket; "Q1 topScore 10" és "Q6 topScore 8" összevetése nem jelenti, hogy Q1
+  retrievációja objektíven jobb volt, csak azt, hogy Q1-nél volt egyértelműen erős találat az
+  adott ítélet szerint.
+- **`hitCount` minden kérdésnél pontosan 4 volt** (a futás ezt megerősítette) — a 768 chunkos
+  korpuszban `CANDIDATE_LIMIT=10` mellett mindig van legalább `TOP_N` jelölt, tehát `hitCount`
+  jelenleg nem megkülönböztető adat, ezért nem szerepel önálló oszlopként a táblázatban.
+- **"Negatív" ≠ nulla találat** — a vektorkeresés sosem ad üres eredményt (mindig visszaadja a
+  legközelebbi szomszédokat, akkor is, ha tartalmilag irrelevánsak). A negatív kérdésnél (7.) a
+  `hitCount` ugyanúgy 4, csak a találatok tartalmilag nem a kérdezett fajról szólnak.
+
+### Eredménytáblázat (top-1 forrás kérdésenként)
+
+| #   | Kérdés                                                          | Nyers top-1 (distance)                             | Pipeline végleges top-1 (score)                                                                               | weak  | Megjegyzés                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --- | --------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0   | Milyen gyakran öntözzem a szukkulenseimet?                      | _How to Care for a Schefflera_ (0.814)             | _Our Top 10 Plant Care Tips_ / _How Often & How Much You Should Water Houseplants_ (10 pontos döntetlen: 9/9) | false | A nyers teljesen más növényről (Schefflera/Bonsai) szóló cikkeket talált; a pipeline releváns öntözési cikkeket.                                                                                                                                                                                                                                                                                                 |
+| 1   | Miért sárgulnak a leveleim?                                     | _5 Causes For Your Plant's Yellow Leaves_ (0.828)  | _5 Causes For Your Plant's Yellow Leaves_ (10)                                                                | false | **Rerank-átrendezési részlet lent.**                                                                                                                                                                                                                                                                                                                                                                             |
+| 2   | Mennyi fényre van szüksége egy monsterának?                     | _The Hole Truth: Monsteras_ (0.665)                | _How To Care for a Monstera Deliciosa_ (10)                                                                   | false | A nyers egy tematikusan közeli, de nem fény-specifikus cikket talált; a pipeline a fény-releváns gondozási cikket hozta elő.                                                                                                                                                                                                                                                                                     |
+| 3   | Hogyan ismerem fel a pajzstetűt a növényemen?                   | _Key Plant Terms Glossary_ (0.640)                 | _Bug Off: All About Mealybugs_ (10)                                                                           | false | A kérdés kifejezetten pajzstetűre (scale) kérdez, a pipeline legjobb találata mégis a mealybugs-cikk — a _Bug Off: All About Scale_ is bekerült a top-4-be (score 8), csak 3. helyen, nem 1.-ként. Nem hibás, de nem pontosan a kérdezett kártevő az élen.                                                                                                                                                       |
+| 4   | Milyen páratartalmat igényelnek a páfrányok?                    | _Between Two Ferns_ (0.760)                        | _Between Two Ferns_ (10)                                                                                      | false | Mindkét ág fern-specifikus tartalmat talált, de más chunköt (a nyers és a HyDE-embedding más H2-szakaszt preferált ugyanabból a cikkből).                                                                                                                                                                                                                                                                        |
+| 5   | Hogyan ültessem át a növényemet nagyobb cserépbe?               | _Plant Care for Large Plants_ (0.617)              | _Our Top 10 Plant Care Tips_ (8)                                                                              | false | **Őszinte korlát**: a nyers megtalálta a dedikált _How to Pot Your Houseplant Step By Step_ cikket (3. helyen), a pipeline rerank-előtti 10 jelöltje között ez **egyáltalán nem szerepelt** — a HyDE-válasz embeddingje ezúttal "elmiszte" a legdirektebb forrást, a végleges válasz csak általános tippekre támaszkodott. Ez a leggyengébb eredmény a 8 kérdés közül (max score 8, a többinél jellemzően 9–10). |
+| 6   | _(negatív)_ Hogyan gondozzam a Xylorhiza nevű ritka növényemet? | _Oxalis_ (0.624)                                   | _Patio Gardening 101_ / _Our Top 10 Plant Care Tips_ (döntetlen 7/7)                                          | false | Sem a nyers, sem a pipeline nem talál Xylorhiza-specifikus tartalmat (nincs is a korpuszban) — csak generikus növénygondozási cikkeket. Agent-szintű bizonyíték lent.                                                                                                                                                                                                                                            |
+| 7   | _(retry-jelölt)_ Mit tegyek, ha nem néz ki jól a növényem?      | _Health Is Wealth, Get That (Plant) Green_ (0.589) | _Health Is Wealth, Get That (Plant) Green_ (10)                                                               | false | Ez a golden-set-scriptes (retrieve-szintű) futás erős találatot adott — az agent-szintű retry-demonstráció ehelyett külön CLI-futásokból származik, ld. lent.                                                                                                                                                                                                                                                    |
+
+### Rerank-átrendezési részlet (1. kérdés: "Miért sárgulnak a leveleim?")
+
+A rerank **előtt** (a HyDE-válasz embeddingjéből, distance szerint) az 1. helyen egy **fern-specifikus** cikk állt, a valódi, dedikált "sárguló levelek" cikk csak a 4. helyen:
+
+1. _Between Two Ferns_ #6 (distance 0.610)
+2. _5 Causes For Your Plant's Browning Leaves_ #3 (0.612)
+3. _A is for Aroids_ #3 (0.613)
+4. _5 Causes For Your Plant's Yellow Leaves_ #1 (0.613)
+
+A rerank **után** a sorrend megfordult — a dedikált cikk lett az 1. (holtversenyben egy másik szakaszával), a fern-cikk a 3. helyre csúszott:
+
+1. _5 Causes For Your Plant's Yellow Leaves_ #1 (score 10)
+1. _5 Causes For Your Plant's Yellow Leaves_ #3 (score 10)
+1. _Between Two Ferns_ #6 (score 9)
+1. _5 Causes For Your Plant's Yellow Leaves_ #2 (score 9)
+
+**Miért jobb az új sorrend** — a tényleges chunk-tartalmat elolvasva: a _Between Two Ferns_ #6 chunk egy páfrány-specifikus, több témát (fény/öntözés/páratartalom/hőmérséklet/gyakori problémák) felsoroló szakasz, amiben a sárgulás csak **egy sor** egy szimptóma-lista közepén ("Yellowing lower leaves, wet potting mix → Overwatered") — a nyers vektor-hasonlóság valószínűleg a "yellowing" szó és az általános gondozási regiszter miatt kerül közel, nem azért, mert a cikk témája a sárgulás. A _5 Causes For Your Plant's Yellow Leaves_ #1 chunk ezzel szemben **kizárólag** és **kimerítően** a kérdés témájáról szól (több különálló sárgulás-ok, tünet szerint bontva, bármely növényre alkalmazható) — a rerank helyesen ismerte fel, hogy ez a direktebb, teljesebb válasz a kérdésre, és előre hozta.
+
+### Agent-szintű bizonyíték: negatív kérdés (7.) és önreflektáló keresés (8.)
+
+Ezek **külön, valós CLI-futásokból** (`pnpm run plantbase ask "..." --show-prompt`) származnak, nem a golden-set táblázat retrieve-szintű soraiból — a negatív-kérdés-kimondás és az önreflektáló újrahívás **agent-szintű** (system prompt által vezérelt) viselkedés, amit a `retrieve()`/`searchKnowledge` közvetlen hívása nem tud demonstrálni. Emiatt a lenti pontszámok eltérhetnek a fenti táblázat 6–7. sorától (más futás, más HyDE-válasz).
+
+**Negatív teszt (Xylorhiza) — PASS-kritérium**: a végső válasz (a) nem állít konkrét, Xylorhiza-specifikus tényt, ÉS (b) explicit jelzi a hiányzó/korlátozott információt. Valós transzkript-kivonat:
+
+> 🔧 `searchKnowledge({"query":"Xylorhiza gondozása, ápolása, tippek"})` → `topScore: 8, weak: false`
+> (találatok: Dino Plant, Tradescantia stb. — más fajokról)
+>
+> 🌱 _"Sajnálom, de a tudásbázisban **nincs konkrét információ a Xylorhiza növényről**. Az eredmények más növényekről szólnak (Dino Plant, Tradescantia stb.), nem az általad említett fajról. [...] **Általános alapelvek** ritka/speciális növényekhez: [...]"_
+
+A válasz PASS: a generikus tanácsot egyértelműen "általános alapelvekként" különítette el, nem Xylorhiza-tényként adta elő — **annak ellenére, hogy `weak: false` volt**. Ez azt mutatja, hogy a negatív-teszt-védelem **nem csak** a kódszintű `weak`-jelzésből jön, hanem az agent saját tartalmi összevetéséből is (felismerte, hogy a talált cikkek nem a kérdezett fajról szólnak) — a két réteg együtt ad robusztus groundingot.
+
+**Önreflektáló keresés (8.) — őszinte eredmény, nem a várt "gyenge→jobb" ív.** 5 próbálkozásból (különböző, szándékosan homályos/szokatlan megfogalmazású kérdésekkel) 3 esetben a `searchKnowledge` **egyetlen hívásra** erős találatot adott (score 6–10) — ez azért van, mert a HyDE pontosan arra való, hogy a homályos megfogalmazásból is jó embeddinget csináljon, tehát egy valóban "gyenge" első kör strukturálisan nehezen idézhető elő, ha a HyDE jól működik. 2 esetben az agent **valóban kétszer hívta meg** a `searchKnowledge`-et, más megfogalmazással — ez az iteratív keresési **mechanizmus** valós, agent-vezérelt bizonyítéka:
+
+> 🔧 `searchKnowledge({"query":"hidroponikus tápoldati EC pH értékek optimalizálása fura levelek"})` → `topScore: 6, weak: false`
+> 🔧 `searchKnowledge({"query":"EC érték pH hidroponika optimális tartomány tápoldati kimaradás tünetei"})` → `topScore: 5, weak: false`
+> 🌱 _"Sajnos a tudásbázisban **nincs megfelelő információ a hidroponikus EC/pH értékek konkrét optimalizálásáról**. [...] szakosított hidroponikus tudásbázisra van szükséged."_
+
+Mindkét kör után a válasz **továbbra sem talált specifikusan releváns tartalmat**, és ezt az agent őszintén kimondta — ez tehát nem "gyenge→jobb" javulást bizonyít, hanem egy **második, iteratív negatív-tesztet**: a mechanizmus (kétszeri hívás, más megfogalmazással) működik, de az eredmény attól függ, hogy a hiány megfogalmazási (reformulálással javítható) vagy valódi tartalmi hiány (reformulálással sem javítható) — ez utóbbi esetben a helyes viselkedés éppen a kitartó, de végül őszinte elutasítás, nem egy erőltetett "jobb" válasz. Ezt a jelenséget a HF3 saját, a rerank-átrendezésre vonatkozó megengedő logikájával analóg módon dokumentáljuk: ha a kívánt ív nem jelenik meg természetesen, ezt magyarázattal együtt rögzítjük, nem szimulált eredménnyel pótoljuk.

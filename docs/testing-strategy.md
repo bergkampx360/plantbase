@@ -23,6 +23,13 @@
   teszttel érkezik **ugyanabban a fázisban/PR-ban**, nem utólag pótolva. (Ez a jelenlegi E3 fázis
   — `docs/implementation/04-runsql-guard-refinements.md` — nyitott adósságát fogalmazza meg
   szabállyá a jövőre nézve: az `askAgent` maga már B3 óta él, de tesztje csak E3-ban készül el.)
+- **Egyszeri, valós API/DB-hívást végző adat- és kiértékelő szkriptek** (`rag/ingest.ts`, F5;
+  `rag/golden-set.ts`, F7) **kivétel a fenti szabály alól**: nincs saját `.spec.ts`-jük — a bennük
+  hívott épületkövek (`chunkArticle`, `embedTexts`, `insertChunks`, `searchChunks`,
+  `rerankChunks` stb.) már önmagukban unit tesztelt, a szkript saját szekvenciáját pedig a valós
+  futtatás (és a PR-leírásba/docs-ba kerülő, tényleges kimenet) ellenőrzi, nem egy mockolt vitest
+  spec. Ez eddig csak az `ingest.ts`-nél volt hallgatólagos gyakorlat; a `golden-set.ts` második
+  előfordulásként mintává emeli, innentől explicit szabály, nem esetleges kivétel.
 - **`packages/db`**: séma/migráció-változásnál legalább egy integration teszt VAGY a
   `db-role-setup` skill futtatásának eredménye dokumentálva a PR leírásban.
 - **`apps/cli`**: minden CLI-szintű viselkedés-változás (flag, output-formázás, interaktív mód)

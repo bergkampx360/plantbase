@@ -108,7 +108,7 @@ A fázisbontás finomabb szemcséjű, mint az A–E részeknél megszokott átla
 **Commit:** `feat: implement search pipeline (HyDE, rerank, retrieve) with searchKnowledge tool and self-reflective iteration`
 → **megállok, kérem a tesztelést.**
 
-### F7 — Golden set + negatív teszt ⏳ NYITOTT
+### F7 — Golden set + negatív teszt ✅ KÉSZ
 
 - 5–10 kérdés a növénygondozási domainből (veled jóváhagyva).
 - Mindegyik kérdés lefuttatva **kétféleképpen** (HF3 szó szerinti módszertana): (1) nyers vektorkeresés (csak embedding + távolság), (2) teljes pipeline (HyDE + rerank) — a kettő összevetése táblázatban vagy debug-kimenettel dokumentálva.
