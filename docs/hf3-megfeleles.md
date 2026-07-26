@@ -37,13 +37,13 @@ teszt, mind az 5 döntésre).
 **Kért elemek**: embedding+vektor-tárolás, HyDE, rerank, grounding (forráshivatkozás + explicit
 "nincs találat" kimondás), multi-provider routing (≥2 provider, indokolt szereposztás).
 
-| Elem | Hol |
-|---|---|
-| Embedding + vektor-tárolás (pgvector) | `packages/core/src/rag/embed.ts`, `knowledge-store.ts`; `docs/tech/infra.md` (pgvector-döntés) |
-| HyDE | `packages/core/src/rag/hyde.ts` |
-| Rerank | `packages/core/src/rag/rerank.ts` |
+| Elem                                         | Hol                                                                                                                                                   |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Embedding + vektor-tárolás (pgvector)        | `packages/core/src/rag/embed.ts`, `knowledge-store.ts`; `docs/tech/infra.md` (pgvector-döntés)                                                        |
+| HyDE                                         | `packages/core/src/rag/hyde.ts`                                                                                                                       |
+| Rerank                                       | `packages/core/src/rag/rerank.ts`                                                                                                                     |
 | Grounding (forráshivatkozás + "nincs infóm") | `packages/core/src/system-prompt.ts` / `docs/system-prompt.md` szabályok; valós bizonyíték: `docs/rag-pipeline.md` "Agent-szintű bizonyíték" szakasza |
-| Multi-provider routing + indoklás | `docs/rag-pipeline.md` "Multi-provider routing" szakasz (OpenAI: embedding+rerank, Anthropic: HyDE+végső válasz) |
+| Multi-provider routing + indoklás            | `docs/rag-pipeline.md` "Multi-provider routing" szakasz (OpenAI: embedding+rerank, Anthropic: HyDE+végső válasz)                                      |
 
 **Eltérés**: nincs.
 
@@ -84,8 +84,8 @@ export: `docs/rag-architektura.assets/adatfolyam.png`.
 repóban már létező, más tartalmú `docs/architektura.md` (a teljes rendszer — nem csak RAG —
 architektúráját leíró, korábbi fájl) **ugyanaz a fájl** lenne. A szó szerinti név vagy hibázott
 volna, vagy csendben felülírta volna a meglévő dokumentumot. A döntés F2-nél lett rögzítve
-(`docs/implementation/05-rag-pipeline.md`, "Rögzített döntések" 5. pont: *"Dokumentáció-helyzet: új
-fájl `docs/rag-architektura.md` (nem `ARCHITEKTURA.md`, case-insensitive FS miatt)."*). A tartalmi
+(`docs/implementation/05-rag-pipeline.md`, "Rögzített döntések" 5. pont: _"Dokumentáció-helyzet: új
+fájl `docs/rag-architektura.md` (nem `ARCHITEKTURA.md`, case-insensitive FS miatt)."_). A tartalmi
 követelmények (adatfolyam-ábra, összes felsorolt eset) maradéktalanul teljesülnek, csak a fájlnév
 tér el.
 
@@ -105,14 +105,14 @@ szakasz.
 
 ## Leadandók — kereszthivatkozás
 
-| Leadandó | Hol |
-|---|---|
-| Működő repo, futtatási instrukciók | README "Futtatás és tesztelés" |
-| Chunking-stratégia + indoklás | `docs/rag-pipeline.md` "Döntések és indoklásuk" |
-| Golden set + nyers-vs-pipeline + negatív teszt | `docs/rag-pipeline.md` "Golden set" szakasz |
-| Multi-provider szereposztás | `docs/rag-pipeline.md` "Multi-provider routing" szakasz |
-| `docs/ARCHITEKTURA.md` + ábra | `docs/rag-architektura.md` (**fájlnév-eltérés, ld. 5. pont**) + `docs/rag-architektura.assets/adatfolyam.png` |
-| Költségbecslés | README "Költség (RAG)" szakasz + `docs/rag-pipeline.md` "Költségbecslés (F9)" |
+| Leadandó                                       | Hol                                                                                                           |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Működő repo, futtatási instrukciók             | README "Futtatás és tesztelés"                                                                                |
+| Chunking-stratégia + indoklás                  | `docs/rag-pipeline.md` "Döntések és indoklásuk"                                                               |
+| Golden set + nyers-vs-pipeline + negatív teszt | `docs/rag-pipeline.md` "Golden set" szakasz                                                                   |
+| Multi-provider szereposztás                    | `docs/rag-pipeline.md` "Multi-provider routing" szakasz                                                       |
+| `docs/ARCHITEKTURA.md` + ábra                  | `docs/rag-architektura.md` (**fájlnév-eltérés, ld. 5. pont**) + `docs/rag-architektura.assets/adatfolyam.png` |
+| Költségbecslés                                 | README "Költség (RAG)" szakasz + `docs/rag-pipeline.md` "Költségbecslés (F9)"                                 |
 
 ## Amit a HF értékel — önértékelés
 
@@ -130,3 +130,12 @@ szakasz.
   tranzakció-kezelés technikai korlátja) is átment, mielőtt lezárult: `docs/rag-architektura.md`.
 - **"A routing-döntéseid indokoltak"** — igen, konkrét szerep-táblázattal: `docs/rag-pipeline.md`
   "Multi-provider routing" szakasz.
+
+## Utólag pótolt tesztelési javítás (F10)
+
+Az önellenőrzés során derült ki, hogy a `SYSTEM_PROMPT` (a grounding-szabályok forrása) sem
+tartalom-asszerciós teszttel, sem a `docs/system-prompt.md`-vel való szinkron-ellenőrzéssel nem
+volt védve — csak manuális CLI-teszttel. Pótolva: `packages/core/src/system-prompt.spec.ts`
+(`docs/implementation/05-rag-pipeline.md`, F10). A szinkron-teszt írás közben egy valós,
+formázási eredetű (prettier) driftet is elkapott a `docs/system-prompt.md` és a `SYSTEM_PROMPT`
+között — ez önmagában igazolta a teszt hasznosságát.
