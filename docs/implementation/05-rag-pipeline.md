@@ -209,11 +209,17 @@ külön ellenőrzéssel visszatér).
 **További döntések (a részletezéskor, F lezárása után rögzítve):**
 
 1. **`askAgent` visszatérési kontraktusa marad `Promise<AskResult>`, csak belül vált AI SDK-ra.**
-   A `streamText` API-t a CLI is tudja **nem-streamelő** módon fogyasztani (megvárva
-   `result.text`/`result.usage`/`result.response.messages`-t) — nincs szükség két külön
-   függvényre. Az `apps/server` (G2) egy MÁSIK, streamelő fogyasztási módot használ ugyanarra a
-   `streamText`-hívásra (`toUIMessageStreamResponse()` vagy hasonló), de a tool-definíciók és a
-   system prompt közösek maradnak `packages/core`-ban — nincs duplikált agent-logika.
+   **Pontosítás**: a CLI és az `apps/server` **két külön Node-folyamat** — fizikailag nem oszthatnak
+   meg egyetlen `streamText`-hívást. Ami valójában megosztott: a tool-definíciók
+   (`RUN_SQL_TOOL`/`LIST_CATEGORIES_TOOL`/`SEARCH_KNOWLEDGE_TOOL` AI SDK `tool()`-alakban), a
+   `SYSTEM_PROMPT`, és a modell-választás logikája (`process.env['ANTHROPIC_MODEL'] ?? ...`) —
+   ezeket G1 **exportálja `packages/core`-ból**, és mind az `askAgent()` (CLI-nek, megvárja a
+   `streamText`-et: `result.text`/`result.usage`/`result.response.messages`), mind a G2-beli
+   `apps/server` (saját, önálló `streamText`-hívást épít ugyanezekből az exportokból, de streamelő
+   fogyasztással) **külön-külön** hívja meg. Nincs duplikált agent-_logika_ (a tool/prompt/modell
+   definíció egy helyen van), de **két külön hívás fut** — ez a G1 explicit tesztelési
+   követelménye is: az exportált építőelemeknek G2-ben zökkenőmentesen újrafelhasználhatónak kell
+   lenniük, anélkül hogy `askAgent()`-et kellene streamelésre kényszeríteni.
    **Következmény**: `AskResult.messages` típusa `Anthropic.MessageParam[]`-ról AI SDK
    `ModelMessage[]`-re vált — ez **valódi, elfogadott** CLI-oldali változás (`apps/cli/src/output.ts`,
    `format-messages.ts` frissül), nem "nulla módosítás", de a CLI funkcionálisan ugyanúgy működik
@@ -233,11 +239,14 @@ külön ellenőrzéssel visszatér).
    a `scaffold-nx-package` skill saját fallback-szabálya szerint ("ha nincs generátor, kézzel
    scaffoldolunk, nem viszünk be nehézsúlyú generátor-plugint csak erre") `@nx/node:application`
    mintájára kézzel épül fel, Express hozzáadva függőségként.
-6. **`apps/web`-hez `@nx/react` telepítése javasolt** (nem kézi scaffold) — mivel React+Vite+Tailwind
-   +shadcn/ui együttes kézi bedrótozása jelentősen hibalehetőség-érzékenyebb, mint egy hivatalos,
-   karbantartott Nx-generátor; a pontos generátor-parancsot és shadcn/ui-inicializálást Context7-vel
-   ellenőrzöm G4 tényleges végrehajtásakor (`docs/architektura.md` 7. döntése — ismeretlen lib előtt
-   Context7).
+6. **`apps/web`-hez `@nx/react` telepítése javasolt** (nem kézi scaffold) — **tudatos eltérés az 5. döntésben idézett skill-elvtől** ("ne vigyünk be nehézsúlyú generátor-plugint csak erre"):
+   itt indokolt a kivétel, mert React+Vite+Tailwind+shadcn/ui együttes kézi bedrótozása lényegesen
+   több, egymásra épülő konfigurációs döntést (bundler, JSX-transform, Tailwind-PostCSS-integráció,
+   shadcn CLI saját projekt-felismerése) igényelne, mint egyetlen Express-appnál (ahol a meglévő
+   `@nx/node:application` már 90%-ban megfelelő, csak az Express-réteg hiányzik) — a hibalehetőség
+   és a karbantartási teher itt nagyobb, mint amit a "ne vigyünk be plugint" elv spórolni akar. A
+   pontos generátor-parancsot és shadcn/ui-inicializálást Context7-vel ellenőrzöm G4 tényleges
+   végrehajtásakor (`docs/architektura.md` 7. döntése — ismeretlen lib előtt Context7).
 7. **Thread/Message Prisma-modell a `KnowledgeChunk` stílusát követi** (camelCase mező + `@map`
    snake_case oszlopra, `Int @id @default(autoincrement())`, `@@map` snake_case tábla), nem a
    `Product` all-snake_case stílusát — ez a újabb, konzisztensebb minta a séma-fájlban.
@@ -247,6 +256,12 @@ külön ellenőrzéssel visszatér).
    `db-role-setup` skillben ezekre a táblákra.
 9. **A `logs/` JSONL-naplózás (`logInteraction`) megmarad változatlanul, párhuzamosan** a DB-alapú
    Thread/Message-perzisztenciával — más célt szolgál (audit/debug-trail, nem UI-history-forrás).
+10. **Explicit kimondva: a CLI és a Web beszélgetés-történetei NEM egyesülnek.** A CLI-n futtatott
+    kérdések a `logs/` JSONL-be írnak (9. döntés), sosem a `Thread`/`Message` táblákba — a webes
+    "korábbi beszélgetések" lista (G6) csak a `Thread`-eket látja, egy CLI-munkamenet ott nem jelenik
+    meg, és fordítva sincs átjárás. Ez tudatos, egyszerűsítő döntés (két független belépési pont, két
+    független history-mechanizmus) — ha a jövőben egyesített history kellene, az egy külön,
+    G-n túli döntés lenne, nem ennek a tervnek a része.
 
 ### G1 — `askAgent` átállítása AI SDK `streamText`+`tools`-ra ⏳ NYITOTT
 
@@ -284,9 +299,12 @@ keresztül változatlanul működik (manuális ellenőrzés, valós API-híváss
 - `apps/server` kézi scaffold (`scaffold-nx-package` skill fallback-mintája, `@nx/node:application`
   struktúrát követve), Express hozzáadva függőségként.
 - `POST /api/chat` — `{ question, threadId? }` body, a G1-ben módosított `packages/core`
-  tool/system-prompt-definíciókat újrahasznosítva (nem duplikálva) egy streamelő `streamText`-hívás,
+  tool/system-prompt-definíciókat újrahasznosítva (nem duplikálva) egy **saját, önálló**
+  streamelő `streamText`-hívás (ld. 1. döntés pontosítása — nem az `askAgent()`-en keresztül),
   AI SDK data-stream-válaszként (`text-delta` + `data-tool`/`data-agent` custom part-ok, a G-rész
-  eredeti döntése szerint).
+  eredeti döntése szerint). A pontos AI SDK v5 streaming-response API (a válasz-objektum létrehozó
+  metódusa, a custom data-part-ok írásának módja) Context7-vel ellenőrizve G2 tényleges
+  végrehajtásakor (`docs/architektura.md` 7. döntése) — ez ebben a repóban még sehol nem használt API.
 - Env-betöltés a szerver belépési pontján (dotenv), a CLI mintájára (`apps/cli/src/main.ts`
   ugyanezt csinálja, mert a globálisan telepített bináris nem örökli a direnv-et).
 - CORS-beállítás a helyi fejlesztői Vite dev-szerverhez (G4 előkészítése).
@@ -312,7 +330,9 @@ keresztül változatlanul működik (manuális ellenőrzés, valós API-híváss
 
 **Teszt:** migráció lefut tiszta DB-n; `pnpm exec nx run-many -t build,typecheck,test,lint` zöld;
 kézi teszt: két egymást követő `/api/chat` hívás ugyanazzal a `threadId`-vel, `GET
-/api/threads/:id` visszaadja mindkét kört.
+/api/threads/:id` visszaadja mindkét kört. **CLI-regresszió**: `packages/db` séma-változás után
+`plantbase ask "..."` továbbra is működik (a `runSql`/`searchKnowledge` RO-útja nem érinti az új
+táblákat, de ezt explicit ellenőrizni kell, nem csak feltételezni).
 **Commit:** `feat: add Thread/Message persistence and /api/threads router`
 → megállok, kérem a tesztelést.
 
@@ -364,6 +384,9 @@ töltődik vissza.
   (`docs/testing-strategy.md` "Kimarad" szakasza) — ez a G-rész scope-ján kívül eső, külön tétel.
 
 **Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, minden új teszttel együtt.
+**CLI-regresszió (G-rész záró ellenőrzése)**: `plantbase ask "..."` és az interaktív mód is
+változatlanul működik a teljes G1–G6 után — ez az egyetlen G-fázison kívül G1-en, ahol ez explicit
+ellenőrzésre kerül, ezért itt, a lezáráskor kötelező, nem csak feltételezett.
 **Commit:** `test: add apps/server and apps/web tests, close out G-rész docs`
 → megállok, kérem a tesztelést.
 
