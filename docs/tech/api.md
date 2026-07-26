@@ -63,36 +63,44 @@ explicit elválasztja a kettőt (gondozási/egészségügyi kérdés → `search
 A tool-ok pontos, agentnek adott leírása és használati szabálya: `docs/system-prompt.md` (szó
 szerint szinkronban a `packages/core/src/system-prompt.ts` `SYSTEM_PROMPT` konstansával).
 
-## HTTP: `POST /api/chat` (`apps/server`, G2–G3)
+## HTTP: `POST /api/chat` (`apps/server`, G2–G4)
 
-Body: `{ "question": string, "threadId"?: number }` (hiányzó/üres `question`-re `400`). **Nem** az
-`askAgent()`-en keresztül megy — `apps/server/src/main.ts` egy saját, önálló `streamText`-hívást
-épít a `packages/core`-ból exportált tool-okból (`RUN_SQL_TOOL`/`LIST_CATEGORIES_TOOL`/
-`SEARCH_KNOWLEDGE_TOOL`), `SYSTEM_PROMPT`-ból és `resolveModel()`-ből — a CLI és a szerver két külön
-Node-folyamat, csak az építőelemeket osztják meg, nem egy hívást.
+Body: `{ "id": string, "message": UIMessage }` (AI SDK natív `useChat`/`DefaultChatTransport`
+mintája, G4-től — **nem** `{ question, threadId }`, ahogy G2/G3-ban eredetileg volt). Az `id`-t a
+**kliens generálja** (`generateId()` az `'ai'`-ból) egy új beszélgetés indításakor, mielőtt az
+első üzenet elmenne — a szerver sosem talál ki saját azonosítót, csak arra perzisztál, amit kap.
+A `message` csak az UTOLSÓ (legújabb) `UIMessage`, nem a teljes history — a szerver tölti be a
+korábbi kört a DB-ből (`prepareSendMessagesRequest` a kliensen, ld. `apps/web/src/app/chat.tsx`).
+Hiányzó `id`/`message`, vagy üres szöveges tartalom → `400`. **Nem** az `askAgent()`-en keresztül
+megy — `apps/server/src/main.ts` egy saját, önálló `streamText`-hívást épít a `packages/core`-ból
+exportált tool-okból (`RUN_SQL_TOOL`/`LIST_CATEGORIES_TOOL`/`SEARCH_KNOWLEDGE_TOOL`),
+`SYSTEM_PROMPT`-ból és `resolveModel()`-ből — a CLI és a szerver két külön Node-folyamat, csak az
+építőelemeket osztják meg, nem egy hívást.
 
-**Thread-kezelés (G3)**: ha `threadId` hiányzik vagy érvénytelen, egy új `Thread` nyílik; ha
-megadott és létező, a korábbi kör(ök) `Message`-ei betöltődnek és a `streamText` `messages`
-tömbjének elejére kerülnek — enélkül a modell nem tudna a korábbi körökre hivatkozva válaszolni,
-csak a mentés léteznék, a beszélgetés-folytonosság a válaszban nem. A user-kérdés azonnal mentve
-(még a `streamText`-hívás előtt); a végleges asszisztens-válasz a `streamText` `onFinish`
-callbackjében mentve (ez fut le, amikor a teljes, több lépéses válasz és minden tool-végrehajtás
-lezárult, nem lépésenként). A `threadId`-t egy `X-Thread-Id` response header adja vissza —
-streamelt válasznál ez az egyszerű csatorna erre.
+**Thread-kezelés**: ha az `id`-hoz nincs `Thread`, egy új nyílik (a kapott `id`-val); ha van,
+a korábbi kör(ök) `Message`-ei betöltődnek, `UIMessage`-é alakítva, és a `convertToModelMessages`
+elé kerülnek a `streamText`-hívásban — enélkül a modell nem tudna a korábbi körökre hivatkozva
+válaszolni, csak a mentés léteznék, a beszélgetés-folytonosság a válaszban nem. A user-üzenet
+azonnal mentve (még a `streamText`-hívás előtt); a végleges asszisztens-válasz a `streamText`
+`onFinish` callbackjében mentve (ez fut le, amikor a teljes, több lépéses válasz és minden
+tool-végrehajtás lezárult, nem lépésenként). **Az `X-Thread-Id` response header megszűnt** — a
+kliens már ismeri az `id`-t, ő generálta.
 
 Válasz: streamelt AI SDK UI-message stream (`result.pipeUIMessageStreamToResponse(res)`,
 Server-Sent Events). A natív `tool-input-start`/`tool-input-available`/`tool-output-available`
 part-ok automatikusan tartalmazzák a tool-hívásokat és -eredményeket — **nincs** egyelőre kézzel
-írt `data-tool`/`data-agent` custom part (a G-terv eredeti ötlete), mert G2-ben még nincs kliens,
-ami ezt fogyasztaná; ha G5 (tool-kártya UI) konkrét igénye ezt indokolja, ott dől el.
+írt `data-tool`/`data-agent` custom part (a G-terv eredeti ötlete); ha G5 (tool-kártya UI) konkrét
+igénye ezt indokolja, ott dől el.
 
-CORS: `CORS_ORIGIN` env-változó (alapértelmezett `http://localhost:5173`, a jövőbeli `apps/web`
-Vite dev-szerveréhez, G4). Port: `PORT` env-változó (alapértelmezett `3001`).
+CORS: `CORS_ORIGIN` env-változó (alapértelmezett `http://localhost:4200` — a `@nx/react:application`
+generátor ezt a portot állítja be alapértelmezetten `apps/web`-hez, nem az általános Vite-
+alapértelmezett 5173-at). Port: `PORT` env-változó (alapértelmezett `3001`).
 
-## HTTP: `GET /api/threads`, `GET /api/threads/:id` (`apps/server`, G3)
+## HTTP: `GET /api/threads`, `GET /api/threads/:id` (`apps/server`, G3–G4)
 
 `GET /api/threads` — a `Thread`-ek listája (`id`, `createdAt`, `updatedAt`), `updatedAt` szerint
 csökkenő sorrendben (legutóbb aktív szál elöl).
 
 `GET /api/threads/:id` — egy `Thread` a hozzá tartozó `Message`-ekkel (`createdAt` szerint
-növekvő sorrendben). Érvénytelen (nem szám) `id` → `400`; nem létező `id` → `404`.
+növekvő sorrendben). `id` egy String (G4-től, ld. `packages/db/prisma/schema.prisma`), nem szám —
+nincs formátum-validáció, csak létezés-ellenőrzés; nem létező `id` → `404`.

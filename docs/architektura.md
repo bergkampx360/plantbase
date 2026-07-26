@@ -10,10 +10,9 @@ plantbase/
 ├── packages/db     Prisma lib (séma, migráció, kliens, seed) — NEM a gyökérben
 ├── apps/cli        CLI (ask parancs + interaktív mód)
 ├── apps/server     Express szerver, streamelő POST /api/chat (G2, `docs/implementation/06-web-chat.md`)
+├── apps/web        React + Vite + Tailwind + shadcn/ui webes chat felület (G4, ua.)
 ├── docs            dokumentáció (lásd dev-workflow.md)
 └── konfig          nx, package.json, .env, docker-compose
-
-Később (NEM most): apps/web (G rész, `docs/implementation/06-web-chat.md`)
 ```
 
 (Csak nagy vonalakban; a fájl-szintű bontást Claude generálja a konvenciók szerint.)

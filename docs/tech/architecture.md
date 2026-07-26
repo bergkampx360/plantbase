@@ -40,8 +40,6 @@ egy külön RW poolon fut, és sosem az agent útján hívódik.
 `ask-agent.ts` a modell-providert (`anthropic(...)`) nem modul-szinten, hanem `askAgent()`
 hívásonként hozza létre.
 
-Később (nem most): `apps/web` (G rész, `docs/implementation/06-web-chat.md`).
-
 ## `apps/server` — HTTP belépési pont (G2)
 
 Egyetlen `POST /api/chat` route (`apps/server/src/main.ts`). **Nem** az `askAgent()`-en keresztül
@@ -59,6 +57,36 @@ megy, ugyanúgy, mint a CLI-nél — `apps/server` ide nem nyúl közvetlenül.
 agent-facing tudásbázis-olvasás, ezért nem a `runSql`/`searchKnowledge` RO-útján megy (NFR1-elv,
 `docs/architektura.md` 2. döntés, itt nem vonatkozik rá). `GET /api/threads`,
 `GET /api/threads/:id`: `docs/tech/api.md`.
+
+## `apps/web` — webes chat felület (G4)
+
+`@nx/react:application` generátorral scaffoldolva (bundler: Vite, teszt: Vitest), **nem** kézzel
+(eltérés a `scaffold-nx-package` skill "kézi scaffold, ha nincs generátor" elvétől — tudatos,
+`06-web-chat.md` 6. döntése: a React+Vite+Tailwind+shadcn/ui kombináció kézi bedrótozása
+hibalehetőség-érzékenyebb, mint a hivatalos generátor). A generátor `apps/web/package.json`
+"name" mezőjét `"web"`-nek hagyja (nem `@plantbase/web`), mert nincs `project.json` — a Nx
+projekt-nevet közvetlenül a package.json `name`-je adja, az átnevezés a `nx serve web` stb.
+parancsokat is megváltoztatná; tudatosan meghagyva a generátor alapértelmezettje szerint.
+
+Tailwind v4 (`@tailwindcss/vite` plugin, nincs `tailwind.config.js`) és shadcn/ui (`components.json`,
+`src/components/ui/`) hozzáadva a hivatalos "Existing Project" (Vite) folyamat szerint. `@/*`
+path-alias `tsconfig.json`/`tsconfig.app.json`-ban és `vite.config.mts`-ben.
+
+Egyetlen `Chat` komponens (`src/app/chat.tsx`): `useChat` (`@ai-sdk/react`) + `DefaultChatTransport`
+
+- `generateId()` (`ai`-ból, új beszélgetés id-jének generálásához, a `POST /api/chat` natív
+  szerződéséhez, `docs/tech/api.md`) — csak szöveges üzenetek, tool-kártya vizuális megkülönböztetés
+  G5, "Új chat"/history-sáv G6 dolga, nem ez a fázis.
+
+**G4 közben talált, valódi függőség-verzió ütközés**: az `@ai-sdk/react` csomag saját verziószámozása
+NEM követi az `ai` csomagét — `@ai-sdk/react@4.x` valójában `ai@7.x`-et vár (nem `ai@5.x`-et, ahogy a
+számok alapján feltételezhető lenne), ami típusütközést okozott a repo többi részének `ai@^5.0.0`
+pinnelésével szemben. A helyes, kompatibilis pár: `@ai-sdk/react@2.x` (ennek van `ai@^5.x` függősége).
+Hasonlóan: `eslint-plugin-react` (a generátor `nx.configs['flat/react']`-je hozza be) még a legfrissebb
+stabil kiadásában (7.37.5) sem kompatibilis az ESLint 10-zel (peerDependencies csak ^9.7-ig) — a
+`react/*` szabályok ezért explicit ki vannak kapcsolva `apps/web/eslint.config.mjs`-ben, amíg a
+plugin nem ad ki ESLint 10-kompatibilis verziót; a `react-hooks`/`jsx-a11y` szabályok külön csomagok,
+azok változatlanul aktívak.
 
 ## `packages/db` — Prisma lib
 
