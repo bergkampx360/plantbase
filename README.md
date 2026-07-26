@@ -56,6 +56,7 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 | [`docs/plugin-valasztasok.md`](docs/plugin-valasztasok.md)       | Marketplace plugin és MCP szerver választások indoklása                             |
 | [`docs/rag-pipeline.md`](docs/rag-pipeline.md)                   | RAG chunking-stratégia, golden-set kiértékelés, költségbecslés (F4/F7/F9)           |
 | [`docs/rag-architektura.md`](docs/rag-architektura.md)           | RAG karbantartási architektúra-terv (hash-alapú sync, F8)                           |
+| [`docs/hf3-megfeleles.md`](docs/hf3-megfeleles.md)               | HF3 megfelelőségi összefoglaló — kereszthivatkozások + eltérések indoklással        |
 | [`docs/ddd/glossary.md`](docs/ddd/glossary.md)                   | Ubiquitous language (termék-katalógus + RAG domain fogalmak)                        |
 | [`docs/ddd/model.md`](docs/ddd/model.md)                         | Entitások, value objectek, aggregátumok                                             |
 | [`docs/tech/infra.md`](docs/tech/infra.md)                       | Postgres/pgvector infra, a két DB-kapcsolat (RO/RW)                                 |
