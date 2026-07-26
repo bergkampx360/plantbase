@@ -166,24 +166,46 @@ keresztül változatlanul működik (manuális ellenőrzés, valós API-híváss
 **Commit:** `feat: migrate askAgent to AI SDK streamText with typed tools`
 → megállok, kérem a tesztelést.
 
-### G2 — `apps/server` scaffold (Express + `/api/chat`) ⏳ NYITOTT
+### G2 — `apps/server` scaffold (Express + `/api/chat`) ✅ KÉSZ
 
-- `apps/server` kézi scaffold (`scaffold-nx-package` skill fallback-mintája, `@nx/node:application`
-  struktúrát követve), Express hozzáadva függőségként.
-- `POST /api/chat` — `{ question, threadId? }` body, a G1-ben módosított `packages/core`
-  tool/system-prompt-definíciókat újrahasznosítva (nem duplikálva) egy **saját, önálló**
-  streamelő `streamText`-hívás (ld. 1. döntés pontosítása — nem az `askAgent()`-en keresztül),
-  AI SDK data-stream-válaszként (`text-delta` + `data-tool`/`data-agent` custom part-ok, a G-rész
-  eredeti döntése szerint). A pontos AI SDK v5 streaming-response API (a válasz-objektum létrehozó
-  metódusa, a custom data-part-ok írásának módja) Context7-vel ellenőrizve G2 tényleges
-  végrehajtásakor (`docs/architektura.md` 7. döntése) — ez ebben a repóban még sehol nem használt API.
+**Context7-ellenőrzés megtörtént kódolás előtt** (`/vercel/ai/ai_5_0_0`). Eredmény, a lenti
+bullet-ök ehhez képest pontosítva:
+
+- Express/Node.js szerverhez a helyes AI SDK v5 API `result.pipeUIMessageStreamToResponse(res)`
+  (nem a 4.0-s, elavult `pipeDataStreamToResponse`).
+- **Egyszerűsítés a G-terv eredeti "data-tool/data-agent" megfogalmazásához képest**: a natív
+  UI-message stream (`pipeUIMessageStreamToResponse`) már alapból tartalmazza a
+  `tool-input-start`/`tool-input-available`/`tool-output-available` part-okat — G2-ben **nem**
+  kellett kézzel írt `data-tool`/`data-agent` custom part-okat bevezetni, mert nincs még kliens
+  (`apps/web`, G4), ami ezt fogyasztaná. Ha G5 (tool-kártya UI) konkrét megjelenítési igénye ezt
+  ténylegesen megköveteli a natív tool-part formátumon felül, azt G5-nél döntjük el, akkor
+  Context7-vel ellenőrizve.
+
+Megvalósítás:
+
+- `apps/server` kézi scaffold (`scaffold-nx-package` skill fallback-mintája, 1:1 az
+  `apps/cli/project.json`/`tsconfig.*`/`eslint.config.mjs` mintája alapján), Express hozzáadva
+  függőségként (`express@5.2.1`, `cors@2.8.6`).
+- `POST /api/chat` (`apps/server/src/main.ts`) — `{ question: string }` body (400 hiányzó/üres
+  `question`-re; a `threadId` mező G3-ban kerül be ténylegesen használva), a G1-ben
+  `packages/core/src/index.ts`-ből exportált tool/system-prompt/modell-építőelemeket
+  újrahasznosítva (nem duplikálva) egy **saját, önálló** `streamText`-hívás (ld. 1. döntés
+  pontosítása — nem az `askAgent()`-en keresztül).
 - Env-betöltés a szerver belépési pontján (dotenv), a CLI mintájára (`apps/cli/src/main.ts`
   ugyanezt csinálja, mert a globálisan telepített bináris nem örökli a direnv-et).
-- CORS-beállítás a helyi fejlesztői Vite dev-szerverhez (G4 előkészítése).
-- `docs/tech/api.md` bővítése a `/api/chat` HTTP-felülettel, a meglévő CLI/tool-felület mellé.
+- CORS-beállítás (`CORS_ORIGIN` env, alapértelmezett `http://localhost:5173`) a helyi fejlesztői
+  Vite dev-szerverhez (G4 előkészítése). Port `PORT` env, alapértelmezett `3001`. Mindkettő
+  bekerült `.env.example`-be, opcionálisként dokumentálva (van kódbeli fallback).
+- `docs/tech/api.md` bővítve a `/api/chat` HTTP-felülettel, `docs/architektura.md` és
+  `docs/tech/architecture.md` bővítve az `apps/server` fájlstruktúra-bejegyzéssel/szakasszal.
+- Nincs közvetlen DB-hívás `apps/server`-ben (sem `getPool()`, sem `getWritePool()`) — az
+  adat-elérés kizárólag a `packages/core`-ból importált tool-okon keresztül megy.
 
-**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld; kézi `curl`/Postman-teszt a
-`/api/chat` végpontra, streamelt válasz látható.
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld (a `server` projekt
+`nx sync`-kel felvéve a root `tsconfig.json` project-referenciái közé); kézi, valós API-hívásos
+`curl`-teszt: hiányzó `question` → `400`; katalógus-kérdés (`listCategories` tool-call/output SSE
+part-okkal streamelve); gondozási kérdés (`searchKnowledge`, RAG, forráshivatkozásos találatokkal
+streamelve).
 **Commit:** `feat: scaffold apps/server with streaming /api/chat endpoint`
 → megállok, kérem a tesztelést.
 

@@ -62,3 +62,20 @@ explicit elválasztja a kettőt (gondozási/egészségügyi kérdés → `search
 
 A tool-ok pontos, agentnek adott leírása és használati szabálya: `docs/system-prompt.md` (szó
 szerint szinkronban a `packages/core/src/system-prompt.ts` `SYSTEM_PROMPT` konstansával).
+
+## HTTP: `POST /api/chat` (`apps/server`, G2)
+
+Body: `{ "question": string }` (hiányzó/üres `question`-re `400`). **Nem** az `askAgent()`-en
+keresztül megy — `apps/server/src/main.ts` egy saját, önálló `streamText`-hívást épít a
+`packages/core`-ból exportált tool-okból (`RUN_SQL_TOOL`/`LIST_CATEGORIES_TOOL`/
+`SEARCH_KNOWLEDGE_TOOL`), `SYSTEM_PROMPT`-ból és `resolveModel()`-ből — a CLI és a szerver két külön
+Node-folyamat, csak az építőelemeket osztják meg, nem egy hívást.
+
+Válasz: streamelt AI SDK UI-message stream (`result.pipeUIMessageStreamToResponse(res)`,
+Server-Sent Events). A natív `tool-input-start`/`tool-input-available`/`tool-output-available`
+part-ok automatikusan tartalmazzák a tool-hívásokat és -eredményeket — **nincs** egyelőre kézzel
+írt `data-tool`/`data-agent` custom part (a G-terv eredeti ötlete), mert G2-ben még nincs kliens,
+ami ezt fogyasztaná; ha G5 (tool-kártya UI) konkrét igénye ezt indokolja, ott dől el.
+
+CORS: `CORS_ORIGIN` env-változó (alapértelmezett `http://localhost:5173`, a jövőbeli `apps/web`
+Vite dev-szerveréhez, G4). Port: `PORT` env-változó (alapértelmezett `3001`).
