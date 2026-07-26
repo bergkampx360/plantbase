@@ -24,6 +24,11 @@ A 6. órai házifeladat (HF3) egy működő RAG-pipeline-t kér: saját tudásb�
 
 Minden fázis: saját branch → implementáció+teszt → doc-lezáró commit → `ddd-audit` → megállok tesztelésre → push/PR/merge csak explicit jóváhagyás után.
 
+Az alábbi fázisleírások **"Commit:" sora csak az implementációs commitot** jelöli — a docs-frissítés
+(pl. `docs/stack.md`, a fázis ✅ KÉSZ jelölése ebben a fájlban, `docs/tech/*`, `docs/ddd/*`) mindig
+**plusz, külön** `docs:` commitba kerül, a `dev-workflow.md` és a `ddd-audit` skill szabálya szerint
+(ld. F1, ahol ez elsőre egy commitba lett gyúrva, majd külön commitra bontva javítva).
+
 A fázisbontás finomabb szemcséjű, mint az A–E részeknél megszokott átlag — egy fázis egy dolog, hogy a `docs/testing-strategy.md` réteg-elvárásai (pl. séma-változásnál `db-role-setup`, új toolnál unit teszt ugyanabban a fázisban) mindig egyértelműen egy-egy fázishoz köthetők legyenek.
 
 ### F1 — Környezet-előkészítés (docker + függőségek) ✅ KÉSZ
