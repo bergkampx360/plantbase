@@ -3,8 +3,8 @@ import { generateHypotheticalAnswer } from './hyde';
 import { searchChunks } from './knowledge-store';
 import { rerankChunks, type RankedChunk } from './rerank';
 
-const CANDIDATE_LIMIT = 10;
-const TOP_N = 4;
+export const CANDIDATE_LIMIT = 10;
+export const TOP_N = 4;
 export const WEAK_RESULT_SCORE_THRESHOLD = 4;
 
 export interface RetrievalResult {
