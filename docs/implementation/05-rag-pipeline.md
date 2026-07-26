@@ -20,7 +20,7 @@ A 6. órai házifeladat (HF3) egy működő RAG-pipeline-t kér: saját tudásb�
 
 ---
 
-## F rész — Fázisok (F1–F9)
+## F rész — Fázisok (F1–F10)
 
 Minden fázis: saját branch → implementáció+teszt → doc-lezáró commit → `ddd-audit` → megállok tesztelésre → push/PR/merge csak explicit jóváhagyás után.
 
@@ -143,11 +143,29 @@ A fázisbontás finomabb szemcséjű, mint az A–E részeknél megszokott átla
 **Commit:** `docs: add RAG cost estimation and update README`
 → **megállok, kérem a tesztelést.**
 
+### F10 — System prompt regressziós védőháló ⏳ NYITOTT
+
+A HF3-megfelelőségi audit (`docs/hf3-megfeleles.md`, F9 után külön elvégezve) során felmerült két
+hiányzó automatizált ellenőrzés a `SYSTEM_PROMPT`-ra:
+
+- `packages/core/src/system-prompt.spec.ts` — tartalom-asszerciók a kulcs grounding-szabályokra
+  (searchKnowledge-előny gondozási kérdésnél, forráshivatkozás, `weak: true` kezelése, "nincs
+  erről infóm"), a `runSql` read-only szabályra, és mindhárom tool felsorolására — ha valaki a
+  jövőben véletlenül kitörli/átfogalmazza ezeket, ez a teszt elkapja, nem csak egy manuális CLI-teszt.
+- Ugyanitt egy szinkron-ellenőrző teszt: a `docs/system-prompt.md` (`<role>`...`</tools>` közötti
+  rész) és a `packages/core/src/system-prompt.ts` `SYSTEM_PROMPT` konstansa tartalmilag egyezik-e —
+  eddig ez kizárólag kézi fegyelem volt (a fájl saját kommentje szerint "szinkronban tartandó"),
+  ez a teszt automatikusan elkapja a szétcsúszást.
+
+**Teszt:** `pnpm exec nx run core:test` zöld, a fenti asszerciókkal együtt.
+**Commit:** `test: add system prompt content and docs-sync regression tests`
+→ **megállok, kérem a tesztelést.**
+
 ---
 
-## G rész — Webes chat felület (F1–F9 UTÁN, külön ütemezve)
+## G rész — Webes chat felület (F1–F10 UTÁN, külön ütemezve)
 
-**Prioritás:** a HF3 leadási része (F1–F9) **előbb** készül el, CLI-n keresztül demonstrálva. A G rész ezután, külön fázissorozat — nem kockáztatjuk a határidős leadást.
+**Prioritás:** a HF3 leadási része (F1–F10) **előbb** készül el, CLI-n keresztül demonstrálva. A G rész ezután, külön fázissorozat — nem kockáztatjuk a határidős leadást.
 
 **Cél:** webes chat UI, stream-elt válasz, kattintható válasz → agent/tool-hívás-nyomkövetés, DB-alapú kontextus, "új chat" gomb, korábbi beszélgetések listája.
 
