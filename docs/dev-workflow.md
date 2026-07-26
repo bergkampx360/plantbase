@@ -93,6 +93,18 @@ fázis leírásában szereplő **"Commit:" sor csak az implementációs commitot
 (ha a fázis érint dokumentált területet) mindig **plusz, külön** `docs:` commit, még akkor is, ha a
 fázis-leírás csak egyetlen Commit sort listáz.
 
+## Manuális DB-ellenőrzés és migrációs drift
+
+Ha egy fázis tesztje ad hoc SQL-t futtat közvetlenül a helyi dev DB-n a Prisma migráción kívül
+(pl. `CREATE EXTENSION IF NOT EXISTS vector;` annak ellenőrzésére, hogy egy image támogatja-e a
+kiterjesztést — ld. F1, `docs/implementation/05-rag-pipeline.md`), az **nem hagyhat maradandó
+sémaváltozást**, különben eltér a migrációs történettől, és a következő `prisma migrate dev`
+drift-et észlel és reset-et kényszerít. Két elfogadott megoldás:
+
+- az ellenőrzés tranzakcióban, rollbackkel fut (`BEGIN; ...; ROLLBACK;`), vagy
+- ugyanabban a fázisban azonnal jön a tényleges Prisma migráció is, ami formalizálja a
+  változást — nem marad tartósan "csak manuálisan alkalmazott" állapotban.
+
 ## Egy aktív feladat szabálya
 
 Egyszerre csak egy feladaton dolgozunk lokálisan. Új feature branch nyitása / új feladat

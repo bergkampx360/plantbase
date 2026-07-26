@@ -1,10 +1,12 @@
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [vector]
 }
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 // docs/stack.md — kategorikus mezők értékkészletei:
@@ -36,4 +38,19 @@ model Product {
   description       String
 
   @@map("products")
+}
+
+// RAG tudásbázis (docs/rag-pipeline.md, F4-től) — a gondozási cikkek chunkjai + embeddingjei.
+// Az agent (searchKnowledge tool, F6) csak a RO kapcsolaton olvassa; az ingest (F5) a RW
+// kapcsolaton írja, ugyanaz az NFR1 elv, mint a products/runSql-nél.
+model KnowledgeChunk {
+  id         Int                     @id @default(autoincrement())
+  source     String
+  title      String
+  category   String
+  chunkIndex Int                     @map("chunk_index")
+  content    String
+  embedding  Unsupported("vector(1536)")?
+
+  @@map("knowledge_chunks")
 }
