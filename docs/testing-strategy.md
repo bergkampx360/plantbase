@@ -56,9 +56,14 @@ A meglévő minta (`run-sql.spec.ts`, `list-categories.spec.ts`) a rögzített k
 - `vi.mock('@anthropic-ai/sdk')` minden LLM-függő unit teszthez (szükséges lesz E3-hoz és minden
   jövőbeli `askAgent`-tesztez).
 - `vi.mock('ai')` + `vi.mock('@ai-sdk/openai')` az AI SDK-alapú RAG-hívásokhoz (F5-től:
-  `embedMany`/`embedTexts`, ld. `packages/core/src/rag/embed.spec.ts`) — a mock-factory-n belüli
-  top-level `vi.fn()` változókat `vi.hoisted()`-del kell deklarálni, különben a vitest-hoisting
-  miatt "Cannot access before initialization" hibát dob.
+  `embedMany`/`embedTexts`, ld. `packages/core/src/rag/embed.spec.ts`; F6-tól: `generateObject`/
+  `rerankChunks`, ld. `packages/core/src/rag/rerank.spec.ts`) — a mock-factory-n belüli top-level
+  `vi.fn()` változókat `vi.hoisted()`-del kell deklarálni, különben a vitest-hoisting miatt
+  "Cannot access before initialization" hibát dob.
+- `vi.mock('ai')` + `vi.mock('@ai-sdk/anthropic')` a HyDE-generáláshoz (F6-tól: `generateText`/
+  `generateHypotheticalAnswer`, ld. `packages/core/src/rag/hyde.spec.ts`) — ez egy **harmadik,**
+  a fentiektől különböző AI-SDK-mock-kombináció (a meglévő `@anthropic-ai/sdk` mock az `askAgent`
+  natív Anthropic-hívásához tartozik, ez pedig a HyDE-hez használt `ai`-SDK-s Anthropic-providerhez).
 - Determinisztikus, izolált tesztek — nincs külső/globális állapot- vagy időzítés-függés
   (`konvenciok.md` elve, itt plantbase-specifikus példával).
 
