@@ -143,7 +143,7 @@ A fázisbontás finomabb szemcséjű, mint az A–E részeknél megszokott átla
 **Commit:** `docs: add RAG cost estimation and update README`
 → **megállok, kérem a tesztelést.**
 
-### F10 — System prompt regressziós védőháló ⏳ NYITOTT
+### F10 — System prompt regressziós védőháló ✅ KÉSZ
 
 A HF3-megfelelőségi audit (`docs/hf3-megfeleles.md`, F9 után külön elvégezve) során felmerült két
 hiányzó automatizált ellenőrzés a `SYSTEM_PROMPT`-ra:
