@@ -233,8 +233,9 @@ külön ellenőrzéssel visszatér).
    (az AI SDK már típusos, validált inputot ad).
 4. **Az "ismeretlen tool" hibaág strukturálisan megszűnik** — AI SDK típusos `tools` rekordja miatt
    a modell fizikailag nem hívhat nem létező tool-t; a jelenlegi teszt (F11-ben pótolt) helyébe egy
-   új teszt lép: egy tool `execute`-ja dob egy hibát, és ez AI SDK-szinten hiba-tool-result lesz,
-   nem crash — ugyanaz a viselkedés, más mechanizmus.
+   új teszt lép: egy tool `execute`-ja dob egy hibát, és a feltevés szerint ez AI SDK-szinten
+   hiba-tool-result lesz, nem crash — **ez, a dokumentum többi hasonló pontjához hasonlóan, Context7-vel
+   és G1 saját tesztjével ellenőrizendő/igazolandó tényleges végrehajtáskor**, nem előre garantált API-viselkedés.
 5. **`apps/server` Express-generátor nélkül, kézzel scaffoldolva** — `@nx/express` nincs telepítve;
    a `scaffold-nx-package` skill saját fallback-szabálya szerint ("ha nincs generátor, kézzel
    scaffoldolunk, nem viszünk be nehézsúlyú generátor-plugint csak erre") `@nx/node:application`
@@ -273,6 +274,17 @@ execute })` export minden toolhoz; a belső `.parse()` hívások elhagyása (AI 
 messages, tools: { runSql, listCategories, searchKnowledge }, stopWhen: stepCountIs(5) })` hívás;
   `AskResult.messages` típusa AI SDK `ModelMessage[]`-re vált; `tokenUsage` az AI SDK aggregált
   `usage`-ából; `generatedSql` side-channel `result.steps`-ből (a `runSql` tool-hívás argumentuma).
+- `packages/core/src/log-interaction.ts`: az `InteractionLog.messages` mező típusa jelenleg
+  `Anthropic.MessageParam[]` — ezt is `ModelMessage[]`-re kell váltani, különben az `ask-agent.ts`-beli
+  `logInteraction({ messages: result.messages, ... })` hívás típushibás lenne. `log-interaction.spec.ts`
+  (F11) teszt-fixture-ei ennek megfelelően frissülnek.
+- `packages/core/src/index.ts`: a G2-nek (másik app) szüksége lesz a tool-definíciókra,
+  `SYSTEM_PROMPT`-ra és a modell-választás logikájára — ezeket itt, a csomag egyetlen publikus
+  belépési pontján (`konvenciok.md` szabálya) exportáljuk, nem mély/belső importtal.
+- `@anthropic-ai/sdk` függőség sorsának eldöntése: G1 után `ask-agent.ts` már nem a nyers
+  Anthropic-klienst hívja — ellenőrizni kell, marad-e bármi valós felhasználása
+  `packages/core`-ban/`apps/cli`-ben (pl. típus-újraexport), és ha nem, a függőség eltávolítása
+  (ne maradjon használaton kívüli csomag).
 - `apps/cli/src/output.ts`, `format-messages.ts`: az új `ModelMessage[]` alakra igazítva (a
   `--show-prompt` kimenet funkcionálisan ugyanazt mutatja, csak az alatta lévő típus más).
 - `docs/architektura.md`: 3. döntés átírása (kézzel írt loop → AI SDK `streamText`+`tools`, a régi
