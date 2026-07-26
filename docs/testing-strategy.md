@@ -50,9 +50,15 @@ követő kód-PR zár le (ld. "Kimarad" lent) — nem hallgatólagos hiány.
 
 A meglévő minta (`run-sql.spec.ts`, `list-categories.spec.ts`) a rögzített konvenció:
 
-- `vi.mock('./db-pool')` minden DB-függő unit teszthez.
+- `vi.mock('./db-pool')` minden DB-függő unit teszthez (mindkét exportált függvényt,
+  `getPool`-t ÉS `getWritePool`-t is mockolni kell, ha a tesztelt modul bármelyiket használja —
+  ld. `packages/core/src/rag/knowledge-store.spec.ts`, F5).
 - `vi.mock('@anthropic-ai/sdk')` minden LLM-függő unit teszthez (szükséges lesz E3-hoz és minden
   jövőbeli `askAgent`-tesztez).
+- `vi.mock('ai')` + `vi.mock('@ai-sdk/openai')` az AI SDK-alapú RAG-hívásokhoz (F5-től:
+  `embedMany`/`embedTexts`, ld. `packages/core/src/rag/embed.spec.ts`) — a mock-factory-n belüli
+  top-level `vi.fn()` változókat `vi.hoisted()`-del kell deklarálni, különben a vitest-hoisting
+  miatt "Cannot access before initialization" hibát dob.
 - Determinisztikus, izolált tesztek — nincs külső/globális állapot- vagy időzítés-függés
   (`konvenciok.md` elve, itt plantbase-specifikus példával).
 

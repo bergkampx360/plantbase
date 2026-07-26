@@ -74,7 +74,7 @@ A fázisbontás finomabb szemcséjű, mint az A–E részeknél megszokott átla
 **Commit:** `feat: implement chunking strategy with context prefix and token-based sizing`
 → **megállok, kérem a tesztelést.**
 
-### F5 — Embedding + vektor-tárolás + ingest ⏳ NYITOTT
+### F5 — Embedding + vektor-tárolás + ingest ✅ KÉSZ
 
 - `packages/core/src/rag/embed.ts` — OpenAI `text-embedding-3-small`, `embedMany` AI SDK-val.
 - `packages/core/src/rag/knowledge-store.ts` — **két pool**: `searchChunks` a meglévő RO `getPool()`-on (`db-pool.ts`, amit `run-sql.ts` is használ); `insertChunks`/`clearKnowledge` egy ÚJ RW poolon (`getWritePool()`, `DATABASE_URL`) — ez utóbbi sosem az agent útján fut.
