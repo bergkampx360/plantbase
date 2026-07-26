@@ -56,7 +56,7 @@ A fázisbontás finomabb szemcséjű, mint az A–E részeknél megszokott átla
 **Commit:** `feat: add knowledge_chunks schema with pgvector, extend RO role grants`
 → **megállok, kérem a tesztelést.**
 
-### F3 — A 202 cikk vendorolása ⏳ NYITOTT
+### F3 — A 202 cikk vendorolása ✅ KÉSZ
 
 - Átvétel a kurzus-repóból (`sajtosistvan/ai-agent-kurzus`, `seed/knowledge/*.md`) a `packages/db/prisma/seed/knowledge/` alá — tisztán adat, saját logika nélkül.
 
