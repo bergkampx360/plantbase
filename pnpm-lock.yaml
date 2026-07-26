@@ -95,6 +95,9 @@ importers:
       '@plantbase/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@plantbase/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       ai:
         specifier: ^5.0.0
         version: 5.0.220(zod@4.4.3)

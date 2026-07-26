@@ -5,6 +5,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.0",
     "@plantbase/core": "workspace:*",
+    "@plantbase/db": "workspace:*",
     "ai": "^5.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
