@@ -27,8 +27,8 @@ tagoltságából; legalább pár unit teszt.
 mondat-szintű átfedés, bolti-zaj-szűrés — mindegyik a **ténylegesen mért** korpusz-struktúrából
 indokolva (202/202 cikknek van H2-je, minden cikk végén ugyanaz a zaj-heading stb.), nem
 elvi/általános érveléssel. Hivatkozás: `docs/rag-pipeline.md` "Döntések és indoklásuk" +
-"A forrás-adat tényleges szerkezete" szakasz. Tesztek: `packages/core/src/rag/chunk.spec.ts` (15
-teszt, mind az 5 döntésre).
+"A forrás-adat tényleges szerkezete" szakasz. Tesztek: `packages/core/src/rag/chunk.spec.ts` (18
+teszt, mind az 5 döntésre + F11-ben pótolt edge case-ek).
 
 **Eltérés**: nincs.
 
@@ -131,11 +131,19 @@ szakasz.
 - **"A routing-döntéseid indokoltak"** — igen, konkrét szerep-táblázattal: `docs/rag-pipeline.md`
   "Multi-provider routing" szakasz.
 
-## Utólag pótolt tesztelési javítás (F10)
+## Utólag pótolt tesztelési javítások (F10, F11)
 
-Az önellenőrzés során derült ki, hogy a `SYSTEM_PROMPT` (a grounding-szabályok forrása) sem
-tartalom-asszerciós teszttel, sem a `docs/system-prompt.md`-vel való szinkron-ellenőrzéssel nem
-volt védve — csak manuális CLI-teszttel. Pótolva: `packages/core/src/system-prompt.spec.ts`
+**F10**: Az önellenőrzés során derült ki, hogy a `SYSTEM_PROMPT` (a grounding-szabályok forrása)
+sem tartalom-asszerciós teszttel, sem a `docs/system-prompt.md`-vel való szinkron-ellenőrzéssel
+nem volt védve — csak manuális CLI-teszttel. Pótolva: `packages/core/src/system-prompt.spec.ts`
 (`docs/implementation/05-rag-pipeline.md`, F10). A szinkron-teszt írás közben egy valós,
 formázási eredetű (prettier) driftet is elkapott a `docs/system-prompt.md` és a `SYSTEM_PROMPT`
 között — ez önmagában igazolta a teszt hasznosságát.
+
+**F11**: `npx vitest run --coverage` (`packages/core`) futtatásával konkrét, mérhető rések
+derültek ki a "ránézésre jónak tűnő" tesztlefedettség mögött (94%/86%/91% → 98%/92%/94%
+stmt/branch/func, 57→66 teszt) — legjelentősebb: a `logInteraction` (a `--show-prompt`/audit-
+naplózás mögötti logika) **0%-on** állt, mert minden hívó helyen mockolva volt. Pótolva:
+`packages/core/src/log-interaction.spec.ts` (ÚJ), plusz kisebb rések (`ask-agent.ts` ismeretlen-
+tool ág, `ANTHROPIC_MODEL` env-fallback ágak, `chunk.ts` frontmatter/üres-input edge case-ek) —
+`docs/implementation/05-rag-pipeline.md`, F11.
