@@ -39,7 +39,7 @@ egy külön RW poolon fut, és sosem az agent útján hívódik.
 (`docs/testing-strategy.md`). A `.env` betöltése itt történik, indulás előtt — ezért az
 `ask-agent.ts` az `Anthropic` klienst nem modul-szinten, hanem `askAgent()` hívásonként hozza létre.
 
-Később (nem most): `apps/api`, `apps/web` (G rész, `docs/implementation/05-rag-pipeline.md`).
+Később (nem most): `apps/api`, `apps/web` (G rész, `docs/implementation/06-web-chat.md`).
 
 ## `packages/db` — Prisma lib
 
