@@ -9,7 +9,9 @@ Elv: iparági best practice, legfrissebb STABIL verzió (se cutting-edge, se ela
 - Agent: Anthropic SDK (hivatalos kliens, nem nyers HTTP) + saját tool-use loop, agent-framework nélkül. Zod (validáció)
 - RAG (`packages/core/src/rag`, scope-olt kivétel — ld. `docs/architektura.md`): Vercel `ai` SDK +
   `@ai-sdk/openai` (embedding, rerank) + `@ai-sdk/anthropic` (HyDE) — csak az egylövéses
-  RAG-hívásokra, az `askAgent` tool-use loopját nem érinti.
+  RAG-hívásokra, az `askAgent` tool-use loopját nem érinti. `js-tiktoken` (`cl100k_base` encoding) a
+  chunkolás token-alapú méretezéséhez (F4) — pontos, kiszámítható tokenszám a karakter-becslés
+  helyett.
 - CLI: commander + node:readline
 - Tooling: Vitest, ESLint + Prettier, tsx
 - Eszköz: Zed, gh CLI
