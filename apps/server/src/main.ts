@@ -14,16 +14,31 @@ import {
   resolveModel,
 } from '@plantbase/core';
 import { prisma } from '@plantbase/db';
-import { stepCountIs, streamText } from 'ai';
+import {
+  convertToModelMessages,
+  stepCountIs,
+  streamText,
+  type UIMessage,
+} from 'ai';
 import cors from 'cors';
 import express, { type Request, type Response } from 'express';
 
 const app = express();
 
 app.use(
-  cors({ origin: process.env['CORS_ORIGIN'] ?? 'http://localhost:5173' }),
+  cors({ origin: process.env['CORS_ORIGIN'] ?? 'http://localhost:4200' }),
 );
 app.use(express.json());
+
+function extractText(message: UIMessage): string {
+  return message.parts
+    .filter(
+      (part): part is Extract<UIMessage['parts'][number], { type: 'text' }> =>
+        part.type === 'text',
+    )
+    .map((part) => part.text)
+    .join('');
+}
 
 app.get('/api/threads', async (_req: Request, res: Response) => {
   const threads = await prisma.thread.findMany({
@@ -33,9 +48,9 @@ app.get('/api/threads', async (_req: Request, res: Response) => {
 });
 
 app.get('/api/threads/:id', async (req: Request, res: Response) => {
-  const id = Number(req.params['id']);
+  const id = req.params['id'];
 
-  if (!Number.isInteger(id)) {
+  if (typeof id !== 'string') {
     res.status(400).json({ error: 'Érvénytelen thread id.' });
     return;
   }
@@ -54,44 +69,50 @@ app.get('/api/threads/:id', async (req: Request, res: Response) => {
 });
 
 app.post('/api/chat', async (req: Request, res: Response) => {
-  const { question, threadId } = req.body as {
-    question?: unknown;
-    threadId?: unknown;
-  };
+  const { id, message } = req.body as { id?: unknown; message?: UIMessage };
 
-  if (typeof question !== 'string' || question.trim() === '') {
-    res.status(400).json({ error: 'A "question" mező kötelező.' });
+  if (typeof id !== 'string' || id.trim() === '' || message == null) {
+    res.status(400).json({ error: 'Az "id" és a "message" mező kötelező.' });
     return;
   }
 
-  // meglévő thread folytatása, vagy új nyitása, ha nincs érvényes threadId — a
-  // beszélgetés-történet innentől a Prisma Clienten (RW) megy, nem a runSql/searchKnowledge
-  // RO poolján (ez alkalmazás-adat, nem agent-facing tudásbázis-olvasás, ld. schema.prisma
-  // Thread-modell fölötti komment)
-  const existingThread =
-    typeof threadId === 'number'
-      ? await prisma.thread.findUnique({ where: { id: threadId } })
-      : null;
-  const thread = existingThread ?? (await prisma.thread.create({ data: {} }));
+  const questionText = extractText(message);
+
+  if (questionText.trim() === '') {
+    res.status(400).json({ error: 'Üres üzenet nem küldhető.' });
+    return;
+  }
+
+  // meglévő thread folytatása, vagy új nyitása a kliens által generált id-val
+  // (useChat + generateId() az 'ai'-ból) — a szerver sosem talál ki saját
+  // azonosítót, csak arra perzisztál, amit kapott (AI SDK natív mintája)
+  const existingThread = await prisma.thread.findUnique({ where: { id } });
 
   // a korábbi körök betöltése, MIELŐTT az új user-üzenet perzisztálódna — enélkül a
-  // streamText-hívás nem látná az előző kör(öke)t, és a threadId-folytonosság csak
-  // a mentésben létezne, a modell válaszaiban nem
+  // streamText-hívás nem látná az előző kör(öke)t
   const priorMessages = existingThread
     ? await prisma.message.findMany({
-        where: { threadId: thread.id },
+        where: { threadId: id },
         orderBy: { createdAt: 'asc' },
       })
     : [];
 
+  if (!existingThread) {
+    await prisma.thread.create({ data: { id } });
+  }
+
   await prisma.message.create({
-    data: { threadId: thread.id, role: 'user', content: question },
+    data: { threadId: id, role: 'user', content: questionText },
   });
 
-  // a threadId-t egy response header-ben adjuk vissza — a streamelt válasznak nincs más
-  // egyszerű csatornája erre ebben a fázisban (nincs még data-tool/data-agent custom part,
-  // ld. G2 döntés)
-  res.setHeader('X-Thread-Id', String(thread.id));
+  const uiMessages: UIMessage[] = [
+    ...priorMessages.map((m): UIMessage => ({
+      id: String(m.id),
+      role: m.role as 'user' | 'assistant',
+      parts: [{ type: 'text', text: m.content }],
+    })),
+    message,
+  ];
 
   // önálló streamText-hívás, NEM az askAgent()-en keresztül (G1 döntés #1) — a CLI és
   // a szerver két külön Node-folyamat, csak a tool/prompt/modell-építőelemeket osztják
@@ -99,13 +120,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
   const result = streamText({
     model: anthropic(resolveModel()),
     system: SYSTEM_PROMPT,
-    messages: [
-      ...priorMessages.map((message) => ({
-        role: message.role as 'user' | 'assistant',
-        content: message.content,
-      })),
-      { role: 'user' as const, content: question },
-    ],
+    messages: convertToModelMessages(uiMessages),
     tools: {
       runSql: RUN_SQL_TOOL,
       listCategories: LIST_CATEGORIES_TOOL,
@@ -114,10 +129,10 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     stopWhen: stepCountIs(MAX_TOOL_ITERATIONS),
     onFinish: async ({ text }) => {
       await prisma.message.create({
-        data: { threadId: thread.id, role: 'assistant', content: text },
+        data: { threadId: id, role: 'assistant', content: text },
       });
       await prisma.thread.update({
-        where: { id: thread.id },
+        where: { id },
         data: { updatedAt: new Date() },
       });
     },

@@ -55,12 +55,15 @@ model KnowledgeChunk {
   @@map("knowledge_chunks")
 }
 
-// Webes chat előzmények (G rész, docs/implementation/06-web-chat.md, G3) — alkalmazás-adat, nem
-// agent-facing tudásbázis, ezért Prisma Clienten (RW) megy, nem a runSql/searchKnowledge RO
+// Webes chat előzmények (G rész, docs/implementation/06-web-chat.md, G3–G4) — alkalmazás-adat,
+// nem agent-facing tudásbázis, ezért Prisma Clienten (RW) megy, nem a runSql/searchKnowledge RO
 // poolján; nincs RO grant rá a db-role-setup skillben. A logs/ JSONL-naplózástól (CLI, audit-trail)
 // független, párhuzamos mechanizmus — CLI és Web history-ja nem egyesül.
+// Thread.id String, NEM autoincrement (G4-től) — az AI SDK useChat natív mintájában a chat id-t
+// a kliens generálja (generateId(), az 'ai' csomagból) egy új beszélgetés indításakor, mielőtt az
+// első üzenet elmenne; a szerver sosem talál ki saját azonosítót, csak arra perzisztál, amit kap.
 model Thread {
-  id        Int       @id @default(autoincrement())
+  id        String    @id
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   messages  Message[]
@@ -70,7 +73,7 @@ model Thread {
 
 model Message {
   id        Int      @id @default(autoincrement())
-  threadId  Int      @map("thread_id")
+  threadId  String   @map("thread_id")
   thread    Thread   @relation(fields: [threadId], references: [id])
   role      String
   content   String
