@@ -33,11 +33,19 @@ describe('retrieve', () => {
     mockedGenerateHyde.mockResolvedValue('hipotetikus válasz');
     mockedEmbedTexts.mockResolvedValue([[0.1, 0.2]]);
     mockedSearchChunks.mockResolvedValue([{ ...chunk(0), distance: 0.1 }]);
-    mockedRerankChunks.mockResolvedValue([chunk(9), chunk(7), chunk(5), chunk(3), chunk(1)]);
+    mockedRerankChunks.mockResolvedValue([
+      chunk(9),
+      chunk(7),
+      chunk(5),
+      chunk(3),
+      chunk(1),
+    ]);
 
     const result = await retrieve('mikor öntözzem a monsterát?');
 
-    expect(mockedGenerateHyde).toHaveBeenCalledWith('mikor öntözzem a monsterát?');
+    expect(mockedGenerateHyde).toHaveBeenCalledWith(
+      'mikor öntözzem a monsterát?',
+    );
     expect(mockedEmbedTexts).toHaveBeenCalledWith(['hipotetikus válasz']);
     expect(mockedSearchChunks).toHaveBeenCalledWith([0.1, 0.2], 10);
     expect(mockedRerankChunks).toHaveBeenCalledWith(
@@ -48,9 +56,10 @@ describe('retrieve', () => {
     expect(result.chunks).toHaveLength(4);
     expect(result.hitCount).toBe(4);
     expect(result.topScore).toBe(9);
+    expect(result.weak).toBe(false);
   });
 
-  it('reports zero hits and zero top score when nothing is found', async () => {
+  it('reports zero hits, zero top score, and weak=true when nothing is found', async () => {
     mockedGenerateHyde.mockResolvedValue('hipotetikus válasz');
     mockedEmbedTexts.mockResolvedValue([[0.1, 0.2]]);
     mockedSearchChunks.mockResolvedValue([]);
@@ -61,5 +70,30 @@ describe('retrieve', () => {
     expect(result.chunks).toEqual([]);
     expect(result.hitCount).toBe(0);
     expect(result.topScore).toBe(0);
+    expect(result.weak).toBe(true);
+  });
+
+  it('marks the result weak when the top score is below WEAK_RESULT_SCORE_THRESHOLD', async () => {
+    mockedGenerateHyde.mockResolvedValue('hipotetikus válasz');
+    mockedEmbedTexts.mockResolvedValue([[0.1, 0.2]]);
+    mockedSearchChunks.mockResolvedValue([chunk(3)]);
+    mockedRerankChunks.mockResolvedValue([chunk(3)]);
+
+    const result = await retrieve('ritka növény, nincs róla infó');
+
+    expect(result.topScore).toBe(3);
+    expect(result.weak).toBe(true);
+  });
+
+  it('does not mark the result weak when the top score meets WEAK_RESULT_SCORE_THRESHOLD', async () => {
+    mockedGenerateHyde.mockResolvedValue('hipotetikus válasz');
+    mockedEmbedTexts.mockResolvedValue([[0.1, 0.2]]);
+    mockedSearchChunks.mockResolvedValue([chunk(4)]);
+    mockedRerankChunks.mockResolvedValue([chunk(4)]);
+
+    const result = await retrieve('közepesen jó találat');
+
+    expect(result.topScore).toBe(4);
+    expect(result.weak).toBe(false);
   });
 });

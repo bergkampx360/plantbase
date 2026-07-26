@@ -11,11 +11,17 @@ export interface RetrievalResult {
   chunks: RankedChunk[];
   hitCount: number;
   topScore: number;
+  /**
+   * true, ha a topScore a WEAK_RESULT_SCORE_THRESHOLD alatt van (vagy nincs találat) — kódszintű
+   * jelzés az agent önreflektáló keresésének, nem a modell szubjektív ítéletére bízva (F6 utólagos
+   * javítás: a modell a szöveges "ha gyenge..." szabályt önmagában nem tartotta be konzisztensen).
+   */
+  weak: boolean;
 }
 
 /**
  * Teljes keresési pipeline: HyDE → embedding → pgvector-keresés (RO pool) → rerank.
- * A visszaadott hitCount/topScore teszi lehetővé az agent önreflektáló keresését
+ * A visszaadott hitCount/topScore/weak teszi lehetővé az agent önreflektáló keresését
  * (gyenge találatnál újrafogalmazott kérdéssel újrahívható) — docs/rag-pipeline.md.
  */
 export async function retrieve(question: string): Promise<RetrievalResult> {
@@ -24,10 +30,12 @@ export async function retrieve(question: string): Promise<RetrievalResult> {
   const candidates = await searchChunks(queryEmbedding, CANDIDATE_LIMIT);
   const ranked = await rerankChunks(question, candidates);
   const chunks = ranked.slice(0, TOP_N);
+  const topScore = chunks[0]?.score ?? 0;
 
   return {
     chunks,
     hitCount: chunks.length,
-    topScore: chunks[0]?.score ?? 0,
+    topScore,
+    weak: topScore < WEAK_RESULT_SCORE_THRESHOLD,
   };
 }

@@ -27,6 +27,7 @@ describe('searchKnowledge', () => {
       ],
       hitCount: 1,
       topScore: 9,
+      weak: false,
     };
     mockedRetrieve.mockResolvedValue(retrievalResult);
 
