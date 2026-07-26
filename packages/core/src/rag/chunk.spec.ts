@@ -53,6 +53,21 @@ describe('parseArticle', () => {
       '---\nsource: https://example.com\n---\n\n# Title\n\nBody.\n';
     expect(() => parseArticle(content, 'bad.md')).toThrow(/title\/category/i);
   });
+
+  it('throws when only category is missing (title present)', () => {
+    const content =
+      '---\ntitle: Snake Plant\nsource: https://example.com\n---\n\n# Title\n\nBody.\n';
+    expect(() => parseArticle(content, 'bad.md')).toThrow(/title\/category/i);
+  });
+
+  it('ignores frontmatter lines without a colon instead of failing', () => {
+    const content =
+      '---\ntitle: Snake Plant\ncategory: plants-101\nthis line has no colon\n---\n\n# Snake Plant\n\nBody.\n';
+    const article = parseArticle(content, 'ok.md');
+
+    expect(article.title).toBe('Snake Plant');
+    expect(article.category).toBe('plants-101');
+  });
 });
 
 describe('stripStoreNoise', () => {
@@ -115,6 +130,11 @@ describe('splitByH2', () => {
 });
 
 describe('packIntoTokenChunks', () => {
+  it('returns an empty array for empty/whitespace-only text', () => {
+    expect(packIntoTokenChunks('')).toEqual([]);
+    expect(packIntoTokenChunks('   \n  ')).toEqual([]);
+  });
+
   it('keeps short text as a single chunk', () => {
     const chunks = packIntoTokenChunks(
       'Water it every two weeks. Keep soil dry between waterings.',
