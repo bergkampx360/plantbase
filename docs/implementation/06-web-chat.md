@@ -28,7 +28,7 @@
    (`RUN_SQL_TOOL`/`LIST_CATEGORIES_TOOL`/`SEARCH_KNOWLEDGE_TOOL` AI SDK `tool()`-alakban), a
    `SYSTEM_PROMPT`, és a modell-választás logikája (`process.env['ANTHROPIC_MODEL'] ?? ...`) —
    ezeket G1 **exportálja `packages/core`-ból**, és mind az `askAgent()` (CLI-nek, megvárja a
-   `streamText`-et: `result.text`/`result.usage`/`result.response.messages`), mind a G2-beli
+   `streamText`-et: `result.text`/`result.totalUsage`/`result.response.messages`), mind a G2-beli
    `apps/server` (saját, önálló `streamText`-hívást épít ugyanezekből az exportokból, de streamelő
    fogyasztással) **külön-külön** hívja meg. Nincs duplikált agent-_logika_ (a tool/prompt/modell
    definíció egy helyen van), de **két külön hívás fut** — ez a G1 explicit tesztelési
@@ -46,10 +46,13 @@
    (`tool({ description, inputSchema, execute })`), a tool-függvények belső `.parse()`-a elhagyható
    (az AI SDK már típusos, validált inputot ad).
 4. **Az "ismeretlen tool" hibaág strukturálisan megszűnik** — AI SDK típusos `tools` rekordja miatt
-   a modell fizikailag nem hívhat nem létező tool-t; a jelenlegi teszt (F11-ben pótolt) helyébe egy
-   új teszt lép: egy tool `execute`-ja dob egy hibát, és a feltevés szerint ez AI SDK-szinten
-   hiba-tool-result lesz, nem crash — **ez, a dokumentum többi hasonló pontjához hasonlóan, Context7-vel
-   és G1 saját tesztjével ellenőrizendő/igazolandó tényleges végrehajtáskor**, nem előre garantált API-viselkedés.
+   a modell fizikailag nem hívhat nem létező tool-t, a TypeScript már fordítási időben kizárja.
+   **G1 Context7-ellenőrzése cáfolta az eredeti feltevést**: egy `execute`-ból dobott hiba az AI
+   SDK-ban **nem** válik automatikusan hiba-tool-result-tá, hanem egy `ToolExecutionError`-t dob,
+   ami megszakítja a teljes `streamText`-hívást. Emiatt minden tool saját `execute`-wrappere
+   explicit try/catch-csel fogja a mögöttes függvény (`runSql`/`listCategories`/`searchKnowledge`)
+   throw-ját, és szövegként adja vissza — ez tartja meg az önreflektáló retry viselkedést, nem az
+   AI SDK automatikus mechanizmusa.
 5. **`apps/server` Express-generátor nélkül, kézzel scaffoldolva** — `@nx/express` nincs telepítve;
    a `scaffold-nx-package` skill saját fallback-szabálya szerint ("ha nincs generátor, kézzel
    scaffoldolunk, nem viszünk be nehézsúlyú generátor-plugint csak erre") `@nx/node:application`
@@ -84,15 +87,33 @@
 
 Minden fázis: saját branch → implementáció+teszt → doc-lezáró commit → `ddd-audit` → megállok tesztelésre → push/PR/merge csak explicit jóváhagyás után — ugyanaz a ciklus, mint F1–F11-nél.
 
-### G1 — `askAgent` átállítása AI SDK `streamText`+`tools`-ra ⏳ NYITOTT
+### G1 — `askAgent` átállítása AI SDK `streamText`+`tools`-ra ✅ KÉSZ
 
-**Context7-ellenőrzés kötelező G1 elején, kódolás előtt** (`docs/architektura.md` 7. döntése —
-ismeretlen lib előtt Context7): a `streamText`, az AI SDK `tool()` helper és a `stopWhen`/
-`stepCountIs` többlépéses tool-use mechanizmus **ebben a repóban most kerül először production-kódba**
-— eddig az `ai` SDK csak egylövéses hívásokra volt használva (`generateText`/`embedMany`/
-`generateObject`, a RAG-rétegben). A lenti bullet-ök (a pontos hívás-alak, a `tools`-rekord
-formátuma, a hiba-kezelés tényleges viselkedése) a Context7-ellenőrzés **után**, annak fényében
-pontosítandók/igazítandók — jelen forma egy tervezett, nem véglegesített API-alak.
+**Context7-ellenőrzés megtörtént kódolás előtt** (`docs/architektura.md` 7. döntése — ismeretlen lib
+előtt Context7, `/vercel/ai/ai_5_0_0`). Eredmény, a lenti bullet-ök ehhez képest pontosítva:
+
+- `streamText` + `tool({ description, inputSchema, execute })` + `stopWhen: stepCountIs(N)` pontosan
+  úgy működik, ahogy a terv feltételezte.
+- **Valódi korrekció a 4. döntéshez képest**: ha egy `execute` hibát dob, az AI SDK ezt **nem**
+  alakítja automatikusan hiba-tool-result-tá — egy `ToolExecutionError`-t dob, ami **megszakítja a
+  teljes `streamText`-hívást**. Emiatt a `runSql`/`listCategories`/`searchKnowledge` (amik
+  változatlanul throw-olnak validációs/futtatási hibán, a meglévő spec-jeik nem változtak) egy
+  vékony try/catch `execute`-wrapperbe kerültek minden tool-fájlban, ami a hibaüzenetet **szövegként
+  visszaadja** (nem dobja tovább) — így az önreflektáló retry viselkedés megmarad.
+- **`tokenUsage`-hoz `result.totalUsage` kell, nem `result.usage`** — az utóbbi csak az utolsó lépés
+  használatát adná vissza multi-step futásnál (a terv ezt még nem különböztette meg).
+- **`result.response.messages`** valóban a teljes (kumulatív, minden lépést tartalmazó) history —
+  ez megegyezik a hivatalos "append response messages to history" mintával.
+- **A tesztelési minta egyszerűbb lett, mint a terv feltételezte**: nem kellett az `ai/test`
+  `MockLanguageModelV2`-t bevezetni — a meglévő `vi.mock('ai', () => ({ streamText: mockFn, ... }))`
+  minta (ld. `hyde.spec.ts`) közvetlenül kiterjedt `streamText`-re (`docs/testing-strategy.md`
+  frissítve).
+- `apps/cli/package.json`-nak is szüksége lett az `ai` függőségre (nem csak `packages/core`-nak),
+  mert a `format-messages.ts` a `ModelMessage` típust importálja.
+- `format-messages.ts` egy apró, futás közben derült ki-probléma: az AI SDK a tool-eredményt egy
+  `{ type: 'text'|'json', value }` alakra csomagolja a `response.messages`-ben — ezt ki kellett
+  csomagolni, különben a `--show-prompt` kimenet dupla JSON-becsomagolást mutatott volna a korábbi,
+  nyers string kimenethez képest.
 
 - `packages/core/src/run-sql.ts`, `list-categories.ts`, `search-knowledge.ts`: a párhuzamos
   zod+raw-`input_schema` pár helyett egyetlen AI SDK `tool({ description, inputSchema: ZodSchema,
@@ -102,8 +123,10 @@ execute })` export minden toolhoz; a belső `.parse()` hívások elhagyása (AI 
 messages, tools: { runSql, listCategories, searchKnowledge }, stopWhen:
 stepCountIs(MAX_TOOL_ITERATIONS) })` hívás (a meglévő `MAX_TOOL_ITERATIONS = 5` konstans
   megmarad, csak a kézzel írt `for` ciklus helyett a `stopWhen`-nek adjuk át — ld. 2. döntés);
-  `AskResult.messages` típusa AI SDK `ModelMessage[]`-re vált; `tokenUsage` az AI SDK aggregált
-  `usage`-ából; `generatedSql` side-channel `result.steps`-ből (a `runSql` tool-hívás argumentuma).
+  `AskResult.messages` típusa AI SDK `ModelMessage[]`-re vált; `tokenUsage` a `result.totalUsage`-ból
+  (ld. fent); `generatedSql` side-channel `result.steps`-ből (az utolsó `runSql` tool-hívás
+  argumentuma — ugyanaz a "legutóbbi próbálkozás számít" szemantika, mint a korábbi kézzel írt
+  loopban volt).
 - `packages/core/src/log-interaction.ts`: az `InteractionLog.messages` mező típusa jelenleg
   `Anthropic.MessageParam[]` — ezt is `ModelMessage[]`-re kell váltani, különben az `ask-agent.ts`-beli
   `logInteraction({ messages: result.messages, ... })` hívás típushibás lenne. `log-interaction.spec.ts`
@@ -111,10 +134,8 @@ stepCountIs(MAX_TOOL_ITERATIONS) })` hívás (a meglévő `MAX_TOOL_ITERATIONS =
 - `packages/core/src/index.ts`: a G2-nek (másik app) szüksége lesz a tool-definíciókra,
   `SYSTEM_PROMPT`-ra és a modell-választás logikájára — ezeket itt, a csomag egyetlen publikus
   belépési pontján (`konvenciok.md` szabálya) exportáljuk, nem mély/belső importtal.
-- `@anthropic-ai/sdk` függőség sorsának eldöntése: G1 után `ask-agent.ts` már nem a nyers
-  Anthropic-klienst hívja — ellenőrizni kell, marad-e bármi valós felhasználása
-  `packages/core`-ban/`apps/cli`-ben (pl. típus-újraexport), és ha nem, a függőség eltávolítása
-  (ne maradjon használaton kívüli csomag).
+- `@anthropic-ai/sdk` függőség eltávolítva mind `packages/core`, mind `apps/cli` `package.json`-jából
+  — a rewrite után egyik helyen sem maradt valós felhasználása (ellenőrizve `grep`-pel).
 - `apps/cli/src/output.ts`, `format-messages.ts`: az új `ModelMessage[]` alakra igazítva (a
   `--show-prompt` kimenet funkcionálisan ugyanazt mutatja, csak az alatta lévő típus más).
 - `docs/architektura.md`: 3. döntés átírása (kézzel írt loop → AI SDK `streamText`+`tools`, a régi
@@ -123,13 +144,22 @@ stepCountIs(MAX_TOOL_ITERATIONS) })` hívás (a meglévő `MAX_TOOL_ITERATIONS =
   frissül (mostantól a teljes agent-loop is ezt használja).
 - `docs/tech/architecture.md`, `docs/tech/api.md`: a tool-definíció-leírás frissítése (egy zod-séma,
   nem kettő); `apps/api` → `apps/server` javítás.
-- `docs/testing-strategy.md`: új, negyedik AI-SDK-mock-mintázat dokumentálása (`streamText`+`tools`
-  mockolása `ai/test` `MockLanguageModelV2`-vel — pontos API Context7-vel ellenőrizve G1
-  végrehajtásakor) — a meglévő három minta (natív Anthropic, `embedMany`, `generateText`/HyDE) mellé.
-- **Kötelező, ugyanebben a fázisban**: `ask-agent.spec.ts` teljes átírása az új mock-mintára,
-  minden meglévő eset megtartásával (SQL-guard hiba, sikeres runSql, multi-tool iteráció,
-  searchKnowledge siker/hiba, önreflektáló retry, `ANTHROPIC_MODEL` fallback) + az új
-  tool-execute-hiba eset az "ismeretlen tool" teszt helyett.
+- `docs/testing-strategy.md`: az `askAgent` mockolási mintája frissítve `vi.mock('ai')`-ra
+  (`streamText`/`tool`/`stepCountIs`) — a korábbi natív `@anthropic-ai/sdk` mock-sor törölve
+  (nincs többé natív Anthropic-hívás a kódban); ez a meglévő HyDE/rerank/embed `ai`-mock család
+  negyedik tagja, **nem** egy külön `ai/test`-alapú minta (ld. fent, Context7-eredmény).
+- **`ask-agent.spec.ts` teljes átírva** az új mock-mintára — **tudatos felelősség-áthelyezés,
+  eltérés az eredeti tervtől**: mivel a tool-végrehajtás és a hibakezelés most a (mockolt) AI
+  SDK-ban, ill. az egyes tool-fájlok `execute`-wrapperében történik, nem az `ask-agent.ts` saját
+  kódjában, az `ask-agent.spec.ts` már csak az orkesztrációt teszteli (a `streamText`-nek átadott
+  paraméterek, a `text`/`totalUsage`/`response`/`steps` helyes feldolgozása, history-összefűzés,
+  `generatedSql`-kinyerés több lépésből, naplózás, `ANTHROPIC_MODEL` fallback). A korábbi
+  SQL-guard-hiba/searchKnowledge-hiba/önreflektáló-retry eseteket immár a saját tool-jük spec-je
+  fedi (`run-sql.spec.ts`, `list-categories.spec.ts`, `search-knowledge.spec.ts` — mindegyikben egy
+  `*_TOOL.execute` teszt, ami igazolja, hogy egy dobott hiba szövegként, nem kivételként jön
+  vissza). Az "ismeretlen tool" teszt megszűnt (típusos `tools` rekord miatt fizikailag nem
+  hívható) — nincs helyettesítő teszt rá, mert nincs mit tesztelni: a TypeScript már fordítási
+  időben kizárja.
 
 **Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld; `plantbase ask "..."` CLI-n
 keresztül változatlanul működik (manuális ellenőrzés, valós API-hívással).

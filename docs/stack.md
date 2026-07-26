@@ -6,12 +6,14 @@ Elv: iparági best practice, legfrissebb STABIL verzió (se cutting-edge, se ela
 - DB: PostgreSQL lokálisan docker-compose-ban (OrbStack futtatja), image `pgvector/pgvector:0.8.5-pg17`
   (pgvector extension a RAG tudásbázis embeddingjeihez), Prisma (ORM: séma, migráció, seed, typed
   query). Helyben dolgozunk, nincs felhő-DB.
-- Agent: Anthropic SDK (hivatalos kliens, nem nyers HTTP) + saját tool-use loop, agent-framework nélkül. Zod (validáció)
-- RAG (`packages/core/src/rag`, scope-olt kivétel — ld. `docs/architektura.md`): Vercel `ai` SDK +
-  `@ai-sdk/openai` (embedding, rerank) + `@ai-sdk/anthropic` (HyDE) — csak az egylövéses
-  RAG-hívásokra, az `askAgent` tool-use loopját nem érinti. `js-tiktoken` (`cl100k_base` encoding) a
-  chunkolás token-alapú méretezéséhez (F4) — pontos, kiszámítható tokenszám a karakter-becslés
-  helyett.
+- Agent: Vercel `ai` SDK (`streamText` + `tool()` + `stopWhen: stepCountIs(...)`) — G1-től
+  (`docs/implementation/06-web-chat.md`) a teljes agent-loop is ezt használja, nem csak a RAG-réteg
+  egylövéses hívásai (a korábbi kézzel írt, Anthropic SDK-ra épülő loop erre lett átírva).
+  `@ai-sdk/anthropic` a modell-hívásokhoz. Zod (validáció, `inputSchema` a tool-oknál)
+- RAG (`packages/core/src/rag`, scope-olt kivétel — ld. `docs/architektura.md`): ugyanaz a Vercel
+  `ai` SDK + `@ai-sdk/openai` (embedding, rerank) + `@ai-sdk/anthropic` (HyDE) — az egylövéses
+  RAG-hívásokra. `js-tiktoken` (`cl100k_base` encoding) a chunkolás token-alapú méretezéséhez (F4) —
+  pontos, kiszámítható tokenszám a karakter-becslés helyett.
 - CLI: commander + node:readline
 - Tooling: Vitest, ESLint + Prettier, tsx
 - Eszköz: Zed, gh CLI

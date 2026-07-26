@@ -12,7 +12,7 @@ Nem ismeri a belépési pontokat (`apps/*`); csak `packages/db`-re hivatkozhat (
 
 ```
 packages/core/src/
-├── ask-agent.ts          az askAgent tool-use loop (Anthropic SDK, MAX_TOOL_ITERATIONS=5)
+├── ask-agent.ts          az askAgent (Vercel ai SDK streamText+tool()+stopWhen, G1, MAX_TOOL_ITERATIONS=5)
 ├── system-prompt.ts      az élő system prompt (SYSTEM_PROMPT konstans) — docs/system-prompt.md szinkronban tartva
 ├── db-pool.ts            getPool() (RO, DATABASE_URL_READONLY) / getWritePool() (RW, DATABASE_URL)
 ├── run-sql.ts            runSql tool (products katalógus, read-only SQL)
@@ -37,9 +37,10 @@ egy külön RW poolon fut, és sosem az agent útján hívódik.
 
 `ask` parancs + interaktív mód, mockolt `askAgent`-tel tesztelve a saját rétegén
 (`docs/testing-strategy.md`). A `.env` betöltése itt történik, indulás előtt — ezért az
-`ask-agent.ts` az `Anthropic` klienst nem modul-szinten, hanem `askAgent()` hívásonként hozza létre.
+`ask-agent.ts` a modell-providert (`anthropic(...)`) nem modul-szinten, hanem `askAgent()`
+hívásonként hozza létre.
 
-Később (nem most): `apps/api`, `apps/web` (G rész, `docs/implementation/06-web-chat.md`).
+Később (nem most): `apps/server`, `apps/web` (G rész, `docs/implementation/06-web-chat.md`).
 
 ## `packages/db` — Prisma lib
 

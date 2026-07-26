@@ -13,9 +13,14 @@
 
 ## Agent tool-ok (`askAgent`, `packages/core/src/ask-agent.ts`)
 
-Mindhárom tool ugyanazt a shape-et követi: egy zod input-schema a runtime validáláshoz + egy
-párhuzamos, kézzel írt raw `input_schema` objektum az Anthropic API-nak (nincs zod-to-json-schema
-konverzió a kódban).
+Mindhárom tool ugyanazt a shape-et követi: `tool({ description, inputSchema: <zod séma>, execute })`
+a Vercel `ai` SDK-ból (G1, `docs/implementation/06-web-chat.md`) — egyetlen zod séma, amit az AI SDK
+konvertál a modellnek adott JSON-sémára, nincs kézzel duplikált raw `input_schema`. Az `execute`
+minden toolnál try/catch-csel csomagolja a mögöttes `runSql`/`listCategories`/`searchKnowledge`
+függvényt: azok validációs/futtatási hibán throw-olnak, de az `execute` ezt szöveges eredményként
+adja vissza (nem dobja tovább) — mert egy `execute`-ból kidobott hiba az AI SDK-ban a teljes
+`streamText`-hívást megszakítaná (`ToolExecutionError`), nem hiba-tool-result-ot generálna, ami
+törné az agent önreflektáló újrapróbálkozását.
 
 ### `runSql(query: string)`
 

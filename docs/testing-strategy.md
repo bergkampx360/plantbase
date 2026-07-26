@@ -8,8 +8,9 @@
 ## Teszt-piramis, plantbase-ben konkrétan
 
 - **Unit** (`packages/core`, később `apps/cli`) — az alapértelmezett, minden új logikánál elvárt
-  szint. Minden külső függőség mockolva: `vi.mock('./db-pool')` a Postgres-hez,
-  `vi.mock('@anthropic-ai/sdk')` az LLM-hívásokhoz. Nincs valódi hálózati/DB hívás.
+  szint. Minden külső függőség mockolva: `vi.mock('./db-pool')` a Postgres-hez, `vi.mock('ai')`
+  (+ a megfelelő `@ai-sdk/*` provider) az LLM-hívásokhoz (G1 óta az `askAgent` is ezen megy, ld.
+  lent). Nincs valódi hálózati/DB hívás.
 - **Integration** — valódi, futó Postgres (docker-compose) ellen: pl. migráció+seed idempotencia
   (`packages/db`), a read-only szerepkör tényleges write-tiltása. Ma ez csak a `db-role-setup` skill
   kézi `psql` lépéseként létezik, nincs automatizálva — ez tudatos, dokumentált állapot, nem
@@ -60,17 +61,21 @@ A meglévő minta (`run-sql.spec.ts`, `list-categories.spec.ts`) a rögzített k
 - `vi.mock('./db-pool')` minden DB-függő unit teszthez (mindkét exportált függvényt,
   `getPool`-t ÉS `getWritePool`-t is mockolni kell, ha a tesztelt modul bármelyiket használja —
   ld. `packages/core/src/rag/knowledge-store.spec.ts`, F5).
-- `vi.mock('@anthropic-ai/sdk')` minden LLM-függő unit teszthez (szükséges lesz E3-hoz és minden
-  jövőbeli `askAgent`-tesztez).
 - `vi.mock('ai')` + `vi.mock('@ai-sdk/openai')` az AI SDK-alapú RAG-hívásokhoz (F5-től:
   `embedMany`/`embedTexts`, ld. `packages/core/src/rag/embed.spec.ts`; F6-tól: `generateObject`/
   `rerankChunks`, ld. `packages/core/src/rag/rerank.spec.ts`) — a mock-factory-n belüli top-level
   `vi.fn()` változókat `vi.hoisted()`-del kell deklarálni, különben a vitest-hoisting miatt
   "Cannot access before initialization" hibát dob.
 - `vi.mock('ai')` + `vi.mock('@ai-sdk/anthropic')` a HyDE-generáláshoz (F6-tól: `generateText`/
-  `generateHypotheticalAnswer`, ld. `packages/core/src/rag/hyde.spec.ts`) — ez egy **harmadik,**
-  a fentiektől különböző AI-SDK-mock-kombináció (a meglévő `@anthropic-ai/sdk` mock az `askAgent`
-  natív Anthropic-hívásához tartozik, ez pedig a HyDE-hez használt `ai`-SDK-s Anthropic-providerhez).
+  `generateHypotheticalAnswer`, ld. `packages/core/src/rag/hyde.spec.ts`).
+- `vi.mock('ai')` (a `streamText`, `tool`, `stepCountIs` exportokra) + `vi.mock('@ai-sdk/anthropic')`
+  az `askAgent`-hez (G1-től, `packages/core/src/ask-agent.spec.ts`) — **nem** kellett az `ai/test`
+  csomag `MockLanguageModelV2`-jét bevezetni (a G-terv ezt még nyitott kérdésként hagyta): a
+  meglévő, közvetlen `vi.mock('ai', () => ({ streamText: mockFn, ... }))` minta — ugyanaz a család,
+  mint a fenti két pontnál — egyszerűen kiterjed `streamText`-re, a `tool()` pedig identitás-
+  mockként (`vi.fn((config) => config)`) elég, mert a teszt a `streamText`-nek átadott
+  argumentumokat és a mockolt visszatérési értéket (`text`/`totalUsage`/`response`/`steps`)
+  ellenőrzi, nem az AI SDK belső tool-végrehajtását.
 - Determinisztikus, izolált tesztek — nincs külső/globális állapot- vagy időzítés-függés
   (`konvenciok.md` elve, itt plantbase-specifikus példával).
 
