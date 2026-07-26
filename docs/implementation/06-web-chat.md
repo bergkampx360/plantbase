@@ -96,10 +96,12 @@ pontosítandók/igazítandók — jelen forma egy tervezett, nem véglegesített
 
 - `packages/core/src/run-sql.ts`, `list-categories.ts`, `search-knowledge.ts`: a párhuzamos
   zod+raw-`input_schema` pár helyett egyetlen AI SDK `tool({ description, inputSchema: ZodSchema,
-  execute })` export minden toolhoz; a belső `.parse()` hívások elhagyása (AI SDK már típusos inputot ad).
+execute })` export minden toolhoz; a belső `.parse()` hívások elhagyása (AI SDK már típusos inputot ad).
 - `packages/core/src/ask-agent.ts`: a kézzel írt `for` ciklus + `client.messages.create` +
   switch-dispatch helyett egyetlen `streamText({ model: anthropic(...), system: SYSTEM_PROMPT,
-  messages, tools: { runSql, listCategories, searchKnowledge }, stopWhen: stepCountIs(5) })` hívás;
+messages, tools: { runSql, listCategories, searchKnowledge }, stopWhen:
+stepCountIs(MAX_TOOL_ITERATIONS) })` hívás (a meglévő `MAX_TOOL_ITERATIONS = 5` konstans
+  megmarad, csak a kézzel írt `for` ciklus helyett a `stopWhen`-nek adjuk át — ld. 2. döntés);
   `AskResult.messages` típusa AI SDK `ModelMessage[]`-re vált; `tokenUsage` az AI SDK aggregált
   `usage`-ából; `generatedSql` side-channel `result.steps`-ből (a `runSql` tool-hívás argumentuma).
 - `packages/core/src/log-interaction.ts`: az `InteractionLog.messages` mező típusa jelenleg
