@@ -51,9 +51,14 @@ fogyasztással (`result.pipeUIMessageStreamToResponse(res)`). Az env-betöltés 
 belépési ponton, indulás előtt történik, mint a CLI-nél (`apps/cli/src/main.ts` mintája) — a
 globálisan/CI-ban futtatott szerver-folyamat sem örökli a direnv-et.
 
-Nincs közvetlen DB-hozzáférés `apps/server`-ben (sem RO, sem RW pool) — az adat-elérés a
-`packages/core`-ból importált tool-okon (`RUN_SQL_TOOL` stb.) keresztül megy, ugyanúgy, mint a
-CLI-nél.
+Az agent-facing adatelérés a `packages/core`-ból importált tool-okon (`RUN_SQL_TOOL` stb.) keresztül
+megy, ugyanúgy, mint a CLI-nél — `apps/server` ide nem nyúl közvetlenül.
+
+**G3-tól**: `apps/server` **közvetlenül** importálja a `@plantbase/db` `prisma` klienst (RW) a
+`Thread`/`Message` (webes beszélgetés-történet) perzisztenciájához — ez alkalmazás-adat, nem
+agent-facing tudásbázis-olvasás, ezért nem a `runSql`/`searchKnowledge` RO-útján megy (NFR1-elv,
+`docs/architektura.md` 2. döntés, itt nem vonatkozik rá). `GET /api/threads`,
+`GET /api/threads/:id`: `docs/tech/api.md`.
 
 ## `packages/db` — Prisma lib
 

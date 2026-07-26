@@ -54,3 +54,27 @@ model KnowledgeChunk {
 
   @@map("knowledge_chunks")
 }
+
+// Webes chat előzmények (G rész, docs/implementation/06-web-chat.md, G3) — alkalmazás-adat, nem
+// agent-facing tudásbázis, ezért Prisma Clienten (RW) megy, nem a runSql/searchKnowledge RO
+// poolján; nincs RO grant rá a db-role-setup skillben. A logs/ JSONL-naplózástól (CLI, audit-trail)
+// független, párhuzamos mechanizmus — CLI és Web history-ja nem egyesül.
+model Thread {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  messages  Message[]
+
+  @@map("threads")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  threadId  Int      @map("thread_id")
+  thread    Thread   @relation(fields: [threadId], references: [id])
+  role      String
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("messages")
+}

@@ -52,3 +52,33 @@ aggregátum — nincs köztük FK-kapcsolat. Az agent mindkettőt olvashatja (k�
 `runSql` a `Product`-ra, `searchKnowledge` a `KnowledgeChunk`-ra), de a válaszban való
 összekapcsolásuk (pl. "ez a növény milyen gondozást igényel") az agent LLM-szintű
 következtetése, nem DB-szintű join.
+
+## Chat domain (G rész, `docs/implementation/06-web-chat.md`, G3)
+
+### `Thread` (aggregátum-gyökér, `threads` tábla) és `Message` (entitás, `messages` tábla)
+
+```
+Thread                          Message
+├── id                          ├── id
+├── createdAt                   ├── threadId    (FK → Thread.id)
+├── updatedAt (minden új         ├── role         ("user" / "assistant")
+│   üzenetnél frissül)          ├── content
+└── messages  (1:N)              └── createdAt
+```
+
+**Aggregátum-határ**: a `Thread` az aggregátum-gyökér, a `Message` csak `Thread`-en belül
+értelmezett (mindig egy adott `threadId`-hez tartozik, önálló élettartama nincs). A
+`GET /api/threads/:id` a teljes aggregátumot adja vissza (`Thread` + rendezett `Message[]`).
+
+**Perzisztencia**: `apps/server` Prisma Clienten (RW) keresztül írja/olvassa — ez alkalmazás-adat
+(UI-history), nem agent-facing tudásbázis-olvasás, ezért a `runSql`/`searchKnowledge` RO-elve
+(`docs/architektura.md` 2. döntés) itt nem vonatkozik rá; nincs RO grant rá a `db-role-setup`
+skillben.
+
+**Kapcsolat a `logs/` JSONL-naplózással**: két független, párhuzamos mechanizmus, NEM ugyanaz az
+adat két helyen. A CLI (`logInteraction`) a `logs/<timestamp>.jsonl`-be ír, minden interakcióról
+(system prompt, teljes üzenet-tömb, token-használat) — audit/debug-trail célra. A `Thread`/
+`Message` a webes UI beszélgetés-történetének forrása — csak a kérdést és a végső választ tárolja,
+tool-hívások nélkül. A CLI és a Web history-ja explicit NEM egyesül: egy CLI-munkamenet nem
+jelenik meg a webes "korábbi beszélgetések" listában, és fordítva sincs átjárás (tudatos,
+egyszerűsítő döntés, `06-web-chat.md` 9–10. döntése).

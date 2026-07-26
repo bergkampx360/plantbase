@@ -1,12 +1,15 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
+    "outDir": "../../dist/out-tsc/apps/server",
     "module": "commonjs",
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
   "references": [
+    {
+      "path": "../../packages/db/tsconfig.lib.json"
+    },
     {
       "path": "../../packages/core/tsconfig.lib.json"
     }
