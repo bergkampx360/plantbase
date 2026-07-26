@@ -206,15 +206,166 @@ külön ellenőrzéssel visszatér).
 - **Stack:** Express 5 + React 19 + Vite + Tailwind + shadcn/ui; streaming-protokoll szöveg-delta + `data-tool`/`data-agent` típusok. **Elnevezés-eltérés:** a `docs/architektura.md` fájlstruktúra-diagramja jelenleg `apps/api`-t jelöl a jövőbeli backend nevének — a G-rész itt tudatosan `apps/server`-re nevezi át (Express-konvenció, nem REST-only API, hanem streaming-szerver is), ezt a `docs/architektura.md`-ben G1-nél kell majd tükrözni.
 - **Thread-perzisztencia:** DB az igazságforrás, kliens új üzenetet + `threadId`-t küld; új chat = `threadId` nélkül (régi a DB-ben marad).
 
-### G1–G7 vázlat (részletezés F lezárása után)
+**További döntések (a részletezéskor, F lezárása után rögzítve):**
 
-- **G1:** `askAgent` → AI SDK `streamText`+`tools`; toolok újrakötése; `ask-agent.spec.ts` frissítés.
-- **G2:** `apps/server` scaffold (Express + `/api/chat`).
-- **G3:** Prisma Thread/Message + `/api/threads` router.
-- **G4:** `apps/web` scaffold (React + `useChat`).
-- **G5:** Tool-kártya komponensek (`data-tool`/`data-agent`).
-- **G6:** "Új chat" gomb + history lista.
-- **G7:** Tesztek + docs.
+1. **`askAgent` visszatérési kontraktusa marad `Promise<AskResult>`, csak belül vált AI SDK-ra.**
+   A `streamText` API-t a CLI is tudja **nem-streamelő** módon fogyasztani (megvárva
+   `result.text`/`result.usage`/`result.response.messages`-t) — nincs szükség két külön
+   függvényre. Az `apps/server` (G2) egy MÁSIK, streamelő fogyasztási módot használ ugyanarra a
+   `streamText`-hívásra (`toUIMessageStreamResponse()` vagy hasonló), de a tool-definíciók és a
+   system prompt közösek maradnak `packages/core`-ban — nincs duplikált agent-logika.
+   **Következmény**: `AskResult.messages` típusa `Anthropic.MessageParam[]`-ról AI SDK
+   `ModelMessage[]`-re vált — ez **valódi, elfogadott** CLI-oldali változás (`apps/cli/src/output.ts`,
+   `format-messages.ts` frissül), nem "nulla módosítás", de a CLI funkcionálisan ugyanúgy működik
+   tovább ("CLI megmarad párhuzamosan" — ez működést jelent, nem érintetlen fájlokat).
+2. **A tool-loop `stopWhen`/multi-step mechanizmusa váltja a kézzel írt `for` ciklust** —
+   az AI SDK beépített többlépéses tool-use támogatása (`stopWhen: stepCountIs(MAX_TOOL_ITERATIONS)`)
+   pontosan ugyanazt az 5-lépéses korlátot adja, mint most, kevesebb kézzel írt kóddal.
+3. **A három tool (`runSql`/`listCategories`/`searchKnowledge`) AI SDK `tool()`-ra vált** — a
+   jelenlegi, kézzel duplikált zod-séma + nyers `input_schema` pár egyetlen zod-sémára egyszerűsödik
+   (`tool({ description, inputSchema, execute })`), a tool-függvények belső `.parse()`-a elhagyható
+   (az AI SDK már típusos, validált inputot ad).
+4. **Az "ismeretlen tool" hibaág strukturálisan megszűnik** — AI SDK típusos `tools` rekordja miatt
+   a modell fizikailag nem hívhat nem létező tool-t; a jelenlegi teszt (F11-ben pótolt) helyébe egy
+   új teszt lép: egy tool `execute`-ja dob egy hibát, és ez AI SDK-szinten hiba-tool-result lesz,
+   nem crash — ugyanaz a viselkedés, más mechanizmus.
+5. **`apps/server` Express-generátor nélkül, kézzel scaffoldolva** — `@nx/express` nincs telepítve;
+   a `scaffold-nx-package` skill saját fallback-szabálya szerint ("ha nincs generátor, kézzel
+   scaffoldolunk, nem viszünk be nehézsúlyú generátor-plugint csak erre") `@nx/node:application`
+   mintájára kézzel épül fel, Express hozzáadva függőségként.
+6. **`apps/web`-hez `@nx/react` telepítése javasolt** (nem kézi scaffold) — mivel React+Vite+Tailwind
+   +shadcn/ui együttes kézi bedrótozása jelentősen hibalehetőség-érzékenyebb, mint egy hivatalos,
+   karbantartott Nx-generátor; a pontos generátor-parancsot és shadcn/ui-inicializálást Context7-vel
+   ellenőrzöm G4 tényleges végrehajtásakor (`docs/architektura.md` 7. döntése — ismeretlen lib előtt
+   Context7).
+7. **Thread/Message Prisma-modell a `KnowledgeChunk` stílusát követi** (camelCase mező + `@map`
+   snake_case oszlopra, `Int @id @default(autoincrement())`, `@@map` snake_case tábla), nem a
+   `Product` all-snake_case stílusát — ez a újabb, konzisztensebb minta a séma-fájlban.
+8. **A Thread/Message perzisztencia Prisma Clienten (RW), NEM a `runSql`/`searchKnowledge` RO
+   poolon megy** — ez alkalmazás-adat (beszélgetés-történet), nem agent-facing tudásbázis-olvasás,
+   tehát a NFR1-elv (`docs/architektura.md` 2. döntés) itt nem vonatkozik rá; nem kell RO grant a
+   `db-role-setup` skillben ezekre a táblákra.
+9. **A `logs/` JSONL-naplózás (`logInteraction`) megmarad változatlanul, párhuzamosan** a DB-alapú
+   Thread/Message-perzisztenciával — más célt szolgál (audit/debug-trail, nem UI-history-forrás).
+
+### G1 — `askAgent` átállítása AI SDK `streamText`+`tools`-ra ⏳ NYITOTT
+
+- `packages/core/src/run-sql.ts`, `list-categories.ts`, `search-knowledge.ts`: a párhuzamos
+  zod+raw-`input_schema` pár helyett egyetlen AI SDK `tool({ description, inputSchema: ZodSchema,
+execute })` export minden toolhoz; a belső `.parse()` hívások elhagyása (AI SDK már típusos inputot ad).
+- `packages/core/src/ask-agent.ts`: a kézzel írt `for` ciklus + `client.messages.create` +
+  switch-dispatch helyett egyetlen `streamText({ model: anthropic(...), system: SYSTEM_PROMPT,
+messages, tools: { runSql, listCategories, searchKnowledge }, stopWhen: stepCountIs(5) })` hívás;
+  `AskResult.messages` típusa AI SDK `ModelMessage[]`-re vált; `tokenUsage` az AI SDK aggregált
+  `usage`-ából; `generatedSql` side-channel `result.steps`-ből (a `runSql` tool-hívás argumentuma).
+- `apps/cli/src/output.ts`, `format-messages.ts`: az új `ModelMessage[]` alakra igazítva (a
+  `--show-prompt` kimenet funkcionálisan ugyanazt mutatja, csak az alatta lévő típus más).
+- `docs/architektura.md`: 3. döntés átírása (kézzel írt loop → AI SDK `streamText`+`tools`, a régi
+  szöveg jelezve, hogy G1-nél felülíródott); a fájlstruktúra-diagram `apps/api` → `apps/server`.
+- `docs/stack.md`: a Vercel `ai` SDK sorának "csak... nem érinti az askAgent loopját" megjegyzése
+  frissül (mostantól a teljes agent-loop is ezt használja).
+- `docs/tech/architecture.md`, `docs/tech/api.md`: a tool-definíció-leírás frissítése (egy zod-séma,
+  nem kettő); `apps/api` → `apps/server` javítás.
+- `docs/testing-strategy.md`: új, negyedik AI-SDK-mock-mintázat dokumentálása (`streamText`+`tools`
+  mockolása `ai/test` `MockLanguageModelV2`-vel — pontos API Context7-vel ellenőrizve G1
+  végrehajtásakor) — a meglévő három minta (natív Anthropic, `embedMany`, `generateText`/HyDE) mellé.
+- **Kötelező, ugyanebben a fázisban**: `ask-agent.spec.ts` teljes átírása az új mock-mintára,
+  minden meglévő eset megtartásával (SQL-guard hiba, sikeres runSql, multi-tool iteráció,
+  searchKnowledge siker/hiba, önreflektáló retry, `ANTHROPIC_MODEL` fallback) + az új
+  tool-execute-hiba eset az "ismeretlen tool" teszt helyett.
+
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld; `plantbase ask "..."` CLI-n
+keresztül változatlanul működik (manuális ellenőrzés, valós API-hívással).
+**Commit:** `feat: migrate askAgent to AI SDK streamText with typed tools`
+→ megállok, kérem a tesztelést.
+
+### G2 — `apps/server` scaffold (Express + `/api/chat`) ⏳ NYITOTT
+
+- `apps/server` kézi scaffold (`scaffold-nx-package` skill fallback-mintája, `@nx/node:application`
+  struktúrát követve), Express hozzáadva függőségként.
+- `POST /api/chat` — `{ question, threadId? }` body, a G1-ben módosított `packages/core`
+  tool/system-prompt-definíciókat újrahasznosítva (nem duplikálva) egy streamelő `streamText`-hívás,
+  AI SDK data-stream-válaszként (`text-delta` + `data-tool`/`data-agent` custom part-ok, a G-rész
+  eredeti döntése szerint).
+- Env-betöltés a szerver belépési pontján (dotenv), a CLI mintájára (`apps/cli/src/main.ts`
+  ugyanezt csinálja, mert a globálisan telepített bináris nem örökli a direnv-et).
+- CORS-beállítás a helyi fejlesztői Vite dev-szerverhez (G4 előkészítése).
+- `docs/tech/api.md` bővítése a `/api/chat` HTTP-felülettel, a meglévő CLI/tool-felület mellé.
+
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld; kézi `curl`/Postman-teszt a
+`/api/chat` végpontra, streamelt válasz látható.
+**Commit:** `feat: scaffold apps/server with streaming /api/chat endpoint`
+→ megállok, kérem a tesztelést.
+
+### G3 — Prisma `Thread`/`Message` + `/api/threads` router ⏳ NYITOTT
+
+- `packages/db/prisma/schema.prisma`: új `Thread` (`id Int @id @default(autoincrement())`,
+  `createdAt`/`updatedAt` `@map`-elve) és `Message` (`id`, `threadId @map("thread_id")`, `role`,
+  `content`, `createdAt`) modell, a `KnowledgeChunk` mező-stílusát követve, `@@map` snake_case
+  táblanévvel, doksi-hivatkozó kommenttel.
+- Migráció generálása; **nem** kell `db-role-setup` skill újrafuttatás (ezek RW-only táblák, az
+  agent RO-útja nem éri el őket).
+- `GET /api/threads` (lista), `GET /api/threads/:id` (üzenetekkel együtt); `POST /api/chat` (G2)
+  bővítése: minden kör után a kérdés+válasz perzisztálása a `threadId`-hez (vagy új `Thread`
+  létrehozása, ha nincs `threadId`).
+- `docs/ddd/model.md` bővítése a `Thread`/`Message` entitásokkal.
+
+**Teszt:** migráció lefut tiszta DB-n; `pnpm exec nx run-many -t build,typecheck,test,lint` zöld;
+kézi teszt: két egymást követő `/api/chat` hívás ugyanazzal a `threadId`-vel, `GET
+/api/threads/:id` visszaadja mindkét kört.
+**Commit:** `feat: add Thread/Message persistence and /api/threads router`
+→ megállok, kérem a tesztelést.
+
+### G4 — `apps/web` scaffold (React + `useChat`) ⏳ NYITOTT
+
+- `@nx/react` telepítése + generátor-alapú scaffold (`apps/web`), Vite bundlerrel, Tailwind +
+  shadcn/ui inicializálva (pontos parancsok Context7-vel ellenőrizve végrehajtáskor).
+- Alap chat-UI: kérdés-beviteli mező, üzenetlista, AI SDK `useChat` hook bekötve a G2 `/api/chat`
+  végpontjára, streamelt válasz-megjelenítéssel.
+- `docs/stack.md` bővítése: React 19, Vite, Tailwind, shadcn/ui bekerül a stack-listába.
+
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld; kézi böngészős teszt (`nx
+serve web` + `nx serve server`), egy kérdés-válasz kör streamelve látszik.
+**Commit:** `feat: scaffold apps/web with streaming chat UI`
+→ megállok, kérem a tesztelést.
+
+### G5 — Tool-kártya komponensek (`data-tool`/`data-agent`) ⏳ NYITOTT
+
+- React komponensek, amik a G2-ben streamelt `data-tool`/`data-agent` part-okat vizuálisan
+  megkülönböztetve jelenítik meg (pl. összecsukható "🔧 searchKnowledge(...)" kártya a tool-hívással
+  és -eredménnyel) — a CLI `--show-prompt` funkcionális megfelelője, de UI-ban.
+
+**Teszt:** kézi böngészős teszt: egy gondozási kérdésnél (`searchKnowledge`) és egy katalógus-
+kérdésnél (`runSql`) is látszik a tool-kártya a megfelelő adattal.
+**Commit:** `feat: add tool-call visualization cards to chat UI`
+→ megállok, kérem a tesztelést.
+
+### G6 — "Új chat" gomb + history lista ⏳ NYITOTT
+
+- "Új chat" gomb: törli az aktuális `threadId`-t, üres beszélgetést indít.
+- Oldalsáv/lista a korábbi `Thread`-ekről (G3 `/api/threads` GET-jéből), kattintásra betölti az adott
+  szál üzeneteit.
+
+**Teszt:** kézi böngészős teszt: több beszélgetés indítása, közöttük váltás, a history helyesen
+töltődik vissza.
+**Commit:** `feat: add new-chat button and thread history sidebar`
+→ megállok, kérem a tesztelést.
+
+### G7 — Tesztek + docs lezárás ⏳ NYITOTT
+
+- `apps/server`: unit/integration tesztek a `/api/chat`/`/api/threads` végpontokra (teszt-könyvtár
+  kiválasztása — pl. `supertest` — Context7-vel ellenőrizve végrehajtáskor).
+- `apps/web`: alap komponens-tesztek (Vitest + React Testing Library, a meglévő Vitest-konvenciót
+  követve).
+- `docs/implementation/STATUS.md`: G sor ✅ Kész.
+- `README.md`: G-rész futtatási instrukciók (`nx serve server`, `nx serve web`), "Dokumentáció"
+  táblázat bővítése.
+- **Tudatosan NEM ebben a körben**: `apps/cli` jelenlegi, F-ben már nevesített teszt-adóssága
+  (`docs/testing-strategy.md` "Kimarad" szakasza) — ez a G-rész scope-ján kívül eső, külön tétel.
+
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, minden új teszttel együtt.
+**Commit:** `test: add apps/server and apps/web tests, close out G-rész docs`
+→ megállok, kérem a tesztelést.
 
 ---
 
