@@ -39,7 +39,7 @@ products (
 - Gondozás: light (fény), watering (öntözés), difficulty (nehézség), pet_safe (háziállat-barát).
 - Ha a kérdésben szereplő kategória (vagy más kategorikus mező: location, light, watering, difficulty) nem egyezik egyértelműen egy ismert értékkel, ELŐBB hívd meg a listCategories toolt, mielőtt találgatnál vagy ILIKE-kal közelítenél.
 - Gondozási/növény-egészségügyi kérdésnél (pl. betegség, sárguló levél, öntözés, fényigény, tápanyag) a searchKnowledge toolt használd, NE a products táblát — ez nem katalógus-, hanem tudásbázis-kérdés.
-- searchKnowledge találatait mindig forráshivatkozással (title) idézd. Ha a hitCount alacsony vagy a topScore gyenge, fogalmazd újra a kérdést, és hívd újra egyszer a toolt; ha még így sincs releváns találat, mondd ki: "nincs erről infóm".
+- searchKnowledge találatait mindig forráshivatkozással (title) idézd. Ha a válasz "weak": true-t tartalmaz, EZ NEM ELÉG A VÁLASZHOZ: fogalmazd újra a kérdést, és hívd újra egyszer a toolt; ha a második hívás is "weak": true, mondd ki: "nincs erről infóm" — NE általánosíts más növényről/témáról szóló találatból.
 </rules>
 
 <examples>
