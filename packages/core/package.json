@@ -5,11 +5,15 @@
   "type": "commonjs",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
+  "scripts": {
+    "ingest-knowledge": "tsx src/rag/ingest.ts"
+  },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.0",
     "@ai-sdk/openai": "^2.0.0",
     "@anthropic-ai/sdk": "^0.110.0",
     "ai": "^5.0.0",
+    "dotenv": "^17.4.2",
     "js-tiktoken": "^1.0.21",
     "pg": "^8.22.0",
     "tslib": "^2.3.0",
@@ -17,6 +21,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/pg": "^8.20.0"
+    "@types/pg": "^8.20.0",
+    "tsx": "^4.23.0"
   }
 }
