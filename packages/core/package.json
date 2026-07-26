@@ -6,7 +6,8 @@
   "main": "./src/index.js",
   "types": "./src/index.d.ts",
   "scripts": {
-    "ingest-knowledge": "tsx src/rag/ingest.ts"
+    "ingest-knowledge": "tsx src/rag/ingest.ts",
+    "golden-set": "tsx src/rag/golden-set.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.0",
