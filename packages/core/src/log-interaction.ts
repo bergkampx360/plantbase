@@ -1,10 +1,10 @@
 import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import type Anthropic from '@anthropic-ai/sdk';
+import type { ModelMessage } from 'ai';
 
 export interface InteractionLog {
   system: string;
-  messages: Anthropic.MessageParam[];
+  messages: ModelMessage[];
   answer: string;
   tokenUsage: { inputTokens: number; outputTokens: number };
   generatedSql?: string;

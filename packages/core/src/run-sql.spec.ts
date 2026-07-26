@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getPool } from './db-pool';
-import { runSql } from './run-sql';
+import { RUN_SQL_TOOL, runSql } from './run-sql';
 
 vi.mock('./db-pool', () => ({
   getPool: vi.fn(),
@@ -125,5 +125,28 @@ describe('runSql', () => {
       'Pontosvesszővel elválasztott több lekérdezés nem engedélyezett.',
     );
     expect(queryMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('RUN_SQL_TOOL.execute', () => {
+  it('catches a runSql validation error and returns it as a plain string instead of throwing', async () => {
+    const output = await RUN_SQL_TOOL.execute?.(
+      { query: 'DROP TABLE products' },
+      { toolCallId: 'test', messages: [] },
+    );
+
+    expect(output).toBe('Csak SELECT lekérdezés engedélyezett.');
+    expect(queryMock).not.toHaveBeenCalled();
+  });
+
+  it('returns the row JSON on a successful query, same as runSql directly', async () => {
+    queryMock.mockResolvedValue({ rows: [{ id: 1, name: 'Monstera' }] });
+
+    const output = await RUN_SQL_TOOL.execute?.(
+      { query: 'SELECT * FROM products' },
+      { toolCallId: 'test', messages: [] },
+    );
+
+    expect(output).toBe(JSON.stringify([{ id: 1, name: 'Monstera' }]));
   });
 });

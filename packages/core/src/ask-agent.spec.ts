@@ -1,14 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type Anthropic from '@anthropic-ai/sdk';
+import type { ModelMessage } from 'ai';
 
-const createMock = vi.fn();
-
-vi.mock('@anthropic-ai/sdk', () => ({
-  default: vi.fn().mockImplementation(function (this: {
-    messages: { create: typeof createMock };
-  }) {
-    this.messages = { create: createMock };
+const { streamTextMock, toolMock, stepCountIsMock, anthropicMock } = vi.hoisted(
+  () => ({
+    streamTextMock: vi.fn(),
+    toolMock: vi.fn((config: unknown) => config),
+    stepCountIsMock: vi.fn((count: number) => ({ type: 'stepCountIs', count })),
+    anthropicMock: vi.fn().mockReturnValue('mock-anthropic-model'),
   }),
+);
+
+vi.mock('ai', () => ({
+  streamText: streamTextMock,
+  tool: toolMock,
+  stepCountIs: stepCountIsMock,
+}));
+
+vi.mock('@ai-sdk/anthropic', () => ({
+  anthropic: anthropicMock,
 }));
 
 vi.mock('./log-interaction', () => ({
@@ -17,233 +26,166 @@ vi.mock('./log-interaction', () => ({
 
 vi.mock('./db-pool', () => ({
   getPool: vi.fn(),
+  getWritePool: vi.fn(),
 }));
 
-vi.mock('./search-knowledge', () => ({
-  SEARCH_KNOWLEDGE_TOOL: {
-    name: 'searchKnowledge',
-    description: 'mock',
-    input_schema: { type: 'object', properties: {} },
-  },
-  searchKnowledge: vi.fn(),
-}));
+import { askAgent, MAX_TOOL_ITERATIONS } from './ask-agent';
+import { logInteraction } from './log-interaction';
 
-import { askAgent } from './ask-agent';
-import { getPool } from './db-pool';
-import { searchKnowledge } from './search-knowledge';
+const mockedLogInteraction = vi.mocked(logInteraction);
 
-const mockedGetPool = vi.mocked(getPool);
-const mockedSearchKnowledge = vi.mocked(searchKnowledge);
-const queryMock = vi.fn();
+type ToolCall = { toolName: string; input: unknown };
+type Step = { toolCalls: ToolCall[] };
 
-function usage(inputTokens = 10, outputTokens = 5) {
-  return { input_tokens: inputTokens, output_tokens: outputTokens };
-}
-
-function toolUseResponse(
-  name: string,
-  input: Record<string, unknown>,
-): Anthropic.Message {
+function streamResult(options: {
+  text: string;
+  responseMessages: ModelMessage[];
+  steps?: Step[];
+  totalUsage?: { inputTokens: number; outputTokens: number };
+}) {
   return {
-    stop_reason: 'tool_use',
-    usage: usage(),
-    content: [{ type: 'tool_use', id: `tool_${name}`, name, input }],
-  } as unknown as Anthropic.Message;
-}
-
-function finalAnswerResponse(text: string): Anthropic.Message {
-  return {
-    stop_reason: 'end_turn',
-    usage: usage(),
-    content: [{ type: 'text', text }],
-  } as unknown as Anthropic.Message;
+    text: options.text,
+    totalUsage: options.totalUsage ?? { inputTokens: 20, outputTokens: 10 },
+    response: { messages: options.responseMessages },
+    steps: options.steps ?? [],
+  };
 }
 
 beforeEach(() => {
-  createMock.mockReset();
-  queryMock.mockReset();
-  mockedSearchKnowledge.mockReset();
-  mockedGetPool.mockReturnValue({
-    query: queryMock,
-  } as unknown as ReturnType<typeof getPool>);
+  streamTextMock.mockReset();
+  mockedLogInteraction.mockClear();
 });
 
 describe('askAgent', () => {
-  it('continues the loop after a tool error and returns a final answer', async () => {
-    createMock
-      .mockResolvedValueOnce(
-        toolUseResponse('runSql', { query: 'DROP TABLE products' }),
-      )
-      .mockResolvedValueOnce(
-        finalAnswerResponse('Nem tudom végrehajtani ezt a lekérdezést.'),
-      );
+  it('returns the final answer and aggregated token usage from a single-step run', async () => {
+    streamTextMock.mockReturnValue(
+      streamResult({
+        text: 'Szia! Miben segíthetek?',
+        responseMessages: [
+          { role: 'assistant', content: 'Szia! Miben segíthetek?' },
+        ],
+      }),
+    );
 
-    const result = await askAgent('töröld a katalógust');
+    const result = await askAgent('szia');
 
-    expect(result.answer).not.toBe('');
-    expect(result.messages.length).toBeGreaterThanOrEqual(4);
-    expect(result.tokenUsage.inputTokens).toBeGreaterThan(0);
-    expect(result.tokenUsage.outputTokens).toBeGreaterThan(0);
-    expect(queryMock).not.toHaveBeenCalled();
-
-    const toolResultMessage = result.messages[2];
-    const block = (
-      toolResultMessage.content as Anthropic.ToolResultBlockParam[]
-    )[0];
-    expect(block.is_error).toBe(true);
-    expect(block.content).toBe('Csak SELECT lekérdezés engedélyezett.');
+    expect(result.answer).toBe('Szia! Miben segíthetek?');
+    expect(result.tokenUsage).toEqual({ inputTokens: 20, outputTokens: 10 });
+    expect(result.generatedSql).toBeUndefined();
+    expect(result.messages).toEqual([
+      { role: 'user', content: 'szia' },
+      { role: 'assistant', content: 'Szia! Miben segíthetek?' },
+    ]);
   });
 
-  it('continues the loop after a successful tool call and returns a final answer', async () => {
-    queryMock.mockResolvedValueOnce({
-      rows: [{ id: 1, name: 'Monstera' }],
+  it('passes the three tools and stepCountIs(MAX_TOOL_ITERATIONS) to streamText', async () => {
+    streamTextMock.mockReturnValue(
+      streamResult({ text: 'válasz', responseMessages: [] }),
+    );
+
+    await askAgent('kérdés');
+
+    expect(stepCountIsMock).toHaveBeenCalledWith(MAX_TOOL_ITERATIONS);
+    const call = streamTextMock.mock.calls[0][0];
+    expect(Object.keys(call.tools)).toEqual([
+      'runSql',
+      'listCategories',
+      'searchKnowledge',
+    ]);
+    expect(call.stopWhen).toEqual({
+      type: 'stepCountIs',
+      count: MAX_TOOL_ITERATIONS,
     });
-    createMock
-      .mockResolvedValueOnce(
-        toolUseResponse('runSql', { query: 'SELECT * FROM products' }),
-      )
-      .mockResolvedValueOnce(finalAnswerResponse('Egy Monsterát találtam.'));
-
-    const result = await askAgent('milyen növényeitek vannak?');
-
-    expect(result.answer).not.toBe('');
-    expect(result.messages.length).toBeGreaterThanOrEqual(4);
-    expect(result.tokenUsage.inputTokens).toBeGreaterThan(0);
-    expect(result.tokenUsage.outputTokens).toBeGreaterThan(0);
-
-    const toolResultMessage = result.messages[2];
-    const block = (
-      toolResultMessage.content as Anthropic.ToolResultBlockParam[]
-    )[0];
-    expect(block.is_error).toBeUndefined();
-    expect(block.content).toBe(JSON.stringify([{ id: 1, name: 'Monstera' }]));
   });
 
-  it('runs a multi-tool iteration (listCategories, then runSql, then the final answer)', async () => {
-    queryMock
-      .mockResolvedValueOnce({ rows: [{ category: 'pozsgás' }] })
-      .mockResolvedValueOnce({ rows: [{ id: 1, name: 'Aloe vera' }] });
-    createMock
-      .mockResolvedValueOnce(toolUseResponse('listCategories', {}))
-      .mockResolvedValueOnce(
-        toolUseResponse('runSql', {
-          query: "SELECT * FROM products WHERE category = 'pozsgás'",
-        }),
-      )
-      .mockResolvedValueOnce(finalAnswerResponse('Van pozsgás növényünk.'));
+  it('extracts generatedSql from the last runSql tool call across steps', async () => {
+    streamTextMock.mockReturnValue(
+      streamResult({
+        text: 'Van pozsgás növényünk.',
+        responseMessages: [],
+        steps: [
+          { toolCalls: [{ toolName: 'listCategories', input: {} }] },
+          {
+            toolCalls: [{ toolName: 'runSql', input: { query: 'SELECT 1' } }],
+          },
+          {
+            toolCalls: [
+              {
+                toolName: 'runSql',
+                input: {
+                  query: "SELECT * FROM products WHERE category = 'pozsgás'",
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    );
 
     const result = await askAgent('vannak pozsgás növényeitek?');
 
-    expect(result.answer).not.toBe('');
-    expect(result.messages.length).toBeGreaterThanOrEqual(6);
-    expect(queryMock).toHaveBeenCalledTimes(2);
-  });
-
-  it('calls searchKnowledge for a care question and returns a final answer', async () => {
-    const retrievalResult = {
-      chunks: [{ title: 'Öntözés', content: 'Hetente egyszer.', score: 9 }],
-      hitCount: 1,
-      topScore: 9,
-    };
-    mockedSearchKnowledge.mockResolvedValueOnce(
-      JSON.stringify(retrievalResult),
+    expect(result.generatedSql).toBe(
+      "SELECT * FROM products WHERE category = 'pozsgás'",
     );
-    createMock
-      .mockResolvedValueOnce(
-        toolUseResponse('searchKnowledge', {
-          query: 'mikor öntözzem a monsterát?',
-        }),
-      )
-      .mockResolvedValueOnce(finalAnswerResponse('Hetente egyszer öntözd.'));
-
-    const result = await askAgent('mikor öntözzem a monsterát?');
-
-    expect(result.answer).not.toBe('');
-    expect(mockedSearchKnowledge).toHaveBeenCalledWith({
-      query: 'mikor öntözzem a monsterát?',
-    });
-    const toolResultMessage = result.messages[2];
-    const block = (
-      toolResultMessage.content as Anthropic.ToolResultBlockParam[]
-    )[0];
-    expect(block.is_error).toBeUndefined();
-    expect(block.content).toBe(JSON.stringify(retrievalResult));
   });
 
-  it('continues the loop after a searchKnowledge error and returns a final answer', async () => {
-    mockedSearchKnowledge.mockRejectedValueOnce(
-      new Error('embedding hívás sikertelen'),
+  it('prepends conversation history before the new user message', async () => {
+    streamTextMock.mockReturnValue(
+      streamResult({
+        text: 'második válasz',
+        responseMessages: [{ role: 'assistant', content: 'második válasz' }],
+      }),
     );
-    createMock
-      .mockResolvedValueOnce(
-        toolUseResponse('searchKnowledge', { query: 'sárgul a levél' }),
-      )
-      .mockResolvedValueOnce(finalAnswerResponse('Nem sikerült a keresés.'));
 
-    const result = await askAgent('miért sárgul a levelem?');
+    const history: ModelMessage[] = [
+      { role: 'user', content: 'első kérdés' },
+      { role: 'assistant', content: 'első válasz' },
+    ];
 
-    expect(result.answer).not.toBe('');
-    const toolResultMessage = result.messages[2];
-    const block = (
-      toolResultMessage.content as Anthropic.ToolResultBlockParam[]
-    )[0];
-    expect(block.is_error).toBe(true);
-    expect(block.content).toBe('embedding hívás sikertelen');
+    const result = await askAgent('második kérdés', history);
+
+    const call = streamTextMock.mock.calls[0][0];
+    expect(call.messages).toEqual([
+      ...history,
+      { role: 'user', content: 'második kérdés' },
+    ]);
+    expect(result.messages).toEqual([
+      ...history,
+      { role: 'user', content: 'második kérdés' },
+      { role: 'assistant', content: 'második válasz' },
+    ]);
   });
 
-  it('supports a self-reflective retry: a weak first search is followed by a reformulated query', async () => {
-    const weakResult = { chunks: [], hitCount: 0, topScore: 0 };
-    const strongResult = {
-      chunks: [
-        { title: 'Sárguló levelek', content: 'Túlöntözés jele.', score: 8 },
-      ],
-      hitCount: 1,
-      topScore: 8,
-    };
-    mockedSearchKnowledge
-      .mockResolvedValueOnce(JSON.stringify(weakResult))
-      .mockResolvedValueOnce(JSON.stringify(strongResult));
+  it('logs the interaction with the final answer, messages, and token usage', async () => {
+    streamTextMock.mockReturnValue(
+      streamResult({
+        text: 'válasz',
+        responseMessages: [{ role: 'assistant', content: 'válasz' }],
+        totalUsage: { inputTokens: 5, outputTokens: 3 },
+      }),
+    );
 
-    createMock
-      .mockResolvedValueOnce(
-        toolUseResponse('searchKnowledge', { query: 'sárgul a levél' }),
-      )
-      .mockResolvedValueOnce(
-        toolUseResponse('searchKnowledge', {
-          query: 'sárguló levelek túlöntözés',
-        }),
-      )
-      .mockResolvedValueOnce(finalAnswerResponse('Valószínűleg túlöntözted.'));
+    await askAgent('kérdés');
 
-    const result = await askAgent('miért sárgul a levelem?');
-
-    expect(result.answer).not.toBe('');
-    expect(mockedSearchKnowledge).toHaveBeenCalledTimes(2);
-    expect(mockedSearchKnowledge).toHaveBeenNthCalledWith(1, {
-      query: 'sárgul a levél',
-    });
-    expect(mockedSearchKnowledge).toHaveBeenNthCalledWith(2, {
-      query: 'sárguló levelek túlöntözés',
-    });
-    expect(result.messages.length).toBeGreaterThanOrEqual(6);
+    expect(mockedLogInteraction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        answer: 'válasz',
+        tokenUsage: { inputTokens: 5, outputTokens: 3 },
+      }),
+    );
   });
 
-  it('turns an unknown tool name into an error tool_result instead of throwing', async () => {
-    createMock
-      .mockResolvedValueOnce(toolUseResponse('deleteEverything', {}))
-      .mockResolvedValueOnce(
-        finalAnswerResponse('Nem tudom ezt a műveletet elvégezni.'),
-      );
+  it('falls back to 0 token usage when the SDK reports undefined counts', async () => {
+    streamTextMock.mockReturnValue({
+      text: 'válasz',
+      totalUsage: { inputTokens: undefined, outputTokens: undefined },
+      response: { messages: [] },
+      steps: [],
+    });
 
-    const result = await askAgent('töröld az összes adatot');
+    const result = await askAgent('kérdés');
 
-    expect(result.answer).not.toBe('');
-    const toolResultMessage = result.messages[2];
-    const block = (
-      toolResultMessage.content as Anthropic.ToolResultBlockParam[]
-    )[0];
-    expect(block.is_error).toBe(true);
-    expect(block.content).toBe('Ismeretlen tool: deleteEverything');
+    expect(result.tokenUsage).toEqual({ inputTokens: 0, outputTokens: 0 });
   });
 
   describe('ANTHROPIC_MODEL fallback', () => {
@@ -251,6 +193,10 @@ describe('askAgent', () => {
 
     beforeEach(() => {
       delete process.env['ANTHROPIC_MODEL'];
+      anthropicMock.mockClear();
+      streamTextMock.mockReturnValue(
+        streamResult({ text: 'válasz', responseMessages: [] }),
+      );
     });
 
     afterEach(() => {
@@ -262,13 +208,9 @@ describe('askAgent', () => {
     });
 
     it('falls back to claude-haiku-4-5 when ANTHROPIC_MODEL is unset', async () => {
-      createMock.mockResolvedValueOnce(finalAnswerResponse('válasz'));
-
       await askAgent('kérdés');
 
-      expect(createMock).toHaveBeenCalledWith(
-        expect.objectContaining({ model: 'claude-haiku-4-5' }),
-      );
+      expect(anthropicMock).toHaveBeenCalledWith('claude-haiku-4-5');
     });
   });
 });
