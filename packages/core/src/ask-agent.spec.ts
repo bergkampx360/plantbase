@@ -19,10 +19,21 @@ vi.mock('./db-pool', () => ({
   getPool: vi.fn(),
 }));
 
+vi.mock('./search-knowledge', () => ({
+  SEARCH_KNOWLEDGE_TOOL: {
+    name: 'searchKnowledge',
+    description: 'mock',
+    input_schema: { type: 'object', properties: {} },
+  },
+  searchKnowledge: vi.fn(),
+}));
+
 import { askAgent } from './ask-agent';
 import { getPool } from './db-pool';
+import { searchKnowledge } from './search-knowledge';
 
 const mockedGetPool = vi.mocked(getPool);
+const mockedSearchKnowledge = vi.mocked(searchKnowledge);
 const queryMock = vi.fn();
 
 function usage(inputTokens = 10, outputTokens = 5) {
@@ -51,6 +62,7 @@ function finalAnswerResponse(text: string): Anthropic.Message {
 beforeEach(() => {
   createMock.mockReset();
   queryMock.mockReset();
+  mockedSearchKnowledge.mockReset();
   mockedGetPool.mockReturnValue({
     query: queryMock,
   } as unknown as ReturnType<typeof getPool>);
@@ -125,5 +137,94 @@ describe('askAgent', () => {
     expect(result.answer).not.toBe('');
     expect(result.messages.length).toBeGreaterThanOrEqual(6);
     expect(queryMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('calls searchKnowledge for a care question and returns a final answer', async () => {
+    const retrievalResult = {
+      chunks: [{ title: 'Öntözés', content: 'Hetente egyszer.', score: 9 }],
+      hitCount: 1,
+      topScore: 9,
+    };
+    mockedSearchKnowledge.mockResolvedValueOnce(
+      JSON.stringify(retrievalResult),
+    );
+    createMock
+      .mockResolvedValueOnce(
+        toolUseResponse('searchKnowledge', {
+          query: 'mikor öntözzem a monsterát?',
+        }),
+      )
+      .mockResolvedValueOnce(finalAnswerResponse('Hetente egyszer öntözd.'));
+
+    const result = await askAgent('mikor öntözzem a monsterát?');
+
+    expect(result.answer).not.toBe('');
+    expect(mockedSearchKnowledge).toHaveBeenCalledWith({
+      query: 'mikor öntözzem a monsterát?',
+    });
+    const toolResultMessage = result.messages[2];
+    const block = (
+      toolResultMessage.content as Anthropic.ToolResultBlockParam[]
+    )[0];
+    expect(block.is_error).toBeUndefined();
+    expect(block.content).toBe(JSON.stringify(retrievalResult));
+  });
+
+  it('continues the loop after a searchKnowledge error and returns a final answer', async () => {
+    mockedSearchKnowledge.mockRejectedValueOnce(
+      new Error('embedding hívás sikertelen'),
+    );
+    createMock
+      .mockResolvedValueOnce(
+        toolUseResponse('searchKnowledge', { query: 'sárgul a levél' }),
+      )
+      .mockResolvedValueOnce(finalAnswerResponse('Nem sikerült a keresés.'));
+
+    const result = await askAgent('miért sárgul a levelem?');
+
+    expect(result.answer).not.toBe('');
+    const toolResultMessage = result.messages[2];
+    const block = (
+      toolResultMessage.content as Anthropic.ToolResultBlockParam[]
+    )[0];
+    expect(block.is_error).toBe(true);
+    expect(block.content).toBe('embedding hívás sikertelen');
+  });
+
+  it('supports a self-reflective retry: a weak first search is followed by a reformulated query', async () => {
+    const weakResult = { chunks: [], hitCount: 0, topScore: 0 };
+    const strongResult = {
+      chunks: [
+        { title: 'Sárguló levelek', content: 'Túlöntözés jele.', score: 8 },
+      ],
+      hitCount: 1,
+      topScore: 8,
+    };
+    mockedSearchKnowledge
+      .mockResolvedValueOnce(JSON.stringify(weakResult))
+      .mockResolvedValueOnce(JSON.stringify(strongResult));
+
+    createMock
+      .mockResolvedValueOnce(
+        toolUseResponse('searchKnowledge', { query: 'sárgul a levél' }),
+      )
+      .mockResolvedValueOnce(
+        toolUseResponse('searchKnowledge', {
+          query: 'sárguló levelek túlöntözés',
+        }),
+      )
+      .mockResolvedValueOnce(finalAnswerResponse('Valószínűleg túlöntözted.'));
+
+    const result = await askAgent('miért sárgul a levelem?');
+
+    expect(result.answer).not.toBe('');
+    expect(mockedSearchKnowledge).toHaveBeenCalledTimes(2);
+    expect(mockedSearchKnowledge).toHaveBeenNthCalledWith(1, {
+      query: 'sárgul a levél',
+    });
+    expect(mockedSearchKnowledge).toHaveBeenNthCalledWith(2, {
+      query: 'sárguló levelek túlöntözés',
+    });
+    expect(result.messages.length).toBeGreaterThanOrEqual(6);
   });
 });

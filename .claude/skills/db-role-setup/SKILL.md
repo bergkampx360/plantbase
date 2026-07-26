@@ -1,6 +1,6 @@
 ---
 name: db-role-setup
-description: Use when creating or changing the Prisma schema/migrations in packages/db, or when the local Postgres container is (re)started — provisions and verifies the strictly read-only Postgres role that the agent's runSql tool connects through, so the agent can never mutate data (see docs/architektura.md decision #2).
+description: Use when creating or changing the Prisma schema/migrations in packages/db, or when the local Postgres container is (re)started — provisions and verifies the strictly read-only Postgres role that the agent's runSql and searchKnowledge tools connect through, so the agent can never mutate data (see docs/architektura.md decision #2).
 ---
 
 # DB role setup (Prisma + read-only agent role)
@@ -8,8 +8,10 @@ description: Use when creating or changing the Prisma schema/migrations in packa
 Plantbase uses **two DB connections with two different roles** (docs/architektura.md, docs/stack.md):
 
 - `DATABASE_URL` — read-write, used only by Prisma (schema, migrate, seed) in `packages/db`.
-- `DATABASE_URL_READONLY` — used only by the agent's `runSql` tool in `packages/core`. This role must be
-  physically incapable of writing, not just conventionally restricted by app code.
+- `DATABASE_URL_READONLY` — used only by the agent's `runSql` and `searchKnowledge` tools in `packages/core`
+  (`searchKnowledge`'s `rag/knowledge-store.ts` `searchChunks()` reads `knowledge_chunks` on this same
+  connection, F6). This role must be physically incapable of writing, not just conventionally restricted
+  by app code.
 
 ## When to run this
 
@@ -80,5 +82,5 @@ Plantbase uses **two DB connections with two different roles** (docs/architektur
    Expect `ERROR: permission denied for table products`. If it succeeds, stop and fix the grants before
    wiring `runSql` to this connection.
 
-6. Confirm `packages/core`'s `runSql` tool reads its connection string from `DATABASE_URL_READONLY`, never from
-   `DATABASE_URL`.
+6. Confirm `packages/core`'s `runSql` and `searchKnowledge` tools read their connection string from
+   `DATABASE_URL_READONLY`, never from `DATABASE_URL`.

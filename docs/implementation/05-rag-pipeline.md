@@ -88,7 +88,7 @@ A fázisbontás finomabb szemcséjű, mint az A–E részeknél megszokott átla
 **Commit:** `feat: implement embedding and vector storage with ingest pipeline`
 → **megállok, kérem a tesztelést.**
 
-### F6 — Keresési pipeline (HyDE + rerank) + agent-integráció + unit tesztek ⏳ NYITOTT
+### F6 — Keresési pipeline (HyDE + rerank) + agent-integráció + unit tesztek ✅ KÉSZ
 
 - `packages/core/src/rag/hyde.ts` — Anthropic `generateText`, hipotetikus válasz.
 - `packages/core/src/rag/rerank.ts` — OpenAI `generateObject`, strukturált pontozás (0–10).
