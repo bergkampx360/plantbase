@@ -20,7 +20,8 @@ implementálása nem F8 része**, csak a terv.
 
 ```prisma
 model KnowledgeSource {
-  source          String   @id                // pl. "care-miscellaneous__why-plant-leaves-turn-yellow.md"
+  id              Int      @id @default(autoincrement())
+  source          String   @unique             // pl. "care-miscellaneous__why-plant-leaves-turn-yellow.md"
   title           String
   category        String
   contentHash     String                       // SHA-256 hex a TELJES nyers fájltartalmon (frontmatterrel együtt)
@@ -34,17 +35,27 @@ model KnowledgeSource {
 }
 ```
 
+Az `id Int @id @default(autoincrement())` + `source String @unique` mintát követi (nem a
+`source` a PK) — ugyanaz a konvenció, mint a `Product`-nál (`latin_name String @unique`) és a
+`KnowledgeChunk`-nál (`id Int @id @default(autoincrement())`) a `schema.prisma`-ban, hogy a
+tábla stílusban konzisztens maradjon a meglévőkkel.
+
 A `knowledge_chunks.source` mező (már létezik, F2) logikailag erre a táblára hivatkozna. Ha ez a
 terv implementálódik, egy `ON DELETE CASCADE` FK-kényszer (`knowledge_chunks.source →
-knowledge_sources.source`) automatikusan törölné egy forrás chunkjait a forrás törlésekor,
-csökkentve az "elfelejtett kézi DELETE" hibalehetőséget.
+knowledge_sources.source`, a `@unique` mezőre hivatkozva, nem szükséges hozzá `@id`) automatikusan
+törölné egy forrás chunkjait a forrás törlésekor, csökkentve az "elfelejtett kézi DELETE"
+hibalehetőséget.
+
+**RO/RW-hozzáférés**: a `knowledge_sources` tábla kizárólag az ingest/sync-script RW-poolján
+(`getWritePool()`) íródna/olvasódna — az agent (`searchKnowledge`) sosem érné el, nincs rá
+szüksége. Emiatt, ellentétben a `knowledge_chunks`-szal, ennek a táblának **nem** kellene RO
+`SELECT`-jogot adni a `db-role-setup` skillben, ha ez a terv implementálódik.
 
 ### Miért a teljes fájlon fut a hash, nem csak a body-n
 
-A `chunk.ts` a cikk `title`-jét belesüti minden chunk `content`-jébe kontextus-prefixként (F4,
-3. döntés) — tehát ha **csak** a frontmatter `title`-je változik (a body nem), az embeddelt szöveg
+A `chunk.ts` a cikk `title`-jét belesüti minden chunk `content`-jébe kontextus-prefixként (F4, 3. döntés) — tehát ha **csak** a frontmatter `title`-je változik (a body nem), az embeddelt szöveg
 mégis megváltozik minden abból a cikkből származó chunknál. Ha a hash csak a body-n futna, ez a
-változás észrevétlen maradna. A teljes nyers fájltartalom (frontmatter + body) hash-elése ezt a
+változás észrevétlen maradna. A teljes nyers fájltartalom (frontmatter + body) hash-elése ezt az
 esetet automatikusan helyesen kezeli.
 
 ### Miért `chunkingVersion` manuális szám, nem automatikusan számolt konfig-hash
