@@ -1,10 +1,12 @@
 # Plantbase — lokális Postgres (OrbStack futtatja). Helyben dolgozunk, nincs felhő-DB.
 # Két jog: a plantbase (RW) viszi a sémát/migrációt/seedet, a plantbase_ro (RO)
-# az agent runSql-jét szolgálja ki (NFR1). A RO szerepkört az initdb script hozza létre.
+# az agent runSql-jét (és a RAG searchKnowledge tooljának olvasásait) szolgálja ki
+# (NFR1). A RO szerepkört az initdb script hozza létre.
+# pgvector: a knowledge_chunks tábla embedding oszlopához (RAG pipeline, F2).
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: pgvector/pgvector:0.8.5-pg17
     container_name: plantbase-pg
     restart: unless-stopped
     environment:
