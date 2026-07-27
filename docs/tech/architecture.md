@@ -54,7 +54,10 @@ hívásonként hozza létre.
 Egyetlen `POST /api/chat` route (`apps/server/src/main.ts`). **Nem** az `askAgent()`-en keresztül
 megy — a CLI-vel csak a `packages/core/src/index.ts` építőelemeit osztja meg (tool-definíciók,
 `SYSTEM_PROMPT`, `resolveModel`), egy saját, önálló `streamText`-hívást épít belőlük, streamelő
-fogyasztással (`result.pipeUIMessageStreamToResponse(res)`). Az env-betöltés (`dotenv`) ugyanúgy a
+fogyasztással a standalone `pipeUIMessageStreamToResponse({ response, stream })` függvényen
+keresztül (`result.toUIMessageStream({ onFinish })`-ból kapott stream — nem a
+`result.pipeUIMessageStreamToResponse(res)` kényelmi metódus, mert az nem fogad egyedi `onFinish`-t
+a `Message.parts` perzisztálásához, H4). Az env-betöltés (`dotenv`) ugyanúgy a
 belépési ponton, indulás előtt történik, mint a CLI-nél (`apps/cli/src/main.ts` mintája) — a
 globálisan/CI-ban futtatott szerver-folyamat sem örökli a direnv-et.
 
