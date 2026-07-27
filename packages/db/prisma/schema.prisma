@@ -78,6 +78,12 @@ model Message {
   thread    Thread   @relation(fields: [threadId], references: [id])
   role      String
   content   String
+  // teljes UIMessage.parts tömb (szöveg + tool-hívás/-eredmény), csak assistant-
+  // üzeneteknél töltve (H4, docs/implementation/07-web-ux-improvements.md) — a
+  // content mező marad egyszerű szöveges fallback/napló céljából; a H4 előtti
+  // sorokon null, a toUIMessages() kliens-oldali fallback-ja ekkor a content-et
+  // egyetlen text part-tá alakítja
+  parts     Json?
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("messages")

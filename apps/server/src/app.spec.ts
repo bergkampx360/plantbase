@@ -11,6 +11,7 @@ const {
   convertToModelMessagesMock,
   generateTextMock,
   anthropicMock,
+  pipeUIMessageStreamToResponseMock,
 } = vi.hoisted(() => ({
   streamTextMock: vi.fn(),
   toolMock: vi.fn((config: unknown) => config),
@@ -18,6 +19,11 @@ const {
   convertToModelMessagesMock: vi.fn((messages: unknown) => messages),
   generateTextMock: vi.fn().mockResolvedValue({ text: 'Kaktusz-ajánlás' }),
   anthropicMock: vi.fn().mockReturnValue('mock-anthropic-model'),
+  pipeUIMessageStreamToResponseMock: vi.fn(
+    ({ response }: { response: { end: (chunk: string) => void } }) => {
+      response.end('mock-stream');
+    },
+  ),
 }));
 
 vi.mock('ai', () => ({
@@ -26,6 +32,7 @@ vi.mock('ai', () => ({
   stepCountIs: stepCountIsMock,
   convertToModelMessages: convertToModelMessagesMock,
   generateText: generateTextMock,
+  pipeUIMessageStreamToResponse: pipeUIMessageStreamToResponseMock,
 }));
 
 vi.mock('@ai-sdk/anthropic', () => ({
@@ -67,21 +74,25 @@ vi.mock('@plantbase/db', () => ({
 
 import app from './app';
 
-function streamResult(text: string) {
+type ResponseMessage = { role: 'assistant'; parts: unknown[] };
+
+// a streamText()-eredmény toUIMessageStream({onFinish}) metódusát mockoljuk (H4) — a
+// responseMessage-t itt adja meg a teszt, az onFinish meghívása egy promise-t ad
+// vissza, amit a pipeUIMessageStreamToResponseMock (lásd fent) megvár, mielőtt
+// lezárja a választ, így a mentés determinisztikusan a válasz előtt fut le
+function streamResult(responseMessage: ResponseMessage) {
   return {
-    pipeUIMessageStreamToResponse: vi.fn(
-      async (res: { end: (chunk: string) => void }) => {
-        const onFinish = streamTextMock.mock.calls.at(-1)?.[0]?.onFinish as
-          ((result: { text: string }) => Promise<void>) | undefined;
-        await onFinish?.({ text });
-        res.end('mock-stream');
-      },
+    toUIMessageStream: vi.fn(
+      (options: {
+        onFinish: (opts: { responseMessage: ResponseMessage }) => Promise<void>;
+      }) => Promise.resolve(options.onFinish({ responseMessage })),
     ),
   };
 }
 
 beforeEach(() => {
   streamTextMock.mockReset();
+  pipeUIMessageStreamToResponseMock.mockClear();
   threadFindManyMock.mockReset();
   threadFindUniqueMock.mockReset();
   threadCreateMock.mockReset();
@@ -155,7 +166,19 @@ describe('POST /api/chat', () => {
 
   it('creates a new thread when the id is not yet known', async () => {
     threadFindUniqueMock.mockResolvedValue(null);
-    streamTextMock.mockReturnValue(streamResult('szia!'));
+    const assistantParts = [
+      { type: 'text', text: 'szia!' },
+      {
+        type: 'tool-listCategories',
+        toolCallId: 'call-1',
+        state: 'output-available',
+        input: {},
+        output: ['kaktusz'],
+      },
+    ];
+    streamTextMock.mockReturnValue(
+      streamResult({ role: 'assistant', parts: assistantParts }),
+    );
 
     const response = await request(app)
       .post('/api/chat')
@@ -178,9 +201,15 @@ describe('POST /api/chat', () => {
         content: 'milyen kaktuszotok van?',
       },
     });
-    // az onFinish-ben mentett asszisztens-válasz
+    // az onFinish-ben mentett asszisztens-válasz: content a szöveges fallback,
+    // parts a teljes tool-hívást is tartalmazó tömb (H4)
     expect(messageCreateMock).toHaveBeenCalledWith({
-      data: { threadId: 'new-thread', role: 'assistant', content: 'szia!' },
+      data: {
+        threadId: 'new-thread',
+        role: 'assistant',
+        content: 'szia!',
+        parts: assistantParts,
+      },
     });
     expect(threadUpdateMock).toHaveBeenCalledWith({
       where: { id: 'new-thread' },
@@ -198,7 +227,12 @@ describe('POST /api/chat', () => {
         content: 'korábbi kérdés',
       },
     ]);
-    streamTextMock.mockReturnValue(streamResult('folytatás'));
+    streamTextMock.mockReturnValue(
+      streamResult({
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'folytatás' }],
+      }),
+    );
 
     const response = await request(app)
       .post('/api/chat')

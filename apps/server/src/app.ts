@@ -8,9 +8,10 @@ import {
   generateThreadTitle,
   resolveModel,
 } from '@plantbase/core';
-import { prisma } from '@plantbase/db';
+import { prisma, type InputJsonValue } from '@plantbase/db';
 import {
   convertToModelMessages,
+  pipeUIMessageStreamToResponse,
   stepCountIs,
   streamText,
   type UIMessage,
@@ -128,9 +129,26 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       searchKnowledge: SEARCH_KNOWLEDGE_TOOL,
     },
     stopWhen: stepCountIs(MAX_TOOL_ITERATIONS),
-    onFinish: async ({ text }) => {
+  });
+
+  // toUIMessageStream({ onFinish }) — NEM a streamText()-szintű onFinish — mert a
+  // responseMessage egy teljes, kész UIMessage a parts tömbjével (szöveg + minden
+  // tool-hívás/-eredmény, ugyanabban az alakban, amit a kliens useChat-je végül
+  // megkap), így nincs szükség kézi steps-parsingra a perzisztáláshoz (H4)
+  const uiMessageStream = result.toUIMessageStream({
+    onFinish: async ({ responseMessage }) => {
       await prisma.message.create({
-        data: { threadId: id, role: 'assistant', content: text },
+        data: {
+          threadId: id,
+          role: 'assistant',
+          content: extractText(responseMessage),
+          // Prisma Json mező InputJsonValue-t vár, a UIMessagePart uniónak nincs
+          // string index signature-je — a JSON round-trip strukturálisan egyszerű,
+          // sima objektumra alakítja (mellékesen az undefined mezőket is eldobja)
+          parts: JSON.parse(
+            JSON.stringify(responseMessage.parts),
+          ) as InputJsonValue,
+        },
       });
       await prisma.thread.update({
         where: { id },
@@ -139,7 +157,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     },
   });
 
-  result.pipeUIMessageStreamToResponse(res);
+  pipeUIMessageStreamToResponse({ response: res, stream: uiMessageStream });
 });
 
 export default app;
