@@ -24,6 +24,9 @@ F rész (RAG, HF3) is kész: a `plantbase ask` gondozási kérdésekre a `search
 (HyDE + rerank pipeline) a 202 vendorolt gondozási cikk chunkolt/embeddelt tudásbázisából válaszol,
 forráshivatkozással; golden-set kiértékelés, karbantartási architektúra-terv és költségbecslés is
 elkészült — ld. [`docs/rag-pipeline.md`](docs/rag-pipeline.md), [`docs/rag-architektura.md`](docs/rag-architektura.md).
+G rész (webes chat felület) is kész: streamelő `apps/server` (Express) + `apps/web` (React,
+`useChat`, tool-kártyák, "Új chat"/history-sáv) ugyanazokra a `packages/core`-építőelemekre épül,
+mint a CLI, DB-alapú (`Thread`/`Message`) beszélgetés-történettel — ld. "Futtatás és tesztelés".
 
 ### Költség (RAG)
 
@@ -60,8 +63,8 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 | [`docs/ddd/glossary.md`](docs/ddd/glossary.md)                   | Ubiquitous language (termék-katalógus + RAG domain fogalmak)                        |
 | [`docs/ddd/model.md`](docs/ddd/model.md)                         | Entitások, value objectek, aggregátumok                                             |
 | [`docs/tech/infra.md`](docs/tech/infra.md)                       | Postgres/pgvector infra, a két DB-kapcsolat (RO/RW)                                 |
-| [`docs/tech/architecture.md`](docs/tech/architecture.md)         | `packages/core`/`apps/cli` felosztás, `rag/` réteg                                  |
-| [`docs/tech/api.md`](docs/tech/api.md)                           | Tool/CLI felület (`ask`, `runSql`, `listCategories`, `searchKnowledge`)             |
+| [`docs/tech/architecture.md`](docs/tech/architecture.md)         | `packages/core`/`apps/cli`/`apps/server`/`apps/web` felosztás, `rag/` réteg         |
+| [`docs/tech/api.md`](docs/tech/api.md)                           | Tool/CLI felület + HTTP-felület (`/api/chat`, `/api/threads`)                       |
 | [`CLAUDE.md`](CLAUDE.md)                                         | Claude Code-nak szóló projekt-instrukciók                                           |
 
 ## Helyi fejlesztői környezet
@@ -103,6 +106,17 @@ plantbase ask "<kérdés>"
 ```
 
 A `--show-prompt` kapcsolóval a teljes üzenet-előzmény (LLM-hívások, tool-hívások, válaszok) is megjelenik — az `ask` parancson (`... ask "<kérdés>" --show-prompt`) és interaktív módban is (`pnpm run plantbase --show-prompt`). Minden interakció naplózva a `logs/` mappába (JSONL, nincs commitolva).
+
+**Webes chat felület** (`apps/server` + `apps/web`, G rész, `docs/implementation/06-web-chat.md`) —
+két külön folyamat, párhuzamosan indítva:
+
+```bash
+pnpm exec nx serve server   # Express, streamelő /api/chat + /api/threads, alapértelmezett port 3001
+pnpm exec nx serve web      # Vite dev-szerver, alapértelmezett port 4200 (nem az 5173-as Vite-alapértelmezett)
+```
+
+Ezután a böngészőben a `http://localhost:4200` cím alatt érhető el a chat UI. A `PORT`/`CORS_ORIGIN`
+env-változók (`.env.example`) opcionálisak, van kódbeli fallback mindkettőre.
 
 **RAG golden-set kiértékelés** (reprodukálható, `docs/rag-pipeline.md` "Golden set" szakaszának alapja) — nyers vektorkeresés vs. teljes HyDE+rerank pipeline összevetése a 8 tesztkérdésre, valós DB/API-hívásokkal:
 
