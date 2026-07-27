@@ -105,6 +105,18 @@ előfeltételként, de a tényleges telepítő a már működő shadcn/ui CLI-re
 kipróbálva, ténylegesen működik ebben a Vite-projektben is, semmilyen Next.js-specifikus
 függőséget nem hoz be (csak a `use-stick-to-bottom`-ot).
 
+A `Message`/`MessageContent`/`MessageResponse` (`src/components/ai-elements/message.tsx`, H2-től)
+a végleges buborék-szerkezetet és a Markdown-renderelést adja: `MessageResponse` a `Streamdown`-t
+(streamelés-biztos Markdown-parser) csomagolja, a fél-kész/nem lezárt markdown-szintaxist is
+korrekt kezeli menet közben. **Tudatosan testreszabva, mert ez a fájl a telepítés után a saját
+kódbázisunk része**: (1) az `ai-elements` alapértelmezett `cjk`/`code`/`math`/`mermaid`
+Streamdown-pluginjai (shiki minden nyelvhez, katex, mermaid+cytoscape) eltávolítva — egy magyar
+növénygondozási chatnek nincs rájuk szüksége, a bundle méretét viszont ~1,47 MB-ról ~874 KB-ra
+(258 KB gzip) csökkentette; (2) a `MessageContent` alapértelmezett stílusa csak a user-üzeneteknek
+ad hátteres buborékot, az asszisztensnek nem (ChatGPT-stílusú, aszimmetrikus design) — visszaállítva
+a plantbase eredeti, szimmetrikus buborék-dizájnjára (`bg-primary`/`bg-muted`), mert a felhasználó
+ezt jelezte kézi teszteléskor hiányként.
+
 **G4 közben talált, valódi függőség-verzió ütközés**: az `@ai-sdk/react` csomag saját verziószámozása
 NEM követi az `ai` csomagét — `@ai-sdk/react@4.x` valójában `ai@7.x`-et vár (nem `ai@5.x`-et, ahogy a
 számok alapján feltételezhető lenne), ami típusütközést okozott a repo többi részének `ai@^5.0.0`

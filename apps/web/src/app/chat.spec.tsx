@@ -76,6 +76,54 @@ describe('Chat', () => {
     expect(screen.getByRole('button', { name: /Küldés/ })).toBeDisabled();
   });
 
+  it('renders assistant Markdown as formatted HTML, not raw syntax', () => {
+    useChatMock.mockReturnValue({
+      messages: [
+        {
+          id: 'm1',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'text',
+              text: 'Az **Öregember-kaktusz** a legolcsóbb.',
+            },
+          ],
+        },
+      ],
+      sendMessage,
+      status: 'ready',
+    });
+
+    render(<Chat id="thread-1" initialMessages={[]} />);
+
+    // a Streamdown a félkövért egy data-streamdown="strong" span-ként rendereli,
+    // nem natív <strong>-ként
+    expect(
+      screen.getByText('Öregember-kaktusz', {
+        selector: '[data-streamdown="strong"]',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument();
+  });
+
+  it('renders a literal asterisk in a user message as plain text, not Markdown', () => {
+    useChatMock.mockReturnValue({
+      messages: [
+        {
+          id: 'm1',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Mennyi a *pontos* ára?' }],
+        },
+      ],
+      sendMessage,
+      status: 'ready',
+    });
+
+    render(<Chat id="thread-1" initialMessages={[]} />);
+
+    expect(screen.getByText('Mennyi a *pontos* ára?')).toBeInTheDocument();
+  });
+
   it('renders the message list inside the ai-elements Conversation container', () => {
     useChatMock.mockReturnValue({ messages: [], sendMessage, status: 'ready' });
 
