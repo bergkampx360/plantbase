@@ -75,23 +75,34 @@ beszélgetéseket, ne csak dátummal jelölje.
 Minden fázis: saját branch → implementáció+teszt → doc-lezáró commit → `ddd-audit` → megállok
 tesztelésre → push/PR/merge csak explicit jóváhagyás után — ugyanaz a ciklus, mint G1–G7-nél.
 
-### H1 — Automatikus lescrollozás a beszélgetés végére (`ai-elements` `Conversation`) ⏳ NYITOTT
+### H1 — Automatikus lescrollozás a beszélgetés végére (`ai-elements` `Conversation`) ✅ KÉSZ
 
-- **Első lépés, mielőtt bármi más történne**: próba-telepítés (`npx ai-elements@latest add
-conversation` vagy a shadcn CLI-s ekvivalens) és `nx serve web` — megerősíteni, hogy a Vite-
-  alapú `apps/web`-ben ténylegesen működik (ld. a fenti kockázat a Döntéseknél). Ha nem, vissza a
-  `use-stick-to-bottom` közvetlen bekötésére, dokumentálva a döntés-változást.
-- `apps/web/src/components/ai-elements/conversation.tsx` (a telepítő generálja).
-- `apps/web/src/app/chat.tsx`: a jelenlegi `overflow-y-auto` üzenetlista-`div` lecserélve
-  `<Conversation><ConversationContent>...(a meglévő messages.map, változatlanul)...</ConversationContent></Conversation>`-re.
+**A dokumentált kockázat nem igazolódott**: `npx ai-elements@latest add conversation`, az
+`apps/web` könyvtárból futtatva, ténylegesen működött — csak a `use-stick-to-bottom` dependency
+került telepítésre, semmi Next.js-specifikus. (A repo-gyökérből, `-c apps/web`-fel futtatva a
+shadcn CLI monorepo-workspace-felismerése nem működött; közvetlenül `apps/web`-ből futtatva igen
+— ez egy H1-nél talált gyakorlati részlet, nem a "Next.js" kockázat maga.)
 
-**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, ÚJ teszttel: a `Chat`
-spec-ben (`apps/web/src/app/chat.spec.tsx`) egy eset, ami leellenőrzi, hogy a `Conversation`/
-`ConversationContent` be van kötve (a `Conversation` belső `use-stick-to-bottom`-logikáját magát
-nem kell újratesztelni, az a könyvtár saját felelőssége). Kézi böngészős teszt: szál
-kiválasztásakor a scroll a történet végén van (nem a tetején); kérdés elküldésekor és streamelés
-közben a scroll követi az új tartalmat; ha streamelés közben felfelé görgetünk, NEM rángat vissza
-a legaljára.
+- `apps/web/src/components/ai-elements/conversation.tsx` (a telepítő generálta).
+- `apps/web/src/app/chat.tsx`: az üzenetlista `<Conversation className="flex-1"><ConversationContent>`
+  csomagolásba került, a meglévő `messages.map` renderelés változatlan.
+- **Menet közben talált, valós tesztkörnyezeti hiányosság**: a `use-stick-to-bottom` belül
+  `ResizeObserver`-t használ, amit a jsdom nem implementál — enélkül minden, `Chat`-et vagy
+  `App`-ot renderelő teszt `ReferenceError`-ral elszállt volna. Javítva: `apps/web/vitest-setup.ts`
+  egy minimál `ResizeObserverStub`-bal (`observe`/`unobserve`/`disconnect` no-op-ok). Ehhez
+  `apps/web/tsconfig.spec.json`-nak is bővülnie kellett `"lib": ["ES2022", "dom"]`-mal, mert a
+  `globalThis.ResizeObserver` típusa a `dom` lib nélkül nem létezett a spec-fájlok
+  TypeScript-kontextusában.
+
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, két tiszta futtatással is
+stabil. ÚJ teszt (`chat.spec.tsx`): a `Conversation` `role="log"`-ját (a komponens saját
+forráskódjából) ellenőrzi, hogy a wrapper ténylegesen be van kötve — a `use-stick-to-bottom` belső
+scroll-fizikáját magát nem kell újratesztelni, az a könyvtár saját felelőssége.
+**CLI-regresszió**: `plantbase ask "..."` valós API-hívással működik. **Interaktív böngészős teszt
+nem történt** — a `claude-in-chrome` megpróbálva, nem volt kapcsolódva ebben a munkamenetben sem;
+csak a `curl`-lal ellenőrzött, hogy a Vite dev-szerver ténylegesen kiszolgálja az oldalt (`200`).
+A tényleges scroll-viselkedést (streamelés közben követi-e az új tartalmat, nem rángat-e vissza
+felfelé görgetéskor) emiatt a felhasználónak kell megerősítenie böngészőben.
 **Commit:** `feat: auto-scroll chat to the latest message with ai-elements Conversation`
 → megállok, kérem a tesztelést.
 
