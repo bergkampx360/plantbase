@@ -81,16 +81,28 @@ exportált tool-okból (`RUN_SQL_TOOL`/`LIST_CATEGORIES_TOOL`/`SEARCH_KNOWLEDGE_
 a korábbi kör(ök) `Message`-ei betöltődnek, `UIMessage`-é alakítva, és a `convertToModelMessages`
 elé kerülnek a `streamText`-hívásban — enélkül a modell nem tudna a korábbi körökre hivatkozva
 válaszolni, csak a mentés léteznék, a beszélgetés-folytonosság a válaszban nem. A user-üzenet
-azonnal mentve (még a `streamText`-hívás előtt); a végleges asszisztens-válasz a `streamText`
-`onFinish` callbackjében mentve (ez fut le, amikor a teljes, több lépéses válasz és minden
-tool-végrehajtás lezárult, nem lépésenként). **Az `X-Thread-Id` response header megszűnt** — a
+azonnal mentve (még a `streamText`-hívás előtt); a végleges asszisztens-válasz a
+`result.toUIMessageStream({ onFinish: ({ responseMessage }) => ... })` callbackjében mentve (ez fut
+le, amikor a teljes, több lépéses válasz és minden tool-végrehajtás lezárult, nem lépésenként) — **nem**
+a `streamText`-szintű `onFinish`-ben, mert az csak a végleges szöveget adja, nem a tool-hívásokat
+is tartalmazó `parts` tömböt (H4, ld. lent). **Az `X-Thread-Id` response header megszűnt** — a
 kliens már ismeri az `id`-t, ő generálta.
 
-Válasz: streamelt AI SDK UI-message stream (`result.pipeUIMessageStreamToResponse(res)`,
-Server-Sent Events). A natív `tool-input-start`/`tool-input-available`/`tool-output-available`
-part-ok automatikusan tartalmazzák a tool-hívásokat és -eredményeket — **nincs** egyelőre kézzel
-írt `data-tool`/`data-agent` custom part (a G-terv eredeti ötlete); ha G5 (tool-kártya UI) konkrét
-igénye ezt indokolja, ott dől el.
+Válasz: streamelt AI SDK UI-message stream — a **standalone** `pipeUIMessageStreamToResponse({
+response, stream })` függvénnyel (nem a `result.pipeUIMessageStreamToResponse(res)` kényelmi
+metódussal, mert az nem fogad egyedi `onFinish`-t), Server-Sent Events. A natív
+`tool-input-start`/`tool-input-available`/`tool-output-available` part-ok automatikusan
+tartalmazzák a tool-hívásokat és -eredményeket — **nincs** egyelőre kézzel írt `data-tool`/
+`data-agent` custom part (a G-terv eredeti ötlete); ha G5 (tool-kártya UI) konkrét igénye ezt
+indokolja, ott dől el.
+
+**Tool-hívások perzisztálása (H4)**: a `Message.parts` (nullable `Json`) mezőbe a mentés a natív
+`toUIMessageStream`-`onFinish` `responseMessage.parts`-ja kerül — a teljes, kész `UIMessage.parts`
+tömb (szöveg + minden tool-hívás/-eredmény), ugyanabban az alakban, mint amit a kliens megkap
+élő streamelés közben. A `content` mező marad, egyszerű szöveges fallback/napló céljából. A
+`GET /api/threads/:id` válaszban minden `Message`-nek van (esetleg `null`) `parts` mezője; a H4
+előtti üzeneteknél `null`, a kliens (`apps/web/src/app/app.tsx` `toUIMessages()`) ilyenkor a
+`content`-ből épít egyetlen szöveges `part`-ot.
 
 CORS: `CORS_ORIGIN` env-változó (alapértelmezett `http://localhost:4200` — a `@nx/react:application`
 generátor ezt a portot állítja be alapértelmezetten `apps/web`-hez, nem az általános Vite-

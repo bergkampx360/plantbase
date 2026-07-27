@@ -5,13 +5,28 @@ import { ThreadSidebar } from './thread-sidebar';
 
 const THREADS_URL = 'http://localhost:3001/api/threads';
 
-type StoredMessage = { id: number; role: string; content: string };
+type StoredMessage = {
+  id: number;
+  role: string;
+  content: string;
+  parts?: unknown;
+};
+
+function isUIMessageParts(value: unknown): value is UIMessage['parts'] {
+  return Array.isArray(value) && value.length > 0;
+}
 
 function toUIMessages(messages: StoredMessage[]): UIMessage[] {
   return messages.map((message) => ({
     id: String(message.id),
     role: message.role === 'assistant' ? 'assistant' : 'user',
-    parts: [{ type: 'text', text: message.content }],
+    // a H4 óta mentett assistant-üzeneteknek van parts mezőjük (tool-hívás/-eredmény
+    // is benne, már a helyes alakban, mert a szerver a natív responseMessage.parts-ot
+    // mentette) — a H4 előtti, parts nélküli üzeneteknél a content marad az egyetlen
+    // forrás, csak-szöveges rekonstrukcióval
+    parts: isUIMessageParts(message.parts)
+      ? message.parts
+      : [{ type: 'text', text: message.content }],
   }));
 }
 

@@ -53,7 +53,7 @@ aggregátum — nincs köztük FK-kapcsolat. Az agent mindkettőt olvashatja (k�
 összekapcsolásuk (pl. "ez a növény milyen gondozást igényel") az agent LLM-szintű
 következtetése, nem DB-szintű join.
 
-## Chat domain (G rész, `docs/implementation/06-web-chat.md`, G3–G4; H rész, `07-web-ux-improvements.md`, H3)
+## Chat domain (G rész, `docs/implementation/06-web-chat.md`, G3–G4; H rész, `07-web-ux-improvements.md`, H3–H4)
 
 ### `Thread` (aggregátum-gyökér, `threads` tábla) és `Message` (entitás, `messages` tábla)
 
@@ -63,9 +63,18 @@ Thread                          Message
 ├── title (nullable, LLM adja)  ├── threadId    (FK → Thread.id)
 ├── createdAt                   ├── role         ("user" / "assistant")
 ├── updatedAt (minden új        ├── content
-│   üzenetnél frissül)          └── createdAt
-└── messages  (1:N)
+│   üzenetnél frissül)          ├── parts        (nullable Json, H4)
+└── messages  (1:N)              └── createdAt
 ```
+
+**`Message.parts` (H4)**: nullable `Json` — csak assistant-üzeneteknél töltve, a teljes
+`UIMessage.parts` tömb (szöveg + tool-hívás/-eredmény), a natív AI SDK
+`toUIMessageStream`-`onFinish` `responseMessage.parts`-ja közvetlenül mentve. A `content` mező
+marad, egyszerű szöveges fallback/napló céljából. H4 előtti sorokon `null` — a webes UI
+(`apps/web/src/app/app.tsx` `toUIMessages()`) ekkor a `content`-ből épít egyetlen szöveges
+`part`-ot, tool-kártya nélkül. Ez zárta le azt a hiányosságot, hogy szál-váltás/oldal-újratöltés
+után a `ToolCallCard` (G5) eltűnt — élő streamelés közben mindig helyesen megjelent, csak a
+DB-ből visszatöltött történetnél nem, mert korábban a `Message` sosem tárolt tool-adatot.
 
 **`Thread.title` (H3)**: nullable — a szerver tölti ki egy rövid, LLM-generált összefoglalóval
 (`generateThreadTitle()`, `packages/core/src/title-agent.ts`) az ÚJ szál első kérdéséből, nem a
@@ -90,7 +99,9 @@ skillben.
 **Kapcsolat a `logs/` JSONL-naplózással**: két független, párhuzamos mechanizmus, NEM ugyanaz az
 adat két helyen. A CLI (`logInteraction`) a `logs/<timestamp>.jsonl`-be ír, minden interakcióról
 (system prompt, teljes üzenet-tömb, token-használat) — audit/debug-trail célra. A `Thread`/
-`Message` a webes UI beszélgetés-történetének forrása — csak a kérdést és a végső választ tárolja,
-tool-hívások nélkül. A CLI és a Web history-ja explicit NEM egyesül: egy CLI-munkamenet nem
+`Message` a webes UI beszélgetés-történetének forrása — a kérdést, a végső választ, és (H4 óta) az
+assistant-üzenetek tool-hívásait/-eredményeit is tárolja (`parts`), de nem a system promptot vagy a
+token-használatot, azok kizárólag a CLI naplójában élnek. A CLI és a Web history-ja explicit NEM
+egyesül: egy CLI-munkamenet nem
 jelenik meg a webes "korábbi beszélgetések" listában, és fordítva sincs átjárás (tudatos,
 egyszerűsítő döntés, `06-web-chat.md` 9–10. döntése).

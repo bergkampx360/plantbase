@@ -182,43 +182,63 @@ böngészőben**: "nagyon szépen működik".
 **Commit:** `feat: derive thread titles from the first question via a title-generation agent`
 → megállok, kérem a tesztelést.
 
-### H4 — Tool-hívások perzisztálása szál-váltás/újratöltés után is ⏳ NYITOTT
+### H4 — Tool-hívások perzisztálása szál-váltás/újratöltés után is ✅ KÉSZ
 
 **H1 kézi tesztelése közben talált hiányosság** (nem H1 regressziója — élő teszttel megerősítve,
 hogy egy friss kérdésnél a tool-kártya helyesen megjelenik, csak a DB-ből visszatöltött
-történetnél nem). A `Message` tábla G3 óta csak a végleges `role`/`content` szöveget tárolja,
+történetnél nem). A `Message` tábla G3 óta csak a végleges `role`/`content` szöveget tárolta,
 tool-hívás/-eredmény adatot sosem — ezért `apps/web/src/app/app.tsx` `toUIMessages()` egy
-visszatöltött üzenetből csak egyetlen `text` part-ot tud rekonstruálni, a `ToolCallCard` (G5)
-nem jelenik meg.
+visszatöltött üzenetből csak egyetlen `text` part-ot tudott rekonstruálni, a `ToolCallCard` (G5)
+nem jelent meg.
 
-- `packages/db/prisma/schema.prisma`: `Message` kap egy nullable `parts Json?` mezőt (Postgres
-  `Json` típus Prisma-ban) — a teljes `UIMessage.parts` tömb (szöveg + tool-input/-output) tárolva,
-  a meglévő `content` mező marad (egyszerű szöveges fallback/keresés/napló céljából). Migráció.
-- `apps/server/src/app.ts`: a `streamText` `onFinish`-ében jelenleg csak a végleges `text` kerül
-  mentésre — ki kell egészíteni úgy, hogy a lépések (`steps`) tool-hívásait/-eredményeit is
-  tartalmazó, `UIMessage.parts`-kompatibilis szerkezet kerüljön a `parts` mezőbe. **Az AI SDK
-  streamText `onFinish`/`steps` pontos alakja (hogyan nyerhető ki belőle egy `UIMessage.parts`-tal
-  kompatibilis tömb) Context7-vel ellenőrizendő végrehajtáskor** — ez a repóban még nem használt
-  minta (eddig csak a végleges szöveg mentése történt, G3).
-- `apps/web/src/app/app.tsx`: `toUIMessages()` a `parts` mezőt használja, ha van (a régi, `parts`
-  nélküli üzeneteknél visszaesik az eddigi, csak-szöveges rekonstrukcióra).
-- `apps/server/src/app.spec.ts`, `apps/server/src/app.ts`'s `GET /api/threads/:id`: a válasz
-  tartalmazza a `parts` mezőt is.
+**A tervezett kézi `steps`-parsing helyett natív AI SDK mechanizmus (Context7-vel megerősítve,
+`/vercel/ai/ai_5_0_0`)**: a `streamText`-eredmény `toUIMessageStream(options)` metódusának saját
+`onFinish: ({ responseMessage }) => ...` opciója van — a `responseMessage` egy **teljes, kész
+`UIMessage`**, a `parts` tömbjével (szöveg + minden tool-hívás/-eredmény, pontosan abban az
+alakban, amit a kliens `useChat`-je végül megkapna). Ez kiváltotta a `streamText`-szintű
+`onFinish: ({text}) => ...`-ot, semmilyen kézi `steps`-összerakás nem kellett.
 
-**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld. Meglévő `apps/server/src/app.spec.ts`
-frissítve/kiegészítve, hogy az `onFinish`-ben mentett `parts` tartalmazza a tool-hívás(oka)t is, nem
-csak a szöveget. **CLI-regresszió**: `plantbase ask "..."` a séma-változás után is működik. Kézi
-böngészős teszt: egy tool-hívást igénylő kérdés után szál-váltás (vagy oldal-újratöltés) után is
-látszik a tool-kártya, ugyanúgy, mint élőben; egy régi, `parts` nélküli szál változatlanul,
-tool-kártya nélkül (csak szöveggel) jelenik meg, hiba nélkül.
+- `packages/db/prisma/schema.prisma`: `Message.parts Json?` (nullable — a H4 előtti üzeneteknek
+  nincs). Migráció: `20260727174508_h4_add_message_parts` (egyszerű, nem-destruktív `ADD COLUMN`).
+  A meglévő `content` mező marad, egyszerű szöveges fallback/napló céljából.
+- `apps/server/src/app.ts`: a korábbi `result.pipeUIMessageStreamToResponse(res)` kényelmi metódus
+  (ami nem fogad `onFinish`-t) helyett a folyamat explicit épül fel: `const stream =
+result.toUIMessageStream({ onFinish: async ({ responseMessage }) => {...} })`, majd a
+  **standalone** `pipeUIMessageStreamToResponse({ response: res, stream })` függvény köti a
+  válaszra (a G2-ben már megismert, de eddig nem használt önálló export, mert nem kellett egyedi
+  `onFinish`). Az `onFinish`-ben `extractText(responseMessage)` adja a `content`-et (a meglévő
+  segédfüggvény újrahasznosításával), `responseMessage.parts` a `parts`-ot.
+- **Menet közben talált Prisma-tipizálási részlet**: a `Message.parts` Prisma `Json` mezője
+  `InputJsonValue`-t vár, de a `UIMessagePart` unió típusnak nincs string index signature-je, ezért
+  a natív `responseMessage.parts` közvetlenül nem fogadható el TypeScript-szinten. Megoldás: egy
+  `JSON.parse(JSON.stringify(...))` round-trip (mellékesen az `undefined` mezőket — pl.
+  `rawInput`/`errorText`/`providerExecuted` a tool-part-okon — is eldobja, tisztább DB-adatot
+  eredményezve), `InputJsonValue`-ra castolva. Az `InputJsonValue` típus új exportja
+  `packages/db/src/index.ts`-ben (`./generated/prisma/internal/prismaNamespace`-ből), hogy a
+  szerver ne a generált Prisma-kód belső elérési útját importálja.
+- **Menet közben talált gyakorlati lépés**: séma-módosítás után a Prisma Clientet kézzel újra
+  kellett generálni (`prisma generate`) és az `nx`-cache-elt `db`/`server` build-eket
+  `--skip-nx-cache`-sel újraépíteni — enélkül a régi, generált client nem ismerte a `parts` mezőt,
+  és `PrismaClientValidationError`-ral elszállt az `onFinish`.
+- `apps/web/src/app/app.tsx`: `toUIMessages()` egy `isUIMessageParts()` típus-őrrel eldönti, hogy a
+  tárolt üzenetnek van-e (nem üres) `parts` tömbje — ha igen, azt használja közvetlenül (már a
+  helyes alakban van, mert a szerver a natív `responseMessage.parts`-ot mentette), ha nincs (H4
+  előtti üzenet), a régi, csak-szöveges `[{type:'text', text: content}]` rekonstrukcióra esik
+  vissza.
+- `apps/server/src/app.spec.ts`: a mock-struktúra átépült — `streamResult()` most a
+  `toUIMessageStream({onFinish})`-t mockolja (a megadott `responseMessage`-dzsel hívja meg az
+  `onFinish`-t), a standalone `pipeUIMessageStreamToResponse` egy modul-szintű mock, ami megvárja
+  a stream-promise-t, mielőtt lezárja a választ — ez determinisztikus sorrendet garantál a mentés
+  és a válasz lezárása között.
+
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, két tiszta futtatással is
+stabil. `apps/server/src/app.spec.ts` "creates a new thread…" esete kiegészítve: egy
+`tool-listCategories`-t is tartalmazó `parts` tömbbel hívja az `onFinish`-t, és ellenőrzi, hogy a
+`messageCreateMock` a teljes `parts` tömbbel (nem csak `content`-tel) kapja a hívást.
+**CLI-regresszió**: `plantbase ask "..."` a séma-változás után is működik. **Valós, DB-be író
+`curl`-teszt** (`nx serve server` + tool-hívást igénylő kérdés + `GET /api/threads/:id`): a mentett
+assistant-üzenet `parts` mezője ténylegesen tartalmazza a `tool-runSql`/`tool-listCategories`
+input/output párt, nem csak a végleges szöveget. **Felhasználó által élőben megerősítve
+böngészőben**: szál-váltás után is látszik a tool-kártya — "jónak tűnik".
 **Commit:** `feat: persist tool-call parts so they survive thread switches`
 → megállok, kérem a tesztelést.
-
-## A most végrehajtandó lépés
-
-Ezt a H1–H4 fázisbontást (a fenti döntésekkel együtt) beírtam ebbe a fájlba — H1 már ✅ Kész
-(implementálva, tesztelve, a felhasználó által böngészőben megerősítve), H2–H4 ⏳ NYITOTT
-(bejelentés, nem implementáció — ugyanaz a minta, mint a G-rész saját bevezetésénél). H4 a H1
-kézi tesztelése közben derült ki, közvetlenül a dokumentumba felvéve, külön jóváhagyás nélküli
-implementáció nélkül. Ezután, jóváhagyás esetén, H2-től kezdve folytatódik a tényleges
-implementáció — saját branch fázisonként, a fenti terv szerint.
