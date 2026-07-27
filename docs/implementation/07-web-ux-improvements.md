@@ -18,12 +18,17 @@ beszélgetéseket, ne csak dátummal jelölje.
 
 **Döntések:**
 
-- **Egyetlen scroll-mechanizmus fedi le mindkét scroll-igényt** — egy sentinel `div` a
-  `apps/web/src/app/chat.tsx` üzenetlistájának végén + `useRef` + `useEffect` a `useChat`
-  `messages` tömbjére. Mivel a `Chat` komponens `key={activeThreadId}`-vel remountol szál-váltáskor
-  (G6 döntés), ugyanaz az effekt lefut mountoláskor (kezdeti történet végére scrolloz) ÉS minden
-  új/streamelt üzenetnél is (a `messages` tömb új referenciát kap minden delta-frissítésnél) — nincs
-  szükség két külön mechanizmusra.
+- **Scroll: `use-stick-to-bottom` (`useStickToBottom` hook), nem kézzel írt scroll-logika** — a
+  felhasználó explicit kérése, hogy ahol lehet, kész, bevett eszközt használjunk, ne saját
+  scroll-tracking kódot. Context7-vel ellenőrizve (`/stackblitz-labs/use-stick-to-bottom`,
+  `1.1.6`, React `^16.8 || ^17 || ^18 || ^19` peer — kompatibilis). A hook natívan tudja a
+  kért viselkedést: **csak akkor követi automatikusan az új tartalmat, ha a felhasználó már amúgy
+  is a lista alján volt** (`isAtBottom`/`escapedFromLock` — ha valaki felfelé görget streamelés
+  közben, nem rángatja vissza), és az `initial` opcióval a kezdeti mountoláskor (szál-váltáskor,
+  mert a `Chat` `key={activeThreadId}`-vel remountol, G6 döntés) is a lista aljára ugrik. A hook
+  `scrollRef`/`contentRef` párja az `apps/web/src/app/chat.tsx` meglévő `overflow-y-auto`
+  üzenetlista-konténerére és a belső üzenet-wrapper `div`-re kerül — nem kell saját `useRef`/
+  `useEffect`/sentinel-div.
 - **Markdown-renderelés `react-markdown`+`remark-gfm`-mel, kézzel Tailwind-osztályozva, nem a
   `@tailwindcss/typography` `prose` pluginnal** — Context7-vel ellenőrizve (`/remarkjs/react-markdown`,
   `react-markdown@10.1.0`, React ≥18 peer, kompatibilis React 19-cel; `remark-gfm@4.0.1` a
@@ -51,13 +56,18 @@ tesztelésre → push/PR/merge csak explicit jóváhagyás után — ugyanaz a c
 
 ### H1 — Automatikus lescrollozás a beszélgetés végére ⏳ NYITOTT
 
-- `apps/web/src/app/chat.tsx`: sentinel `div` az üzenetlista (`overflow-y-auto` konténer) végén,
-  `useRef<HTMLDivElement>` + `useEffect(() => { bottomRef.current?.scrollIntoView({ behavior:
-  'smooth' }); }, [messages])`.
+- `apps/web/package.json`: `use-stick-to-bottom` hozzáadva.
+- `apps/web/src/app/chat.tsx`: `useStickToBottom({ initial: 'instant' })` — a visszaadott
+  `scrollRef` a meglévő `overflow-y-auto` üzenetlista-konténerre, a `contentRef` egy belső
+  wrapper `div`-re kerül (a jelenlegi `space-y-4` osztály erre a wrapperre mozgatva).
 
-**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld; kézi böngészős teszt: szál
-kiválasztásakor a scroll a történet végén van (nem a tetején); kérdés elküldésekor és a válasz
-streamelése közben a scroll folyamatosan a legaljon marad.
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, ÚJ teszttel: a `Chat`
+spec-ben (`apps/web/src/app/chat.spec.tsx`) egy eset, ami leellenőrzi, hogy a `use-stick-to-bottom`
+tényleg be van kötve (pl. a `scrollRef`/`contentRef` a megfelelő elemekre kerül — a hook belső
+scroll-fizikáját magát nem kell újratesztelni, az a könyvtár saját felelőssége). Kézi böngészős
+teszt: szál kiválasztásakor a scroll a történet végén van (nem a tetején); kérdés elküldésekor és
+streamelés közben a scroll követi az új tartalmat; ha streamelés közben felfelé görgetünk, NEM
+rángat vissza a legaljára.
 **Commit:** `feat: auto-scroll chat to the latest message`
 → megállok, kérem a tesztelést.
 
@@ -69,10 +79,13 @@ streamelése közben a scroll folyamatosan a legaljon marad.
 - `apps/web/src/app/chat.tsx`: `text` part-ok — `role === 'assistant'` esetén `<Markdown>`,
   `user`-nél változatlan nyers `<span>`.
 
-**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld; kézi böngészős teszt: egy
-kérdésre adott válaszban a félkövér/lista formázás ténylegesen renderelt HTML-ként jelenik meg, nem
-nyers `**`/`-` karakterekként; egy user-üzenetben véletlenül szereplő `*` karakter nem alakul
-formázássá.
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, ÚJ tesztekkel:
+`apps/web/src/app/markdown.spec.tsx` (félkövér/lista/link bemenetre a várt HTML-elem, pl.
+`<strong>`/`<ul><li>`/`<a>`, jelenik meg), és a meglévő `chat.spec.tsx` kiegészítve egy esettel,
+ami egy `**félkövér**`-t tartalmazó asszisztens-üzenetet renderel, és ellenőrzi, hogy `<strong>`
+elemként jelenik meg, NEM nyers `**`-ként. Kézi böngészős teszt: egy kérdésre adott válaszban a
+félkövér/lista formázás ténylegesen renderelt HTML-ként jelenik meg; egy user-üzenetben véletlenül
+szereplő `*` karakter nem alakul formázássá.
 **Commit:** `feat: render assistant responses as Markdown`
 → megállok, kérem a tesztelést.
 
@@ -80,14 +93,19 @@ formázássá.
 
 - `packages/db/prisma/schema.prisma`: `Thread.title String?` mező (nullable), migráció.
 - `apps/server/src/app.ts`: az `!existingThread` ágban a `prisma.thread.create` hívás kap egy
-  `title`-t a `questionText`-ből (60 karakteres csonkolás, `…` a vágás jelzésére).
+  `title`-t a `questionText`-ből (60 karakteres csonkolás, szóhatáron, `…` a vágás jelzésére).
 - `apps/web/src/app/thread-sidebar.tsx`: a `ThreadSummary` típus bővítve `title: string | null`-lal,
   a lista-elem szövege `thread.title ?? formatDate(thread.updatedAt)`.
 
-**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld; **CLI-regresszió**:
-`plantbase ask "..."` a séma-változás után is működik; kézi böngészős teszt: új szál nyitása után a
-sidebar az első kérdés szövegéből vett címmel jelenik meg, nem puszta dátummal; egy régi, cím
-nélküli szál a dátum-fallbackkel jelenik meg továbbra is.
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld. **A meglévő
+`apps/server/src/app.spec.ts` "creates a new thread…" esete frissítendő** — jelenleg
+`expect(threadCreateMock).toHaveBeenCalledWith({ data: { id: 'new-thread' } })`-et vár, ami a
+`title` mező hozzáadása után elbukna; ki kell egészíteni a várt `title`-lel, plusz egy ÚJ eset a
+csonkolási logikára (egy 60 karakternél hosszabb kérdés → csonkolt, `…`-re végződő cím). **Meglévő
+`thread-sidebar.spec.tsx`** frissítve/kiegészítve, hogy a mock-threadeknek van `title`-je, és a
+lista ezt jeleníti meg, nem a dátumot. **CLI-regresszió**: `plantbase ask "..."` a séma-változás
+után is működik. Kézi böngészős teszt: új szál nyitása után a sidebar az első kérdés szövegéből
+vett címmel jelenik meg; egy régi, cím nélküli szál a dátum-fallbackkel jelenik meg továbbra is.
 **Commit:** `feat: derive thread titles from the first question`
 → megállok, kérem a tesztelést.
 
