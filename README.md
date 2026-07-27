@@ -132,7 +132,9 @@ plantbase/
 ├── packages/core   agent-logika (LLM-hívás, runSql tool, séma-kontextus, naplózás)
 ├── packages/db     Prisma lib (séma, migráció, kliens, seed)
 ├── apps/cli        CLI (ask parancs + interaktív mód)
+├── apps/server     Express szerver, streamelő /api/chat (G2)
+├── apps/web        webes chat felület, React + Vite + Tailwind + shadcn/ui (G4)
 └── docs/           dokumentáció (ld. fent)
 ```
 
-Később (nem most): `apps/server`, `apps/web`. Részletek: [`docs/architektura.md`](docs/architektura.md).
+Részletek: [`docs/architektura.md`](docs/architektura.md).

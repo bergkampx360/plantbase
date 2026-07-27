@@ -258,16 +258,71 @@ helyes sorrendben; érvénytelen/nem létező id-kre 400/404.
 **Commit:** `feat: add Thread/Message persistence and /api/threads router`
 → megállok, kérem a tesztelést.
 
-### G4 — `apps/web` scaffold (React + `useChat`) ⏳ NYITOTT
+### G4 — `apps/web` scaffold (React + `useChat`) ✅ KÉSZ
 
-- `@nx/react` telepítése + generátor-alapú scaffold (`apps/web`), Vite bundlerrel, Tailwind +
-  shadcn/ui inicializálva (pontos parancsok Context7-vel ellenőrizve végrehajtáskor).
-- Alap chat-UI: kérdés-beviteli mező, üzenetlista, AI SDK `useChat` hook bekötve a G2 `/api/chat`
-  végpontjára, streamelt válasz-megjelenítéssel.
-- `docs/stack.md` bővítése: React 19, Vite, Tailwind, shadcn/ui bekerül a stack-listába.
+**Kutatás közben feltárt, valódi architekturális ütközés, jóváhagyással kezelve** (nem a lenti
+bullet-ök, hanem a G2/G3 `POST /api/chat` szerződés érintett): a G2/G3-ban megépített
+`{ question, threadId }` body + `X-Thread-Id` response header **eltér** az AI SDK `useChat` natív
+mintájától (`{ id, message }` body — csak az utolsó üzenet —, `result.pipeUIMessageStreamToResponse`
 
-**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld; kézi böngészős teszt (`nx
-serve web` + `nx serve server`), egy kérdés-válasz kör streamelve látszik.
+- `streamText`'s saját `onFinish` a perzisztenciához). Jóváhagyva: **a szervert alakítottuk a natív
+  mintára**, nem a klienst hajlítottuk a régi szerződéshez. Ennek közvetlen következménye: `Thread.id`
+  `Int` → `String` (a kliens generálja `generateId()`-vel, mielőtt az első üzenet elmenne — a szerver
+  sosem talál ki saját azonosítót), újabb Prisma-migráció a már mergelt G3-sémára.
+
+* `@nx/react` telepítve, generátor-alapú scaffold (`nx g @nx/react:application apps/web
+--bundler=vite --unitTestRunner=vitest --linter=eslint --style=css --e2eTestRunner=none`).
+* Tailwind v4 (`@tailwindcss/vite`, nincs `tailwind.config.js` v4-ben) + shadcn/ui (`npx
+shadcn@latest init -t vite -c apps/web -y -b radix -p nova`, "Existing Project" folyamat: `@/*`
+  path-alias `tsconfig.json`/`tsconfig.app.json`/`vite.config.mts`-ben).
+* `apps/server/src/main.ts`: `POST /api/chat` átalakítva a natív szerződésre (`{ id, message }`,
+  `convertToModelMessages`, `streamText`'s saját `onFinish` a mentéshez — **nem**
+  `toUIMessageStreamResponse`-ra váltottunk, mert az Fetch `Response`-t ad vissza, amit Express
+  natívan nem ért; a meglévő `pipeUIMessageStreamToResponse` + `streamText onFinish` páros
+  változatlanul jó, csak a bemenet alakja változott). `GET /api/threads(/:id)` érintetlen logika,
+  csak az `id` típusa string.
+* `Chat` komponens (`apps/web/src/app/chat.tsx`): `useChat` + `DefaultChatTransport` +
+  `prepareSendMessagesRequest` (csak az utolsó üzenetet küldi — a G-terv eredeti "DB az
+  igazságforrás" döntése) + `generateId()` egy `chatId`-hoz komponens-mountoláskor.
+* `docs/stack.md`, `docs/architektura.md`, `docs/tech/architecture.md`, `docs/tech/api.md`,
+  `docs/ddd/model.md` frissítve.
+
+**G4 közben talált, valódi problémák (mindegyik javítva, ebben a fázisban)**:
+
+1. **`@ai-sdk/react` verziószámozása NEM követi az `ai`-ét**: `@ai-sdk/react@4.x` valójában
+   `ai@7.x`-et vár (nem `5.x`-et, ahogy a számok alapján feltételezhető lenne) — típusütközést
+   okozott a repo `ai@^5.0.0` pinnelésével szemben. Helyes pár: `@ai-sdk/react@2.x` (`ai@^5.x`
+   függőséggel).
+2. **`eslint-plugin-react` (a generátor `nx.configs['flat/react']`-je hozza be) nem kompatibilis
+   az ESLint 10-zel** — a legfrissebb stabil kiadás (7.37.5) is lefagy (`peerDependencies` csak
+   ^9.7-ig). A `react/*` szabályok explicit kikapcsolva `apps/web/eslint.config.mjs`-ben (a
+   `react-hooks`/`jsx-a11y` külön csomagok, azok maradtak, `eslint-plugin-react-hooks` 7.1.1-re
+   frissítve, mert az 5.0.0 ugyanígy lefagyott ESLint 10 alatt).
+3. **`baseUrl` a `tsconfig.json`/`tsconfig.app.json`-ban** — a shadcn hivatalos "Existing Project"
+   mintája ezt írja elő, de a repo TypeScript-verziója (`^6.0.3`) szerint deprecated (TS 7-ben
+   megszűnik) — eltávolítva, csak `paths` maradt (modern TS a tsconfig könyvtárához képest oldja
+   fel, `baseUrl` nélkül is).
+4. **A `@nx/react:application` generátor 4200-as portot állít be alapértelmezetten**, nem az
+   általános Vite-alapértelmezett 5173-at — a `CORS_ORIGIN` fallback és a `.env.example` ehhez
+   igazítva mindenhol.
+5. **`apps/web/package.json`-nak nincs `project.json`-ja** — a Nx projekt-nevet a package.json
+   `name`-je adja, ezért `"web"` maradt (nem `@plantbase/web`), hogy a `nx serve web` stb.
+   parancsok ne törjenek — tudatosan elfogadott, dokumentált eltérés a többi app elnevezési
+   konvenciójától.
+
+**Nem tesztelt, tudatosan jelezve**: ebben a környezetben nincs böngésző-automatizálási eszköz
+elérhető, ezért **nem történt szó szerinti, interaktív böngészős kattintásteszt**. Amit
+ellenőriztünk helyette: (a) a `POST /api/chat` natív `{ id, message }` szerződését valós `curl`-lal,
+kétkörös thread-folytonossággal (ugyanaz a kérés-alak, mint amit a `useChat` ténylegesen küldene);
+(b) `apps/web` `typecheck`/`build` zöld a valós `ai`/`@ai-sdk/react` típusok ellen; (c) a Vite
+dev-szerver ténylegesen kiszolgálja az oldalt (`curl` `200`-at ad, a HTML tartalmazza a beágyazott
+scripteket). Ez erős közvetett bizonyíték, de nem helyettesíti a tényleges vizuális/interaktív
+ellenőrzést — ezt a felhasználónak kell elvégeznie (`nx serve web` + `nx serve server`).
+
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, két tiszta futtatással is
+stabil. **CLI-regresszió**: `plantbase ask "..."` a `Thread.id` séma-változás után is működik
+(valós API-hívással). `POST /api/chat` natív szerződés valós, kétkörös `curl`-teszttel igazolva.
+A tényleges böngészős kattintásteszt a fenti okból elmaradt — l. fent.
 **Commit:** `feat: scaffold apps/web with streaming chat UI`
 → megállok, kérem a tesztelést.
 

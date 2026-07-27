@@ -53,18 +53,24 @@ aggregátum — nincs köztük FK-kapcsolat. Az agent mindkettőt olvashatja (k�
 összekapcsolásuk (pl. "ez a növény milyen gondozást igényel") az agent LLM-szintű
 következtetése, nem DB-szintű join.
 
-## Chat domain (G rész, `docs/implementation/06-web-chat.md`, G3)
+## Chat domain (G rész, `docs/implementation/06-web-chat.md`, G3–G4)
 
 ### `Thread` (aggregátum-gyökér, `threads` tábla) és `Message` (entitás, `messages` tábla)
 
 ```
 Thread                          Message
-├── id                          ├── id
+├── id (String, kliens adja)    ├── id
 ├── createdAt                   ├── threadId    (FK → Thread.id)
 ├── updatedAt (minden új         ├── role         ("user" / "assistant")
 │   üzenetnél frissül)          ├── content
 └── messages  (1:N)              └── createdAt
 ```
+
+**`Thread.id` String, NEM autoincrement (G4-től)**: az AI SDK `useChat` natív mintájában a chat
+id-t a kliens generálja (`generateId()`), mielőtt az első üzenet elmenne — a szerver sosem talál
+ki saját azonosítót. Ez G3-hoz képest változás (ott még `Int @default(autoincrement())` volt, az
+`X-Thread-Id` response header-rel kommunikálva vissza) — G4 kutatása közben derült ki, hogy ez
+ütközik a `useChat` natív, kliens-generált-id mintájával.
 
 **Aggregátum-határ**: a `Thread` az aggregátum-gyökér, a `Message` csak `Thread`-en belül
 értelmezett (mindig egy adott `threadId`-hez tartozik, önálló élettartama nincs). A

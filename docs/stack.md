@@ -15,6 +15,9 @@ Elv: iparági best practice, legfrissebb STABIL verzió (se cutting-edge, se ela
   RAG-hívásokra. `js-tiktoken` (`cl100k_base` encoding) a chunkolás token-alapú méretezéséhez (F4) —
   pontos, kiszámítható tokenszám a karakter-becslés helyett.
 - CLI: commander + node:readline
+- Szerver (`apps/server`, G2): Express 5 + cors + dotenv, streamelő `POST /api/chat`
+- Web (`apps/web`, G4): React 19, Vite (bundler + dev-szerver), `@ai-sdk/react` `useChat` hook,
+  Tailwind CSS v4 (`@tailwindcss/vite`, nincs `tailwind.config.js`), shadcn/ui (Radix-alapú preset)
 - Tooling: Vitest, ESLint + Prettier, tsx
 - Eszköz: Zed, gh CLI
 

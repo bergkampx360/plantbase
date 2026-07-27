@@ -21,3 +21,7 @@ logs
 
 # vitest --coverage kimenete
 coverage
+vite.config.*.timestamp*
+
+# apps/web vitest typecheck plugin kimenete
+out-tsc
