@@ -3,7 +3,12 @@ import { Button } from '@/components/ui/button';
 
 const THREADS_URL = 'http://localhost:3001/api/threads';
 
-type ThreadSummary = { id: string; createdAt: string; updatedAt: string };
+type ThreadSummary = {
+  id: string;
+  title: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('hu-HU', {
@@ -64,7 +69,7 @@ export function ThreadSidebar({
                 : 'hover:bg-accent/50')
             }
           >
-            {formatDate(thread.updatedAt)}
+            {thread.title ?? formatDate(thread.updatedAt)}
           </button>
         ))}
 

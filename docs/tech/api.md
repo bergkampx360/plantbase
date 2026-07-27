@@ -96,11 +96,18 @@ CORS: `CORS_ORIGIN` env-változó (alapértelmezett `http://localhost:4200` — 
 generátor ezt a portot állítja be alapértelmezetten `apps/web`-hez, nem az általános Vite-
 alapértelmezett 5173-at). Port: `PORT` env-változó (alapértelmezett `3001`).
 
-## HTTP: `GET /api/threads`, `GET /api/threads/:id` (`apps/server`, G3–G4)
+## HTTP: `GET /api/threads`, `GET /api/threads/:id` (`apps/server`, G3–G4, H3)
 
-`GET /api/threads` — a `Thread`-ek listája (`id`, `createdAt`, `updatedAt`), `updatedAt` szerint
-csökkenő sorrendben (legutóbb aktív szál elöl).
+`GET /api/threads` — a `Thread`-ek listája (`id`, `title`, `createdAt`, `updatedAt`), `updatedAt`
+szerint csökkenő sorrendben (legutóbb aktív szál elöl). `title` nullable — a H3 előtt létrehozott
+szálaknak nincs (a kliens ilyenkor dátum-fallbackre esik vissza, `apps/web/src/app/thread-sidebar.tsx`).
 
 `GET /api/threads/:id` — egy `Thread` a hozzá tartozó `Message`-ekkel (`createdAt` szerint
 növekvő sorrendben). `id` egy String (G4-től, ld. `packages/db/prisma/schema.prisma`), nem szám —
 nincs formátum-validáció, csak létezés-ellenőrzés; nem létező `id` → `404`.
+
+**Szál-cím generálása (H3)**: `POST /api/chat`-ben, ÚJ szál létrehozásakor, a szerver meghívja a
+`generateThreadTitle(questionText)`-et (`packages/core/src/title-agent.ts`) — egy rövid, 2-4 szavas
+cím LLM-összefoglalással, nem nyers karakter/mondat-csonkolással (ami félbevágott mondatokat adhatna,
+különösen magyar, ragozott szerkezeteknél). Egy plusz, gyors (haiku) modellhívás szálanként egyszer,
+szekvenciálisan a `streamText`-hívás előtt.

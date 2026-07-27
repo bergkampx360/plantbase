@@ -10,8 +10,18 @@ describe('ThreadSidebar', () => {
       vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
-          { id: 'thread-a', createdAt: '2026-01-01T10:00:00.000Z', updatedAt: '2026-01-02T10:00:00.000Z' },
-          { id: 'thread-b', createdAt: '2026-01-03T10:00:00.000Z', updatedAt: '2026-01-04T10:00:00.000Z' },
+          {
+            id: 'thread-a',
+            title: 'Kaktusz-ajánlás',
+            createdAt: '2026-01-01T10:00:00.000Z',
+            updatedAt: '2026-01-02T10:00:00.000Z',
+          },
+          {
+            id: 'thread-b',
+            title: null,
+            createdAt: '2026-01-03T10:00:00.000Z',
+            updatedAt: '2026-01-04T10:00:00.000Z',
+          },
         ],
       }),
     );
@@ -21,7 +31,7 @@ describe('ThreadSidebar', () => {
     vi.unstubAllGlobals();
   });
 
-  it('renders the fetched threads and highlights the active one', async () => {
+  it('renders the fetched thread titles, falling back to the date when there is none', async () => {
     render(
       <ThreadSidebar
         activeThreadId="thread-a"
@@ -31,8 +41,10 @@ describe('ThreadSidebar', () => {
       />,
     );
 
-    const buttons = await screen.findAllByRole('button', { name: /2026/ });
-    expect(buttons).toHaveLength(2);
+    expect(
+      await screen.findByRole('button', { name: 'Kaktusz-ajánlás' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /2026/ })).toBeInTheDocument();
   });
 
   it('calls onNewChat when the button is clicked', async () => {
@@ -64,9 +76,11 @@ describe('ThreadSidebar', () => {
       />,
     );
 
-    const buttons = await screen.findAllByRole('button', { name: /2026/ });
-    await user.click(buttons[1]);
+    const button = await screen.findByRole('button', { name: /2026/ });
+    await user.click(button);
 
-    await waitFor(() => expect(onSelectThread).toHaveBeenCalledWith('thread-b'));
+    await waitFor(() =>
+      expect(onSelectThread).toHaveBeenCalledWith('thread-b'),
+    );
   });
 });

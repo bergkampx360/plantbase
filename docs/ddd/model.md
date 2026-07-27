@@ -53,18 +53,24 @@ aggregátum — nincs köztük FK-kapcsolat. Az agent mindkettőt olvashatja (k�
 összekapcsolásuk (pl. "ez a növény milyen gondozást igényel") az agent LLM-szintű
 következtetése, nem DB-szintű join.
 
-## Chat domain (G rész, `docs/implementation/06-web-chat.md`, G3–G4)
+## Chat domain (G rész, `docs/implementation/06-web-chat.md`, G3–G4; H rész, `07-web-ux-improvements.md`, H3)
 
 ### `Thread` (aggregátum-gyökér, `threads` tábla) és `Message` (entitás, `messages` tábla)
 
 ```
 Thread                          Message
 ├── id (String, kliens adja)    ├── id
-├── createdAt                   ├── threadId    (FK → Thread.id)
-├── updatedAt (minden új         ├── role         ("user" / "assistant")
-│   üzenetnél frissül)          ├── content
-└── messages  (1:N)              └── createdAt
+├── title (nullable, LLM adja)  ├── threadId    (FK → Thread.id)
+├── createdAt                   ├── role         ("user" / "assistant")
+├── updatedAt (minden új        ├── content
+│   üzenetnél frissül)          └── createdAt
+└── messages  (1:N)
 ```
+
+**`Thread.title` (H3)**: nullable — a szerver tölti ki egy rövid, LLM-generált összefoglalóval
+(`generateThreadTitle()`, `packages/core/src/title-agent.ts`) az ÚJ szál első kérdéséből, nem a
+kliens. A H3 előtt létrehozott szálaknál `null` marad (nincs visszamenőleges kitöltés) — a
+webes UI ekkor egy dátum-fallbackre esik vissza (`apps/web/src/app/thread-sidebar.tsx`).
 
 **`Thread.id` String, NEM autoincrement (G4-től)**: az AI SDK `useChat` natív mintájában a chat
 id-t a kliens generálja (`generateId()`), mielőtt az első üzenet elmenne — a szerver sosem talál

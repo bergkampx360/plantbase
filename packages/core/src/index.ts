@@ -6,3 +6,4 @@ export { RUN_SQL_TOOL } from './run-sql';
 export { LIST_CATEGORIES_TOOL } from './list-categories';
 export { SEARCH_KNOWLEDGE_TOOL } from './search-knowledge';
 export { SYSTEM_PROMPT } from './system-prompt';
+export { generateThreadTitle } from './title-agent';
