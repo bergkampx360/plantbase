@@ -94,6 +94,17 @@ mert az egy, a kliensben még nem látott (de a szerveren már létező) szálra
 automatikusan a korábbi kört; a szülő (`App`) explicit lekérdezi `GET /api/threads/:id`-t, és a
 kapott üzeneteket `initialMessages`-ként adja át az újonnan mountolt `Chat`-nek.
 
+**`ai-elements` (Vercel hivatalos, shadcn/ui-alapú komponens-könyvtár, H1-től)**: a `Conversation`/
+`ConversationContent` (`src/components/ai-elements/conversation.tsx`) csomagolja az üzenetlistát —
+belül a `use-stick-to-bottom`-ot használja, csak akkor követi automatikusan az új tartalmat, ha a
+felhasználó már amúgy is a lista alján volt. Telepítés: `npx ai-elements@latest add conversation`,
+**az `apps/web` könyvtárból futtatva**, nem a repo-gyökérből (a monorepo-gyökérről futtatva a
+shadcn CLI elutasítja, `-c apps/web`-fel sem ismeri fel helyesen a workspace-et — ez egy valódi,
+H1-nél talált részlet, nem csak feltételezés). A dokumentáció "Next.js projekt"-et ír elő
+előfeltételként, de a tényleges telepítő a már működő shadcn/ui CLI-re épül — H1-nél élesben
+kipróbálva, ténylegesen működik ebben a Vite-projektben is, semmilyen Next.js-specifikus
+függőséget nem hoz be (csak a `use-stick-to-bottom`-ot).
+
 **G4 közben talált, valódi függőség-verzió ütközés**: az `@ai-sdk/react` csomag saját verziószámozása
 NEM követi az `ai` csomagét — `@ai-sdk/react@4.x` valójában `ai@7.x`-et vár (nem `ai@5.x`-et, ahogy a
 számok alapján feltételezhető lenne), ami típusütközést okozott a repo többi részének `ai@^5.0.0`

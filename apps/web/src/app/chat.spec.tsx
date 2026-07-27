@@ -75,4 +75,15 @@ describe('Chat', () => {
     expect(screen.getByPlaceholderText(/Kérdezz/)).toBeDisabled();
     expect(screen.getByRole('button', { name: /Küldés/ })).toBeDisabled();
   });
+
+  it('renders the message list inside the ai-elements Conversation container', () => {
+    useChatMock.mockReturnValue({ messages: [], sendMessage, status: 'ready' });
+
+    render(<Chat id="thread-1" initialMessages={[]} />);
+
+    // a Conversation komponens (apps/web/src/components/ai-elements/conversation.tsx)
+    // role="log"-ot állít a StickToBottom wrapperen — ez igazolja, hogy be van kötve,
+    // a use-stick-to-bottom belső scroll-fizikáját magát nem kell újratesztelni
+    expect(screen.getByRole('log')).toBeInTheDocument();
+  });
 });
