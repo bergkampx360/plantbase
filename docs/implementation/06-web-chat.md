@@ -422,7 +422,9 @@ szerver-életciklust egy kérésen belül.
   (`docs/testing-strategy.md` "Kimarad" szakasza) — ez a G-rész scope-ján kívül eső, külön tétel.
 
 **Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, minden új teszttel együtt (7
-új `apps/server`-teszt, 11 új `apps/web`-teszt), két tiszta futtatással is stabil (elsőre
+új `apps/server`-teszt; `apps/web`-en 10 új teszt a három új spec-fájlban, plusz a meglévő,
+változatlan `app.spec.tsx` smoke teszt — 11 teszt összesen az `apps/web` projektben), két tiszta
+futtatással is stabil (elsőre
 hibátlanul futottak, csak lint-formázási hibák — `import/first`, üres arrow function, TS2883
 hiányzó típus-annotáció — kerültek javításra, nem tesztlogikai hiba). **CLI-regresszió (G-rész
 záró ellenőrzése)**: `plantbase ask "..."` valós API-hívással működik a teljes G1–G7 után. Kézi,

@@ -37,14 +37,14 @@ számítanak, a `main`-en nem őrződnek meg külön-külön.
         "hooks": [
           {
             "type": "command",
-            "command": "pnpm prettier --write $FILE",
-            "timeout": 10000,
+            "command": "f=$(jq -r '.tool_input.file_path'); pnpm prettier --write \"$f\" 2>/dev/null || true",
+            "timeout": 10,
             "async": true
           },
           {
             "type": "command",
-            "command": "pnpm vitest related --run $FILE",
-            "timeout": 60000,
+            "command": "f=$(jq -r '.tool_input.file_path'); pnpm vitest related --run \"$f\" 2>/dev/null || true",
+            "timeout": 60,
             "async": true
           }
         ]
@@ -53,6 +53,10 @@ számítanak, a `main`-en nem őrződnek meg külön-külön.
   }
 }
 ```
+
+(A fájl-útvonalat a hook a saját stdin-jén kapott JSON-ból nyeri ki `jq`-val — nincs `$FILE`
+env-változó –, és mindkét parancs elnyeli a hibát, hogy egy formázási/teszt-hiba sose törje meg
+magát a szerkesztést.)
 
 - **prettier** (PostToolUse, Edit): formázás szerkesztés után.
 - **teszt** (PostToolUse, Edit): a változáshoz tartozó Vitest fut.

@@ -12,6 +12,8 @@ Nem ismeri a belépési pontokat (`apps/*`); csak `packages/db`-re hivatkozhat (
 
 ```
 packages/core/src/
+├── index.ts               a csomag publikus felülete (askAgent, MAX_TOOL_ITERATIONS, resolveModel,
+│                           RUN_SQL_TOOL, LIST_CATEGORIES_TOOL, SEARCH_KNOWLEDGE_TOOL, SYSTEM_PROMPT)
 ├── ask-agent.ts          az askAgent (Vercel ai SDK streamText+tool()+stopWhen, G1, MAX_TOOL_ITERATIONS=5)
 ├── system-prompt.ts      az élő system prompt (SYSTEM_PROMPT konstans) — docs/system-prompt.md szinkronban tartva
 ├── db-pool.ts            getPool() (RO, DATABASE_URL_READONLY) / getWritePool() (RW, DATABASE_URL)
@@ -25,7 +27,11 @@ packages/core/src/
     ├── knowledge-store.ts searchChunks() (RO pool) / insertChunks(), clearKnowledge() (RW pool) (F2, F5)
     ├── hyde.ts            generateHypotheticalAnswer() — Anthropic generateText a hipotetikus válaszhoz (F6)
     ├── rerank.ts          rerankChunks() — OpenAI generateObject, strukturált 0-10 pontszám (F6)
-    └── retrieve.ts        retrieve() — a teljes pipeline: hyde → embed → searchChunks → rerank (F6)
+    ├── retrieve.ts        retrieve() — a teljes pipeline: hyde → embed → searchChunks → rerank (F6)
+    ├── ingest.ts           egyszeri szkript (pnpm run ingest-knowledge) — a 202 gondozási cikk
+    │                       chunkolása+embeddelése a RW poolon, sosem az agent útján fut (F5)
+    └── golden-set.ts       egyszeri kiértékelő szkript — nyers keresés vs. HyDE+rerank pipeline
+                            összevetése a golden-set kérdéseken (F7, docs/rag-pipeline.md)
 ```
 
 **Réteg-szabály:** a `rag/` modulok agent-facing olvasása (`searchChunks`, és ezáltal `retrieve`,
