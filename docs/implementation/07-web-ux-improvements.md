@@ -9,7 +9,9 @@
 
 **Prioritás:** a G rész lezárása után kézi teszteléskor a felhasználó négy UX-hiányosságot
 jelzett a webes chat felületen (`apps/web`). Ez a rész ezeket a hiányosságokat zárja le, önálló,
-kis fázisokban, ugyanazzal a fázis-ciklussal, mint G1–G7-nél.
+kis fázisokban, ugyanazzal a fázis-ciklussal, mint G1–G7-nél. **H1 kézi tesztelése közben egy
+ötödik, önálló hiányosság is előkerült** (nem regresszió, egy G3 óta fennálló, eddig
+észrevétlen korlátozás) — ez lett H4, ld. lent.
 
 **Cél:** a beszélgetés automatikusan a végére scrollozzon (szál-váltáskor és új üzenetnél/streamelés
 közben is); az asszisztens-válaszok Markdown-formázva jelenjenek meg (jelenleg nyers `**`/`-`
@@ -68,9 +70,18 @@ beszélgetéseket, ne csak dátummal jelölje.
   kerül (a legegyszerűbb, a meglévő kód-struktúrába illő megoldás; a két hívás párhuzamosítása
   `Promise.all`-lal egy lehetséges, de nem kötelező finomítás végrehajtáskor).
 
+- **H4: tool-hívások perzisztálása, hogy szál-váltás/újratöltés után is látszódjanak** — H1 kézi
+  tesztelése közben derült ki: a `ThreadSidebar`-ból egy korábbi szálra váltva a tool-kártyák
+  (G5, `ToolCallCard`) nem jelennek meg, csak a végleges válasz-szöveg. Ez **nem H1 regressziója**
+  — megerősítve élő teszttel, hogy egy friss kérdésnél a tool-kártya továbbra is helyesen
+  megjelenik, csak a visszatöltött (szál-váltás utáni) történetnél hiányzik. Az ok: a `Message`
+  tábla (G3 óta) sosem tárolt tool-hívás/-eredmény adatot, csak a végleges szöveget
+  (`role`/`content`) — `apps/web/src/app/app.tsx` `toUIMessages()` emiatt mindig csak egyetlen
+  `text` part-ot tud visszaépíteni egy DB-ből betöltött üzenetből. Részletek H4-nél lent.
+
 ---
 
-## H rész — Fázisok (H1–H3)
+## H rész — Fázisok (H1–H4)
 
 Minden fázis: saját branch → implementáció+teszt → doc-lezáró commit → `ddd-audit` → megállok
 tesztelésre → push/PR/merge csak explicit jóváhagyás után — ugyanaz a ciklus, mint G1–G7-nél.
@@ -150,9 +161,43 @@ teszt: új szál nyitása után a sidebar egy valós, LLM-generált, értelmes r
 **Commit:** `feat: derive thread titles from the first question via a title-generation agent`
 → megállok, kérem a tesztelést.
 
+### H4 — Tool-hívások perzisztálása szál-váltás/újratöltés után is ⏳ NYITOTT
+
+**H1 kézi tesztelése közben talált hiányosság** (nem H1 regressziója — élő teszttel megerősítve,
+hogy egy friss kérdésnél a tool-kártya helyesen megjelenik, csak a DB-ből visszatöltött
+történetnél nem). A `Message` tábla G3 óta csak a végleges `role`/`content` szöveget tárolja,
+tool-hívás/-eredmény adatot sosem — ezért `apps/web/src/app/app.tsx` `toUIMessages()` egy
+visszatöltött üzenetből csak egyetlen `text` part-ot tud rekonstruálni, a `ToolCallCard` (G5)
+nem jelenik meg.
+
+- `packages/db/prisma/schema.prisma`: `Message` kap egy nullable `parts Json?` mezőt (Postgres
+  `Json` típus Prisma-ban) — a teljes `UIMessage.parts` tömb (szöveg + tool-input/-output) tárolva,
+  a meglévő `content` mező marad (egyszerű szöveges fallback/keresés/napló céljából). Migráció.
+- `apps/server/src/app.ts`: a `streamText` `onFinish`-ében jelenleg csak a végleges `text` kerül
+  mentésre — ki kell egészíteni úgy, hogy a lépések (`steps`) tool-hívásait/-eredményeit is
+  tartalmazó, `UIMessage.parts`-kompatibilis szerkezet kerüljön a `parts` mezőbe. **Az AI SDK
+  streamText `onFinish`/`steps` pontos alakja (hogyan nyerhető ki belőle egy `UIMessage.parts`-tal
+  kompatibilis tömb) Context7-vel ellenőrizendő végrehajtáskor** — ez a repóban még nem használt
+  minta (eddig csak a végleges szöveg mentése történt, G3).
+- `apps/web/src/app/app.tsx`: `toUIMessages()` a `parts` mezőt használja, ha van (a régi, `parts`
+  nélküli üzeneteknél visszaesik az eddigi, csak-szöveges rekonstrukcióra).
+- `apps/server/src/app.spec.ts`, `apps/server/src/app.ts`'s `GET /api/threads/:id`: a válasz
+  tartalmazza a `parts` mezőt is.
+
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld. Meglévő `apps/server/src/app.spec.ts`
+frissítve/kiegészítve, hogy az `onFinish`-ben mentett `parts` tartalmazza a tool-hívás(oka)t is, nem
+csak a szöveget. **CLI-regresszió**: `plantbase ask "..."` a séma-változás után is működik. Kézi
+böngészős teszt: egy tool-hívást igénylő kérdés után szál-váltás (vagy oldal-újratöltés) után is
+látszik a tool-kártya, ugyanúgy, mint élőben; egy régi, `parts` nélküli szál változatlanul,
+tool-kártya nélkül (csak szöveggel) jelenik meg, hiba nélkül.
+**Commit:** `feat: persist tool-call parts so they survive thread switches`
+→ megállok, kérem a tesztelést.
+
 ## A most végrehajtandó lépés
 
-Ezt a H1–H3 fázisbontást (a fenti döntésekkel együtt) beírtam ebbe az új fájlba, **mind a 3 fázist
-⏳ NYITOTT jelöléssel** (bejelentés, nem implementáció — ugyanaz a minta, mint a G-rész saját
-bevezetésénél). Ezután, jóváhagyás esetén, H1-től kezdve indul a tényleges implementáció — saját
-branch, a fenti terv szerint.
+Ezt a H1–H4 fázisbontást (a fenti döntésekkel együtt) beírtam ebbe a fájlba — H1 már ✅ Kész
+(implementálva, tesztelve, a felhasználó által böngészőben megerősítve), H2–H4 ⏳ NYITOTT
+(bejelentés, nem implementáció — ugyanaz a minta, mint a G-rész saját bevezetésénél). H4 a H1
+kézi tesztelése közben derült ki, közvetlenül a dokumentumba felvéve, külön jóváhagyás nélküli
+implementáció nélkül. Ezután, jóváhagyás esetén, H2-től kezdve folytatódik a tényleges
+implementáció — saját branch fázisonként, a fenti terv szerint.
