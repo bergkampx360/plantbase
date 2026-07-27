@@ -1,5 +1,5 @@
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport, generateId, isToolUIPart } from 'ai';
+import { DefaultChatTransport, isToolUIPart, type UIMessage } from 'ai';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,21 +10,27 @@ import { ToolCallCard } from './tool-call';
 // (docs/implementation/06-web-chat.md, G1 döntés #1)
 const API_URL = 'http://localhost:3001/api/chat';
 
-export function Chat() {
-  // a chat id-t a kliens generálja, MIELŐTT az első üzenet elmenne — a szerver sosem
-  // talál ki saját azonosítót, csak arra perzisztál, amit kap (AI SDK natív mintája,
-  // docs/implementation/06-web-chat.md, G4)
-  const [chatId] = useState(() => generateId());
+export function Chat({
+  id,
+  initialMessages,
+  onFinish,
+}: {
+  id: string;
+  initialMessages: UIMessage[];
+  onFinish?: () => void;
+}) {
   const [input, setInput] = useState('');
 
   const { messages, sendMessage, status } = useChat({
-    id: chatId,
+    id,
+    messages: initialMessages,
+    onFinish,
     transport: new DefaultChatTransport({
       api: API_URL,
       // csak az utolsó üzenetet küldjük — a szerver a DB-ből tölti be a korábbi
       // kört, a DB az igazságforrás (G-rész eredeti "Thread-perzisztencia" döntése)
-      prepareSendMessagesRequest: ({ id, messages: currentMessages }) => ({
-        body: { id, message: currentMessages[currentMessages.length - 1] },
+      prepareSendMessagesRequest: ({ id: chatId, messages: currentMessages }) => ({
+        body: { id: chatId, message: currentMessages[currentMessages.length - 1] },
       }),
     }),
   });
@@ -39,7 +45,7 @@ export function Chat() {
   }
 
   return (
-    <div className="mx-auto flex h-screen max-w-2xl flex-col p-4">
+    <div className="flex flex-1 flex-col p-4">
       <h1 className="mb-4 text-xl font-semibold">
         <span role="img" aria-label="növény">
           🌱
