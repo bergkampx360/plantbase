@@ -153,29 +153,32 @@ javítás után "tökéletes"-nek minősítve.
 **Commit:** `feat: render assistant responses as Markdown with ai-elements Message`
 → megállok, kérem a tesztelést.
 
-### H3 — Szál-elnevezés az első kérdés alapján, LLM-összefoglalással ⏳ NYITOTT
+### H3 — Szál-elnevezés az első kérdés alapján, LLM-összefoglalással ✅ KÉSZ
 
 - `packages/core/src/title-agent.ts` (ÚJ): `generateThreadTitle(question: string): Promise<string>`
   — egyetlen `generateText` hívás, `anthropic(resolveModel())` modellel, a `hyde.ts` mintáját
   követve. A `packages/core/src/index.ts` publikus felülete exportálja.
-- `packages/db/prisma/schema.prisma`: `Thread.title String?` mező (nullable), migráció.
+- `packages/db/prisma/schema.prisma`: `Thread.title String?` mező (nullable), migráció (egyszerű,
+  nem-destruktív `ADD COLUMN`, a `prisma migrate dev --name` nem-interaktívan is lefutott, nem
+  úgy, mint a G4-es `Thread.id` típusváltásnál).
 - `apps/server/src/app.ts`: az `!existingThread` ágban a `prisma.thread.create` hívás előtt
   meghívja a `generateThreadTitle(questionText)`-et, és az eredményt adja át `title`-ként.
 - `apps/web/src/app/thread-sidebar.tsx`: a `ThreadSummary` típus bővítve `title: string | null`-lal,
   a lista-elem szövege `thread.title ?? formatDate(thread.updatedAt)`.
 
-**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld. **ÚJ**
-`packages/core/src/title-agent.spec.ts` — a `hyde.spec.ts` mintájára (`vi.mock('ai')` +
-`vi.mock('@ai-sdk/anthropic')`), ellenőrizve, hogy a helyes promptot építi és a modell szövegét
-adja vissza. **A meglévő `apps/server/src/app.spec.ts` "creates a new thread…" esete
-frissítendő** — jelenleg `expect(threadCreateMock).toHaveBeenCalledWith({ data: { id: 'new-thread'
-} })`-et vár, ami a `title` mező hozzáadása után elbukna; a teszt `vi.mock`-olja a
-`generateThreadTitle`-t (ugyanúgy, mint a `streamText`/Prisma-mockok), és ellenőrzi, hogy a
-mockolt cím ténylegesen bekerül a `thread.create` hívásba. **Meglévő `thread-sidebar.spec.tsx`**
-frissítve/kiegészítve, hogy a mock-threadeknek van `title`-je, és a lista ezt jeleníti meg, nem a
-dátumot. **CLI-regresszió**: `plantbase ask "..."` a séma-változás után is működik. Kézi böngészős
-teszt: új szál nyitása után a sidebar egy valós, LLM-generált, értelmes rövid címmel jelenik meg
-(nem félbevágott mondattal); egy régi, cím nélküli szál a dátum-fallbackkel jelenik meg továbbra is.
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, két tiszta futtatással is
+stabil. ÚJ `packages/core/src/title-agent.spec.ts` — a `hyde.spec.ts` mintájára, ellenőrizve, hogy
+a helyes promptot építi és a modell (trimmelt) szövegét adja vissza; a mock-factory-nak a `tool`
+exportot is tartalmaznia kellett, mert a `resolveModel()` importja `./ask-agent`-en keresztül a
+három tool-definíciót is betölti modul-szinten. **A meglévő `apps/server/src/app.spec.ts` "creates
+a new thread…" esete frissítve** — a `title` mezővel bővült `thread.create`-hívást és a helyes
+promptot ellenőrzi; az `ai`-mock kiegészült `generateText`-tel. **Meglévő `thread-sidebar.spec.tsx`**
+frissítve, hogy a mock-threadeknek van `title`-je, és a lista ezt jeleníti meg, a cím nélküli
+szálaknál pedig a dátum-fallbacket.
+**CLI-regresszió**: `plantbase ask "..."` a séma-változás után is működik. Valós, DB-be író
+`curl`-teszt: egy új szál címe ténylegesen egy értelmes, rövid, LLM-generált cím lett
+("Kaktuszaim fajtái"), nem félbevágott mondat. **Felhasználó által élőben megerősítve
+böngészőben**: "nagyon szépen működik".
 **Commit:** `feat: derive thread titles from the first question via a title-generation agent`
 → megállok, kérem a tesztelést.
 
