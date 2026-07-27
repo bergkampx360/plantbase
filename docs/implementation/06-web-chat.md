@@ -357,14 +357,37 @@ ellenőrzési kör, mint G4-nél.
 **Commit:** `feat: add tool-call visualization cards to chat UI`
 → megállok, kérem a tesztelést.
 
-### G6 — "Új chat" gomb + history lista ⏳ NYITOTT
+### G6 — "Új chat" gomb + history lista ✅ KÉSZ
 
-- "Új chat" gomb: törli az aktuális `threadId`-t, üres beszélgetést indít.
-- Oldalsáv/lista a korábbi `Thread`-ekről (G3 `/api/threads` GET-jéből), kattintásra betölti az adott
-  szál üzeneteit.
+**Context7-vel megerősített döntés**: a `useChat`-nek van beépített, hook-élettartamon belüli
+id-hez-kulcsolt üzenet-cache-e, de ez egy, a kliensben még nem látott (bár a szerveren már létező)
+szálra váltásnál nem töltené be automatikusan a korábbi kört — a hívó félnek kell friss
+`messages`-t adnia. Emiatt **nem** a `useChat` belső cache-mechanizmusára hagyatkozunk: a `Chat`
+komponens kontrollált propokat kap (`id`, `initialMessages`), és a szülő React `key={id}`
+remountot használ tiszta újrainicializáláshoz szál-váltáskor — ez a hivatalos "message
+persistence" minta ajánlott megközelítése is.
 
-**Teszt:** kézi böngészős teszt: több beszélgetés indítása, közöttük váltás, a history helyesen
-töltődik vissza.
+- `apps/web/src/app/chat.tsx`: `Chat` átalakítva kontrollált komponenssé (`id`,
+  `initialMessages: UIMessage[]`, `onFinish?` propok) — a korábbi belső
+  `useState(() => generateId())` megszűnt, ezt a szülő adja.
+- `apps/web/src/app/thread-sidebar.tsx` (ÚJ): `ThreadSidebar` — `GET /api/threads` lekérdezése
+  (mountoláskor + `refreshKey` prop változásakor), "Új chat" gomb, kattintható szál-lista
+  (`updatedAt` dátummal — a `Thread`-modellben nincs cím/preview-mező, ez a tervezett scope-on
+  túlmutatna), az aktív szál kiemelve.
+- `apps/web/src/app/app.tsx`: `App` fogja össze a layoutot — `activeThreadId`/`initialMessages`/
+  `refreshKey` állapot; "Új chat" = friss `generateId()` + üres `initialMessages`; szál-kiválasztás
+  = `GET /api/threads/:id` lekérdezése, `UIMessage[]`-é alakítás, majd `activeThreadId`+
+  `initialMessages` együtt frissítve; `Chat`'s `onFinish` bump-olja a `refreshKey`-t, hogy a
+  sidebar frissüljön egy kör lezárultával.
+- `docs/tech/architecture.md` bővítve a szál-váltás mintájával.
+
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, két tiszta futtatással is
+stabil (elsőre hibátlanul). **CLI-regresszió**: `plantbase ask "..."` valós API-hívással működik.
+Valós `curl`-teszt: két különböző `id`-vel indított beszélgetés, `GET /api/threads` mindkettőt
+listázza, `GET /api/threads/:id` visszaadja a `ThreadSidebar`/`App` által ténylegesen fogyasztott
+alakban. **Interaktív böngészős teszt ezúttal sem történt** — a `claude-in-chrome` újra
+megpróbálva, továbbra sem volt kapcsolódva ebben a munkamenetben; ugyanaz a közvetett ellenőrzési
+kör, mint G4/G5-nél.
 **Commit:** `feat: add new-chat button and thread history sidebar`
 → megállok, kérem a tesztelést.
 

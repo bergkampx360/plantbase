@@ -72,12 +72,21 @@ Tailwind v4 (`@tailwindcss/vite` plugin, nincs `tailwind.config.js`) és shadcn/
 `src/components/ui/`) hozzáadva a hivatalos "Existing Project" (Vite) folyamat szerint. `@/*`
 path-alias `tsconfig.json`/`tsconfig.app.json`-ban és `vite.config.mts`-ben.
 
-Fő komponensek: `Chat` (`src/app/chat.tsx`) — `useChat` (`@ai-sdk/react`) + `DefaultChatTransport` +
-`generateId()` (`ai`-ból, új beszélgetés id-jének generálásához, a `POST /api/chat` natív
-szerződéséhez, `docs/tech/api.md`); `ToolCallCard` (`src/app/tool-call.tsx`, G5) — összecsukható
-kártya a tool-hívások/-eredmények megjelenítésére, az AI SDK `isToolUIPart()`/`ToolUIPart` típusaira
-építve (a CLI `--show-prompt` funkcionális megfelelője). "Új chat"/history-sáv G6 dolga, nem ez a
-fázis.
+Fő komponensek: `App` (`src/app/app.tsx`, G6) — az `activeThreadId`/`initialMessages`/`refreshKey`
+állapot gazdája, összefogja a `ThreadSidebar`-t és a `Chat`-et; `Chat` (`src/app/chat.tsx`) —
+kontrollált komponens (`id`/`initialMessages`/`onFinish` propok, G6-tól — korábban maga generálta
+a `chatId`-t belül), `useChat` (`@ai-sdk/react`) + `DefaultChatTransport`; `ThreadSidebar`
+(`src/app/thread-sidebar.tsx`, ÚJ, G6) — `GET /api/threads` lekérdezése, "Új chat" gomb, kattintható
+szál-lista dátummal (nincs cím/preview-mező a `Thread`-modellben, ld. `docs/tech/api.md`);
+`ToolCallCard` (`src/app/tool-call.tsx`, G5) — összecsukható kártya a tool-hívások/-eredmények
+megjelenítésére, az AI SDK `isToolUIPart()`/`ToolUIPart` típusaira építve (a CLI `--show-prompt`
+funkcionális megfelelője).
+
+**Szál-váltás mintája (G6, Context7-vel megerősítve)**: a `Chat` `key={activeThreadId}` alapján
+remountol váltáskor — nem a `useChat` belső, hook-élettartamon belüli id-cache-ére hagyatkozunk,
+mert az egy, a kliensben még nem látott (de a szerveren már létező) szálra váltásnál nem töltené be
+automatikusan a korábbi kört; a szülő (`App`) explicit lekérdezi `GET /api/threads/:id`-t, és a
+kapott üzeneteket `initialMessages`-ként adja át az újonnan mountolt `Chat`-nek.
 
 **G4 közben talált, valódi függőség-verzió ütközés**: az `@ai-sdk/react` csomag saját verziószámozása
 NEM követi az `ai` csomagét — `@ai-sdk/react@4.x` valójában `ai@7.x`-et vár (nem `ai@5.x`-et, ahogy a
