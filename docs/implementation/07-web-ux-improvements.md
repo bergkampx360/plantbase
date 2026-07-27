@@ -18,26 +18,31 @@ beszélgetéseket, ne csak dátummal jelölje.
 
 **Döntések:**
 
-- **Scroll: `use-stick-to-bottom` (`useStickToBottom` hook), nem kézzel írt scroll-logika** — a
-  felhasználó explicit kérése, hogy ahol lehet, kész, bevett eszközt használjunk, ne saját
-  scroll-tracking kódot. Context7-vel ellenőrizve (`/stackblitz-labs/use-stick-to-bottom`,
-  `1.1.6`, React `^16.8 || ^17 || ^18 || ^19` peer — kompatibilis). A hook natívan tudja a
-  kért viselkedést: **csak akkor követi automatikusan az új tartalmat, ha a felhasználó már amúgy
-  is a lista alján volt** (`isAtBottom`/`escapedFromLock` — ha valaki felfelé görget streamelés
-  közben, nem rángatja vissza), és az `initial` opcióval a kezdeti mountoláskor (szál-váltáskor,
-  mert a `Chat` `key={activeThreadId}`-vel remountol, G6 döntés) is a lista aljára ugrik. A hook
-  `scrollRef`/`contentRef` párja az `apps/web/src/app/chat.tsx` meglévő `overflow-y-auto`
-  üzenetlista-konténerére és a belső üzenet-wrapper `div`-re kerül — nem kell saját `useRef`/
-  `useEffect`/sentinel-div.
-- **Markdown-renderelés `react-markdown`+`remark-gfm`-mel, kézzel Tailwind-osztályozva, nem a
-  `@tailwindcss/typography` `prose` pluginnal** — Context7-vel ellenőrizve (`/remarkjs/react-markdown`,
-  `react-markdown@10.1.0`, React ≥18 peer, kompatibilis React 19-cel; `remark-gfm@4.0.1` a
-  táblázat/strikethrough/lista GFM-elemekhez). A `prose` plugin alapértelmezett palettája extra
-  konfiguráció nélkül nem igazodna a projekt meglévő shadcn/CSS-változó-alapú színsémájához —
-  egyszerűbb néhány elemre (`p`, `strong`, `ul`/`ol`/`li`, `code`, `a`) kézzel Tailwind-osztályt
-  rendelni a `components` prop-pal. **Csak az asszisztens-üzenetek** renderelődnek Markdownként — a
-  user-üzenetek (amit a felhasználó ténylegesen begépelt) nyers szövegként maradnak, hogy egy
-  véletlen `*`/`_` karakter ne alakuljon váratlanul formázássá.
+- **Scroll + Markdown: a Vercel hivatalos `ai-elements` komponens-könyvtára, NEM saját
+  hook-bekötés/wrapper** — explicit felhasználói döntés (megkérdezve, `ai-elements` mellett
+  döntött): ez a shadcn/ui-ra épülő, AI SDK-hoz kifejezetten készített, hivatalos komponens-készlet
+  (Context7-vel ellenőrizve, `/vercel/ai-elements`). A `Conversation`/`ConversationContent`
+  komponens **belül szó szerint a `use-stick-to-bottom`-ot csomagolja** (`initial="smooth"`,
+  `resize="smooth"`) — H1-hez nem kell saját hook-bekötés. A `Message`/`MessageContent`/
+  `MessageResponse` komponens a `MessageResponse`-ban a `Streamdown`-t (Vercel-fejlesztésű,
+  streamelés-biztos Markdown-renderelő — a félbeszakadt/még nem lezárt markdown-tokeneket is
+  helyesen kezeli menet közben, nem csak a végleges, teljes szöveget) csomagolja — H2-höz nem kell
+  saját `react-markdown`-wrapper.
+  **Kockázat, amit végrehajtáskor elsőként ellenőrizni kell**: az `ai-elements` dokumentációja
+  többször "Next.js projekt"-et ír elő előfeltételként, DE a tényleges telepítő mechanizmus a
+  meglévő, már működő shadcn/ui CLI-re épül (`components.json`-t használja, ugyanúgy, mint a G4-es
+  `npx shadcn@latest add input` hívás ebben a Vite-projektben) — a komponensek maguk (a Context7-vel
+  látott forráskód alapján) nem tartalmaznak Next.js-specifikus importot. Emiatt valószínűleg
+  működik Vite alatt is, de ez **nincs explicit dokumentálva Vite-re**, úgyhogy a H1 fázis elején,
+  mielőtt a `chat.tsx` átépül a komponensekre, egy gyors próba-telepítéssel és `nx serve web`
+  futtatással megerősítendő. Ha mégis Next.js-hez kötött valamelyik komponens, visszaesési terv:
+  a korábban megtervezett `use-stick-to-bottom` (H1) + `react-markdown`+`remark-gfm` (H2) közvetlen
+  bekötése, amit ez a döntés felváltott.
+  A meglévő `ToolCallCard` (G5) változatlan marad — a `MessageContent` gyerekei között a `text`
+  part-oknál `MessageResponse`, a tool part-oknál (`isToolUIPart`) továbbra is `ToolCallCard`
+  renderelődik, ugyanúgy, mint most. **Csak az asszisztens-üzenetek** mennek `MessageResponse`-on
+  keresztül — a user-üzenetek (amit a felhasználó ténylegesen begépelt) nyers szövegként maradnak,
+  hogy egy véletlen `*`/`_` karakter ne alakuljon váratlanul formázássá.
 - **A szál-cím a szerveren, az első kérdés szövegéből, csonkolással jön létre — nem külön
   LLM-összefoglalással** — a `Thread` modell kap egy nullable `title` mezőt
   (`packages/db/prisma/schema.prisma`), amit `apps/server/src/app.ts` az ÚJ thread létrehozásakor
@@ -54,39 +59,42 @@ beszélgetéseket, ne csak dátummal jelölje.
 Minden fázis: saját branch → implementáció+teszt → doc-lezáró commit → `ddd-audit` → megállok
 tesztelésre → push/PR/merge csak explicit jóváhagyás után — ugyanaz a ciklus, mint G1–G7-nél.
 
-### H1 — Automatikus lescrollozás a beszélgetés végére ⏳ NYITOTT
+### H1 — Automatikus lescrollozás a beszélgetés végére (`ai-elements` `Conversation`) ⏳ NYITOTT
 
-- `apps/web/package.json`: `use-stick-to-bottom` hozzáadva.
-- `apps/web/src/app/chat.tsx`: `useStickToBottom({ initial: 'instant' })` — a visszaadott
-  `scrollRef` a meglévő `overflow-y-auto` üzenetlista-konténerre, a `contentRef` egy belső
-  wrapper `div`-re kerül (a jelenlegi `space-y-4` osztály erre a wrapperre mozgatva).
+- **Első lépés, mielőtt bármi más történne**: próba-telepítés (`npx ai-elements@latest add
+conversation` vagy a shadcn CLI-s ekvivalens) és `nx serve web` — megerősíteni, hogy a Vite-
+  alapú `apps/web`-ben ténylegesen működik (ld. a fenti kockázat a Döntéseknél). Ha nem, vissza a
+  `use-stick-to-bottom` közvetlen bekötésére, dokumentálva a döntés-változást.
+- `apps/web/src/components/ai-elements/conversation.tsx` (a telepítő generálja).
+- `apps/web/src/app/chat.tsx`: a jelenlegi `overflow-y-auto` üzenetlista-`div` lecserélve
+  `<Conversation><ConversationContent>...(a meglévő messages.map, változatlanul)...</ConversationContent></Conversation>`-re.
 
 **Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, ÚJ teszttel: a `Chat`
-spec-ben (`apps/web/src/app/chat.spec.tsx`) egy eset, ami leellenőrzi, hogy a `use-stick-to-bottom`
-tényleg be van kötve (pl. a `scrollRef`/`contentRef` a megfelelő elemekre kerül — a hook belső
-scroll-fizikáját magát nem kell újratesztelni, az a könyvtár saját felelőssége). Kézi böngészős
-teszt: szál kiválasztásakor a scroll a történet végén van (nem a tetején); kérdés elküldésekor és
-streamelés közben a scroll követi az új tartalmat; ha streamelés közben felfelé görgetünk, NEM
-rángat vissza a legaljára.
-**Commit:** `feat: auto-scroll chat to the latest message`
+spec-ben (`apps/web/src/app/chat.spec.tsx`) egy eset, ami leellenőrzi, hogy a `Conversation`/
+`ConversationContent` be van kötve (a `Conversation` belső `use-stick-to-bottom`-logikáját magát
+nem kell újratesztelni, az a könyvtár saját felelőssége). Kézi böngészős teszt: szál
+kiválasztásakor a scroll a történet végén van (nem a tetején); kérdés elküldésekor és streamelés
+közben a scroll követi az új tartalmat; ha streamelés közben felfelé görgetünk, NEM rángat vissza
+a legaljára.
+**Commit:** `feat: auto-scroll chat to the latest message with ai-elements Conversation`
 → megállok, kérem a tesztelést.
 
-### H2 — Markdown-formázás az asszisztens-válaszokhoz ⏳ NYITOTT
+### H2 — Markdown-formázás az asszisztens-válaszokhoz (`ai-elements` `Message`) ⏳ NYITOTT
 
-- `apps/web/package.json`: `react-markdown`, `remark-gfm` hozzáadva.
-- `apps/web/src/app/markdown.tsx` (ÚJ): `Markdown` komponens, `components` map Tailwind-osztályokkal
-  a meglévő színsémára hangolva.
-- `apps/web/src/app/chat.tsx`: `text` part-ok — `role === 'assistant'` esetén `<Markdown>`,
-  `user`-nél változatlan nyers `<span>`.
+- `npx ai-elements@latest add message` (vagy shadcn CLI-s ekvivalens) — `Message`/`MessageContent`/
+  `MessageResponse` (`Streamdown`-alapú) `apps/web/src/components/ai-elements/message.tsx`-be.
+- `apps/web/src/app/chat.tsx`: az üzenet-buborék `messages.map` átépül `Message`
+  (`from={message.role}`) + `MessageContent` szerkezetre; a `text` part-ok `role === 'assistant'`
+  esetén `<MessageResponse>`-ban, `user`-nél változatlan nyers szövegként; a tool part-ok
+  (`isToolUIPart`) továbbra is a meglévő `ToolCallCard`-dal (G5, változatlan).
 
-**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, ÚJ tesztekkel:
-`apps/web/src/app/markdown.spec.tsx` (félkövér/lista/link bemenetre a várt HTML-elem, pl.
-`<strong>`/`<ul><li>`/`<a>`, jelenik meg), és a meglévő `chat.spec.tsx` kiegészítve egy esettel,
-ami egy `**félkövér**`-t tartalmazó asszisztens-üzenetet renderel, és ellenőrzi, hogy `<strong>`
-elemként jelenik meg, NEM nyers `**`-ként. Kézi böngészős teszt: egy kérdésre adott válaszban a
-félkövér/lista formázás ténylegesen renderelt HTML-ként jelenik meg; egy user-üzenetben véletlenül
-szereplő `*` karakter nem alakul formázássá.
-**Commit:** `feat: render assistant responses as Markdown`
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, a meglévő `chat.spec.tsx`
+kiegészítve egy esettel, ami egy `**félkövér**`-t tartalmazó asszisztens-üzenetet renderel, és
+ellenőrzi, hogy `<strong>` elemként jelenik meg, NEM nyers `**`-ként. Kézi böngészős teszt: egy
+kérdésre adott válaszban a félkövér/lista formázás ténylegesen renderelt HTML-ként jelenik meg,
+streamelés közben is korrekt (nem villódzik/törik a félbeszakadt markdown-szintaxis miatt); egy
+user-üzenetben véletlenül szereplő `*` karakter nem alakul formázássá.
+**Commit:** `feat: render assistant responses as Markdown with ai-elements Message`
 → megállok, kérem a tesztelést.
 
 ### H3 — Szál-elnevezés az első kérdés alapján ⏳ NYITOTT
