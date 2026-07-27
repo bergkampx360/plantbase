@@ -391,21 +391,44 @@ kör, mint G4/G5-nél.
 **Commit:** `feat: add new-chat button and thread history sidebar`
 → megállok, kérem a tesztelést.
 
-### G7 — Tesztek + docs lezárás ⏳ NYITOTT
+### G7 — Tesztek + docs lezárás ✅ KÉSZ
 
-- `apps/server`: unit/integration tesztek a `/api/chat`/`/api/threads` végpontokra (teszt-könyvtár
-  kiválasztása — pl. `supertest` — Context7-vel ellenőrizve végrehajtáskor).
-- `apps/web`: alap komponens-tesztek (Vitest + React Testing Library, a meglévő Vitest-konvenciót
-  követve).
-- `docs/implementation/STATUS.md`: G sor ✅ Kész.
-- `README.md`: G-rész futtatási instrukciók (`nx serve server`, `nx serve web`), "Dokumentáció"
-  táblázat bővítése.
+**Context7-vel megerősítve** (`/forwardemail/supertest`): `request(app)` közvetlenül az Express
+`app`-példányra megy, `app.listen()` nélkül — a supertest saját maga kezeli az efemer
+szerver-életciklust egy kérésen belül.
+
+- **Valódi, tesztelhetőséget gátló probléma találva és javítva**: `apps/server/src/main.ts`
+  eredetileg modul-szinten, feltétel nélkül hívta `app.listen(PORT, ...)`-t — egy teszt-import
+  valódi portot nyitott volna. Szétválasztva `apps/server/src/app.ts`-re (az Express app felépítése
+  és exportja, `.listen()` NÉLKÜL) és egy vékony `main.ts`-re (`.env` betöltés + `app.listen(...)`).
+- `apps/server/vitest.config.mts` (ÚJ, `environment: 'node'`, `packages/core`/`packages/db`
+  mintájára) — eddig **nulla** teszt-infrastruktúra volt itt (nincs `test` Nx target sem addig).
+- `apps/server/src/app.spec.ts` (ÚJ, `supertest`): `GET /api/threads` (lista), `GET
+/api/threads/:id` (talált / 404), `POST /api/chat` (400 hiányzó `id`, 400 üres/hiányzó
+  `message`, új thread létrehozása, meglévő thread folytatása — a korábbi kör tényleges
+  betöltésével a `streamText`-hívásba). **Új Prisma-mockolási minta bevezetve** (`vi.mock('@plantbase/db',
+...)`, `docs/testing-strategy.md`-ben dokumentálva) — eddig nem létezett a repóban, a meglévő
+  `db-pool`-mock egy másik (nyers `pg.Pool`) modult takar.
+- `apps/web`: `@testing-library/jest-dom` + `@testing-library/user-event` hozzáadva
+  (`vitest-setup.ts`, `vite.config.mts` `test.setupFiles`). Három ÚJ spec: `tool-call.spec.tsx`
+  (`ToolCallCard` állapotai), `thread-sidebar.spec.tsx` (`fetch`-stubbal, lista/kattintás),
+  `chat.spec.tsx` (`vi.mock('@ai-sdk/react')`-tal, szöveg/tool-part renderelés, form-submit). A
+  meglévő `app.spec.tsx` smoke teszt változatlan — a mélyebb lefedettséget a gyerek-komponensek
+  saját tesztjei adják.
+- `docs/testing-strategy.md` bővítve a fenti két új mintával (Prisma-mock, `supertest`, `apps/web`
+  komponens-teszt konvenció).
+- `docs/implementation/STATUS.md`: G sor ✅ Kész (ezzel a teljes G-rész, G1–G7, lezárul).
 - **Tudatosan NEM ebben a körben**: `apps/cli` jelenlegi, F-ben már nevesített teszt-adóssága
   (`docs/testing-strategy.md` "Kimarad" szakasza) — ez a G-rész scope-ján kívül eső, külön tétel.
 
-**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, minden új teszttel együtt.
-**CLI-regresszió (G-rész záró ellenőrzése)**: `plantbase ask "..."` és az interaktív mód is
-változatlanul működik a teljes G1–G6 után — ez az egyetlen G-fázison kívül G1-en, ahol ez explicit
-ellenőrzésre kerül, ezért itt, a lezáráskor kötelező, nem csak feltételezett.
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, minden új teszttel együtt (7
+új `apps/server`-teszt; `apps/web`-en 10 új teszt a három új spec-fájlban, plusz a meglévő,
+változatlan `app.spec.tsx` smoke teszt — 11 teszt összesen az `apps/web` projektben), két tiszta
+futtatással is stabil (elsőre
+hibátlanul futottak, csak lint-formázási hibák — `import/first`, üres arrow function, TS2883
+hiányzó típus-annotáció — kerültek javításra, nem tesztlogikai hiba). **CLI-regresszió (G-rész
+záró ellenőrzése)**: `plantbase ask "..."` valós API-hívással működik a teljes G1–G7 után. Kézi,
+valós hívásos ellenőrzés: `nx serve server` ténylegesen elindul az `app.ts`/`main.ts` szétválás
+után is, `curl /api/threads` 200-at ad valós adattal.
 **Commit:** `test: add apps/server and apps/web tests, close out G-rész docs`
 → megállok, kérem a tesztelést.

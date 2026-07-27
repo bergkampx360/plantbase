@@ -178,7 +178,10 @@ hiányzó automatizált ellenőrzés a `SYSTEM_PROMPT`-ra:
 - `ask-agent.spec.ts` — új teszt az "ismeretlen tool" ágra (`default: throw` a switch-ben, eddig
   soha nem hívott branch) — `is_error: true` tool-result lesz belőle, nem crash; plusz egy teszt az
   `ANTHROPIC_MODEL` env-fallback ágra (`?? 'claude-haiku-4-5'`), ami eddig sosem futott (a `.env`
-  mindig beállítja tesztfutáskor).
+  mindig beállítja tesztfutáskor). **Utólagos megjegyzés (a fájl lezárása után, G1-nél)**: a
+  kézzel írt `switch`-dispatch és az `is_error: true` tool-result mechanizmus, amit ez a teszt itt
+  még lefed, a G1 fázisban (`docs/implementation/06-web-chat.md`) felülíródott az AI SDK
+  `streamText`+`tool()`-jával — ez a bekezdés az F11-kori állapotot írja le, nem a jelenlegit.
 - `hyde.spec.ts` — ugyanaz az `ANTHROPIC_MODEL`-fallback teszt a HyDE-hívásra.
 - `chunk.spec.ts` — 3 új eset: frontmatter-sor kettőspont nélkül (`continue`-ág), `title` jelen de
   `category` hiányzik (a `!title || !category` jobb oldalának izolált ága), és üres/whitespace-only

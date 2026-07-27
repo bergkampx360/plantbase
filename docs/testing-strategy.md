@@ -36,7 +36,11 @@
 - **`apps/cli`**: minden CLI-szintű viselkedés-változás (flag, output-formázás, interaktív mód)
   unit teszttel a saját rétegén, mockolt `askAgent`-tel. Ma nulla lefedettség (nincs
   `apps/cli/vitest.config.mts`, így Nx sem generál `test` targetet ide) — ez az elsődleges, explicit
-  néven nevezett adósság.
+  néven nevezett adósság (`apps/server`/`apps/web`-től eltérően, ld. lent, ahol G7 pótolta).
+- **`apps/server`**: minden route (`GET /api/threads(/:id)`, `POST /api/chat`) unit/integration
+  teszttel, `supertest`-tel az Express `app`-példányra (G7-től, `apps/server/src/app.spec.ts`).
+- **`apps/web`**: minden komponens, aminek van elágazó renderelési/interakciós logikája (nem a
+  puszta smoke-teszt szintjén) — `Vitest` + `@testing-library/react` (G7-től, ld. lent).
 
 ## Coverage-cél és a kikényszerítés jelenlegi állapota
 
@@ -78,6 +82,22 @@ A meglévő minta (`run-sql.spec.ts`, `list-categories.spec.ts`) a rögzített k
   ellenőrzi, nem az AI SDK belső tool-végrehajtását.
 - Determinisztikus, izolált tesztek — nincs külső/globális állapot- vagy időzítés-függés
   (`konvenciok.md` elve, itt plantbase-specifikus példával).
+- **`vi.mock('@plantbase/db')` a Prisma klienshez** (G7-től, `apps/server/src/app.spec.ts`) — új
+  minta, mert a meglévő `db-pool`-mock egy MÁSIK modult takar (nyers `pg.Pool`, agent-facing
+  RO-olvasás), nem a Prisma klienst. A mock-factory `thread`/`message` modellenként külön
+  `vi.fn()`-t ad minden használt metódushoz (`findMany`, `findUnique`, `create`, `update`),
+  `vi.hoisted()`-del deklarálva.
+- **`supertest` az Express-route-tesztekhez** (G7-től) — `request(app)` közvetlenül az Express
+  `app`-példányra megy, `app.listen()` nélkül (Context7-vel megerősítve: a supertest saját maga
+  kezeli a szerver-életciklust). Ez megkövetelte az `apps/server/src/main.ts` szétválasztását
+  `app.ts`-re (az Express-app felépítése, export, `.listen()` NÉLKÜL) és egy vékony `main.ts`-re
+  (`.env` betöltés + `app.listen(...)`) — enélkül egy teszt-import valódi portot nyitott volna.
+- **`apps/web` komponens-tesztek**: `Chat`/`ThreadSidebar` moduljai belekódolt API-URL-eket
+  használnak (nincs dependency injection), ezért a tesztek globális `fetch`-stubot
+  (`vi.stubGlobal('fetch', ...)`, `afterEach`-ben `vi.unstubAllGlobals()`) és/vagy
+  `vi.mock('@ai-sdk/react')`-ot (a `useChat` hookhoz) használnak, valós hálózati hívás nélkül.
+  `@testing-library/jest-dom` (`import '@testing-library/jest-dom/vitest'`, `vitest-setup.ts` a
+  `vite.config.mts` `test.setupFiles`-ában) és `@testing-library/user-event` hozzáadva (G7).
 
 ## "Tesztileg kész" kritérium a fázis-státuszhoz
 
