@@ -1,6 +1,10 @@
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, isToolUIPart, type UIMessage } from 'ai';
 import { useState } from 'react';
+import {
+  Conversation,
+  ConversationContent,
+} from '@/components/ai-elements/conversation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ToolCallCard } from './tool-call';
@@ -29,8 +33,14 @@ export function Chat({
       api: API_URL,
       // csak az utolsó üzenetet küldjük — a szerver a DB-ből tölti be a korábbi
       // kört, a DB az igazságforrás (G-rész eredeti "Thread-perzisztencia" döntése)
-      prepareSendMessagesRequest: ({ id: chatId, messages: currentMessages }) => ({
-        body: { id: chatId, message: currentMessages[currentMessages.length - 1] },
+      prepareSendMessagesRequest: ({
+        id: chatId,
+        messages: currentMessages,
+      }) => ({
+        body: {
+          id: chatId,
+          message: currentMessages[currentMessages.length - 1],
+        },
       }),
     }),
   });
@@ -53,33 +63,35 @@ export function Chat({
         Plantbase
       </h1>
 
-      <div className="flex-1 space-y-4 overflow-y-auto">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={message.role === 'user' ? 'text-right' : 'text-left'}
-          >
+      <Conversation className="flex-1">
+        <ConversationContent>
+          {messages.map((message) => (
             <div
-              className={
-                'inline-block rounded-lg px-3 py-2 whitespace-pre-wrap ' +
-                (message.role === 'user'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-foreground')
-              }
+              key={message.id}
+              className={message.role === 'user' ? 'text-right' : 'text-left'}
             >
-              {message.parts.map((part, index) => {
-                if (part.type === 'text') {
-                  return <span key={index}>{part.text}</span>;
+              <div
+                className={
+                  'inline-block rounded-lg px-3 py-2 whitespace-pre-wrap ' +
+                  (message.role === 'user'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-foreground')
                 }
-                if (isToolUIPart(part)) {
-                  return <ToolCallCard key={index} part={part} />;
-                }
-                return null;
-              })}
+              >
+                {message.parts.map((part, index) => {
+                  if (part.type === 'text') {
+                    return <span key={index}>{part.text}</span>;
+                  }
+                  if (isToolUIPart(part)) {
+                    return <ToolCallCard key={index} part={part} />;
+                  }
+                  return null;
+                })}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </ConversationContent>
+      </Conversation>
 
       <form onSubmit={handleSubmit} className="mt-4 flex gap-2">
         <Input
