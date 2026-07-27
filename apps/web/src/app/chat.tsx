@@ -1,8 +1,9 @@
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport, generateId } from 'ai';
+import { DefaultChatTransport, generateId, isToolUIPart } from 'ai';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ToolCallCard } from './tool-call';
 
 // a szerver /api/chat végpontja NEM az askAgent()-en keresztül megy — a CLI és a
 // szerver két külön Node-folyamat, csak a tool/prompt/modell-építőelemeket osztják meg
@@ -60,11 +61,15 @@ export function Chat() {
                   : 'bg-muted text-foreground')
               }
             >
-              {message.parts.map((part, index) =>
-                part.type === 'text' ? (
-                  <span key={index}>{part.text}</span>
-                ) : null,
-              )}
+              {message.parts.map((part, index) => {
+                if (part.type === 'text') {
+                  return <span key={index}>{part.text}</span>;
+                }
+                if (isToolUIPart(part)) {
+                  return <ToolCallCard key={index} part={part} />;
+                }
+                return null;
+              })}
             </div>
           </div>
         ))}

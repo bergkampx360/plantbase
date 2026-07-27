@@ -326,14 +326,34 @@ A tényleges böngészős kattintásteszt a fenti okból elmaradt — l. fent.
 **Commit:** `feat: scaffold apps/web with streaming chat UI`
 → megállok, kérem a tesztelést.
 
-### G5 — Tool-kártya komponensek (`data-tool`/`data-agent`) ⏳ NYITOTT
+### G5 — Tool-kártya komponensek ✅ KÉSZ
 
-- React komponensek, amik a G2-ben streamelt `data-tool`/`data-agent` part-okat vizuálisan
-  megkülönböztetve jelenítik meg (pl. összecsukható "🔧 searchKnowledge(...)" kártya a tool-hívással
-  és -eredménnyel) — a CLI `--show-prompt` funkcionális megfelelője, de UI-ban.
+**Pontosítás a G2 eredeti "data-tool/data-agent" megfogalmazásához képest**: nincs kézzel írt
+custom data-part (G2 döntése óta ez volt a terv) — a natív AI SDK `ToolUIPart` alak
+(`part.type === 'tool-runSql'` stb., `part.state`/`part.input`/`part.output`, Context7-vel
+megerősítve, `/vercel/ai/ai_5_0_0`) már mindent tartalmaz, amire a kártyáknak szükségük van.
 
-**Teszt:** kézi böngészős teszt: egy gondozási kérdésnél (`searchKnowledge`) és egy katalógus-
-kérdésnél (`runSql`) is látszik a tool-kártya a megfelelő adattal.
+- `apps/web/src/app/tool-call.tsx` (ÚJ): `ToolCallCard` komponens — összecsukható kártya
+  (`useState`-alapú nyitott/zárt állapot), magyar címkékkel (`runSql` → "🔍 Katalógus-lekérdezés",
+  `listCategories` → "📋 Kategóriák", `searchKnowledge` → "🌿 Tudásbázis-keresés"), kinyitva
+  `input`/`output` megjelenítéssel (JSON, ha objektum, egyébként nyers szöveg — a CLI
+  `format-messages.ts` mintájára), `output-error` állapotra piros hibaszöveggel (defenzív ág — a
+  meglévő tool-`execute`-wrapperek, G1, sosem dobnak kifelé, mindig szöveges eredményt adnak
+  vissza hiba esetén is, tehát ez az ág a gyakorlatban nem várt, de kezelve van).
+- `apps/web/src/app/chat.tsx`: a `message.parts.map` bővítve az AI SDK `isToolUIPart()` type
+  guard-jával (a `ToolUIPart<UITools>` uniós típus miatt egy `part.type.startsWith('tool-')`
+  string-ellenőrzés nem szűkíti le a TS-típust — ezt tényleges `typecheck`-kel találtam meg és
+  javítottam a hivatalos `isToolUIPart` helperre váltva).
+
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, két tiszta futtatással is
+stabil. **CLI-regresszió**: `plantbase ask "..."` működik (a helyi Postgres/OrbStack menet közben
+leállt, újraindítva, utána valós API-hívással megerősítve). Valós `curl`-teszt a `POST
+/api/chat`-re: a szerver ténylegesen `tool-input-available`/`tool-output-available` eseményeket
+streamel a `runSql` valódi bemenetével/kimenetével — ezt fordítja a `useChat` a kliens-oldali
+`tool-runSql` part-alakra, amit a `ToolCallCard` fogyaszt. **Interaktív böngészős teszt ezúttal
+sem történt** — a `claude-in-chrome` eszköz megpróbálva, de nem volt kapcsolódva ebben a
+munkamenetben (a felhasználó a telepítést korábban megszakította); ugyanaz a közvetett
+ellenőrzési kör, mint G4-nél.
 **Commit:** `feat: add tool-call visualization cards to chat UI`
 → megállok, kérem a tesztelést.
 

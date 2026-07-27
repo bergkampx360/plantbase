@@ -72,11 +72,12 @@ Tailwind v4 (`@tailwindcss/vite` plugin, nincs `tailwind.config.js`) és shadcn/
 `src/components/ui/`) hozzáadva a hivatalos "Existing Project" (Vite) folyamat szerint. `@/*`
 path-alias `tsconfig.json`/`tsconfig.app.json`-ban és `vite.config.mts`-ben.
 
-Egyetlen `Chat` komponens (`src/app/chat.tsx`): `useChat` (`@ai-sdk/react`) + `DefaultChatTransport`
-
-- `generateId()` (`ai`-ból, új beszélgetés id-jének generálásához, a `POST /api/chat` natív
-  szerződéséhez, `docs/tech/api.md`) — csak szöveges üzenetek, tool-kártya vizuális megkülönböztetés
-  G5, "Új chat"/history-sáv G6 dolga, nem ez a fázis.
+Fő komponensek: `Chat` (`src/app/chat.tsx`) — `useChat` (`@ai-sdk/react`) + `DefaultChatTransport` +
+`generateId()` (`ai`-ból, új beszélgetés id-jének generálásához, a `POST /api/chat` natív
+szerződéséhez, `docs/tech/api.md`); `ToolCallCard` (`src/app/tool-call.tsx`, G5) — összecsukható
+kártya a tool-hívások/-eredmények megjelenítésére, az AI SDK `isToolUIPart()`/`ToolUIPart` típusaira
+építve (a CLI `--show-prompt` funkcionális megfelelője). "Új chat"/history-sáv G6 dolga, nem ez a
+fázis.
 
 **G4 közben talált, valódi függőség-verzió ütközés**: az `@ai-sdk/react` csomag saját verziószámozása
 NEM követi az `ai` csomagét — `@ai-sdk/react@4.x` valójában `ai@7.x`-et vár (nem `ai@5.x`-et, ahogy a
