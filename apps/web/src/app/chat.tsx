@@ -5,6 +5,11 @@ import {
   Conversation,
   ConversationContent,
 } from '@/components/ai-elements/conversation';
+import {
+  Message,
+  MessageContent,
+  MessageResponse,
+} from '@/components/ai-elements/message';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ToolCallCard } from './tool-call';
@@ -66,29 +71,28 @@ export function Chat({
       <Conversation className="flex-1">
         <ConversationContent>
           {messages.map((message) => (
-            <div
-              key={message.id}
-              className={message.role === 'user' ? 'text-right' : 'text-left'}
-            >
-              <div
-                className={
-                  'inline-block rounded-lg px-3 py-2 whitespace-pre-wrap ' +
-                  (message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-foreground')
-                }
-              >
+            <Message key={message.id} from={message.role}>
+              <MessageContent>
                 {message.parts.map((part, index) => {
                   if (part.type === 'text') {
-                    return <span key={index}>{part.text}</span>;
+                    // csak az asszisztens szövege megy Markdown-renderelésen
+                    // keresztül — a user véletlenül begépelt '*'/'_' karaktere
+                    // ne alakuljon formázássá (H2 döntés)
+                    return message.role === 'assistant' ? (
+                      <MessageResponse key={index}>{part.text}</MessageResponse>
+                    ) : (
+                      <span key={index} className="whitespace-pre-wrap">
+                        {part.text}
+                      </span>
+                    );
                   }
                   if (isToolUIPart(part)) {
                     return <ToolCallCard key={index} part={part} />;
                   }
                   return null;
                 })}
-              </div>
-            </div>
+              </MessageContent>
+            </Message>
           ))}
         </ConversationContent>
       </Conversation>
