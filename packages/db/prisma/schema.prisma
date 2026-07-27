@@ -64,6 +64,7 @@ model KnowledgeChunk {
 // első üzenet elmenne; a szerver sosem talál ki saját azonosítót, csak arra perzisztál, amit kap.
 model Thread {
   id        String    @id
+  title     String?
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   messages  Message[]

@@ -5,6 +5,7 @@ import {
   RUN_SQL_TOOL,
   SEARCH_KNOWLEDGE_TOOL,
   SYSTEM_PROMPT,
+  generateThreadTitle,
   resolveModel,
 } from '@plantbase/core';
 import { prisma } from '@plantbase/db';
@@ -95,7 +96,10 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     : [];
 
   if (!existingThread) {
-    await prisma.thread.create({ data: { id } });
+    // a cím a szerveren, LLM-összefoglalással jön létre (H3) — nem nyers
+    // karakter-csonkolással, ami félbevágott mondatokat adhatna
+    const title = await generateThreadTitle(questionText);
+    await prisma.thread.create({ data: { id, title } });
   }
 
   await prisma.message.create({

@@ -2,21 +2,30 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 
 // az ai-mock ugyanaz a minta, mint packages/core/src/ask-agent.spec.ts — kiegészítve
-// convertToModelMessages-szel (identitás-mock, mert app.ts ezt is importálja 'ai'-ból)
-const { streamTextMock, toolMock, stepCountIsMock, convertToModelMessagesMock, anthropicMock } =
-  vi.hoisted(() => ({
-    streamTextMock: vi.fn(),
-    toolMock: vi.fn((config: unknown) => config),
-    stepCountIsMock: vi.fn((count: number) => ({ type: 'stepCountIs', count })),
-    convertToModelMessagesMock: vi.fn((messages: unknown) => messages),
-    anthropicMock: vi.fn().mockReturnValue('mock-anthropic-model'),
-  }));
+// convertToModelMessages-szel (identitás-mock, mert app.ts ezt is importálja 'ai'-ból) és
+// generateText-tel (a generateThreadTitle, H3, ezt hívja a title-agent.ts-en keresztül)
+const {
+  streamTextMock,
+  toolMock,
+  stepCountIsMock,
+  convertToModelMessagesMock,
+  generateTextMock,
+  anthropicMock,
+} = vi.hoisted(() => ({
+  streamTextMock: vi.fn(),
+  toolMock: vi.fn((config: unknown) => config),
+  stepCountIsMock: vi.fn((count: number) => ({ type: 'stepCountIs', count })),
+  convertToModelMessagesMock: vi.fn((messages: unknown) => messages),
+  generateTextMock: vi.fn().mockResolvedValue({ text: 'Kaktusz-ajánlás' }),
+  anthropicMock: vi.fn().mockReturnValue('mock-anthropic-model'),
+}));
 
 vi.mock('ai', () => ({
   streamText: streamTextMock,
   tool: toolMock,
   stepCountIs: stepCountIsMock,
   convertToModelMessages: convertToModelMessagesMock,
+  generateText: generateTextMock,
 }));
 
 vi.mock('@ai-sdk/anthropic', () => ({
@@ -60,13 +69,14 @@ import app from './app';
 
 function streamResult(text: string) {
   return {
-    pipeUIMessageStreamToResponse: vi.fn(async (res: { end: (chunk: string) => void }) => {
-      const onFinish = streamTextMock.mock.calls.at(-1)?.[0]?.onFinish as
-        | ((result: { text: string }) => Promise<void>)
-        | undefined;
-      await onFinish?.({ text });
-      res.end('mock-stream');
-    }),
+    pipeUIMessageStreamToResponse: vi.fn(
+      async (res: { end: (chunk: string) => void }) => {
+        const onFinish = streamTextMock.mock.calls.at(-1)?.[0]?.onFinish as
+          ((result: { text: string }) => Promise<void>) | undefined;
+        await onFinish?.({ text });
+        res.end('mock-stream');
+      },
+    ),
   };
 }
 
@@ -152,10 +162,21 @@ describe('POST /api/chat', () => {
       .send({ id: 'new-thread', message: userMessage });
 
     expect(response.status).toBe(200);
-    expect(threadCreateMock).toHaveBeenCalledWith({ data: { id: 'new-thread' } });
+    expect(threadCreateMock).toHaveBeenCalledWith({
+      data: { id: 'new-thread', title: 'Kaktusz-ajánlás' },
+    });
+    expect(generateTextMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expect.stringContaining('milyen kaktuszotok van?'),
+      }),
+    );
     expect(messageFindManyMock).not.toHaveBeenCalled();
     expect(messageCreateMock).toHaveBeenCalledWith({
-      data: { threadId: 'new-thread', role: 'user', content: 'milyen kaktuszotok van?' },
+      data: {
+        threadId: 'new-thread',
+        role: 'user',
+        content: 'milyen kaktuszotok van?',
+      },
     });
     // az onFinish-ben mentett asszisztens-válasz
     expect(messageCreateMock).toHaveBeenCalledWith({
@@ -170,7 +191,12 @@ describe('POST /api/chat', () => {
   it('loads prior messages when continuing an existing thread', async () => {
     threadFindUniqueMock.mockResolvedValue({ id: 'existing-thread' });
     messageFindManyMock.mockResolvedValue([
-      { id: 1, threadId: 'existing-thread', role: 'user', content: 'korábbi kérdés' },
+      {
+        id: 1,
+        threadId: 'existing-thread',
+        role: 'user',
+        content: 'korábbi kérdés',
+      },
     ]);
     streamTextMock.mockReturnValue(streamResult('folytatás'));
 
@@ -187,7 +213,10 @@ describe('POST /api/chat', () => {
     expect(streamTextMock).toHaveBeenCalledWith(
       expect.objectContaining({
         messages: expect.arrayContaining([
-          expect.objectContaining({ role: 'user', parts: [{ type: 'text', text: 'korábbi kérdés' }] }),
+          expect.objectContaining({
+            role: 'user',
+            parts: [{ type: 'text', text: 'korábbi kérdés' }],
+          }),
           userMessage,
         ]),
       }),
