@@ -43,14 +43,30 @@ beszélgetéseket, ne csak dátummal jelölje.
   renderelődik, ugyanúgy, mint most. **Csak az asszisztens-üzenetek** mennek `MessageResponse`-on
   keresztül — a user-üzenetek (amit a felhasználó ténylegesen begépelt) nyers szövegként maradnak,
   hogy egy véletlen `*`/`_` karakter ne alakuljon váratlanul formázássá.
-- **A szál-cím a szerveren, az első kérdés szövegéből, csonkolással jön létre — nem külön
-  LLM-összefoglalással** — a `Thread` modell kap egy nullable `title` mezőt
-  (`packages/db/prisma/schema.prisma`), amit `apps/server/src/app.ts` az ÚJ thread létrehozásakor
-  tölt ki (60 karakteres csonkolás, `…` jelzi a vágást). Perzisztált mező, nem minden listázáskor
-  on-the-fly számított — elkerüli az extra join/lekérdezést szálanként. A kliens sosem generál
-  saját maga title-t, ugyanaz az elv, mint a `Thread.id`-nál (G4) — a szerver-oldali logika az
-  egyetlen hely, ami tudja, hogy egy adott üzenet az első-e a szálon. Régi, cím nélküli szálaknál a
-  `ThreadSidebar` a meglévő dátum-fallbackre esik vissza.
+- **A szál-cím LLM-összefoglalással jön létre, egy külön, újrahasználható "agent-stílusú"
+  épületkővel `packages/core`-ban — NEM nyers karakter/mondat-csonkolással** — felülvizsgálat
+  után: a csonkolás fura, félbevágott mondatokat adhatna (különösen magyar, ragozott
+  szerkezeteknél). Pontosan így csinálja a ChatGPT/Claude.ai is. `packages/core/src/title-agent.ts`
+  (ÚJ) — `generateThreadTitle(question: string): Promise<string>`, a meglévő `rag/hyde.ts` (F6)
+  stílusát követve: egyetlen `generateText` hívás (`ai` SDK), `anthropic(resolveModel())` modellel
+  (a `hyde.ts` a modellt még közvetlenül `process.env['ANTHROPIC_MODEL']`-ből olvassa ki — az új
+  fájl a megosztott `resolveModel()`-t importálja, konzisztensebben), egy rövid prompt, ami 2-4
+  szavas, magyar, idézőjel/írásjel nélküli címet kér. **Nem valódi tool-hívási képességű
+  (`streamText`+`tool()`+`stopWhen`) agent** — a felhasználóval tisztázva: egy cím-összefoglaláshoz
+  nincs mit lekérdeznie/számolnia egy toolnak, a "agent-stílus" itt azt jelenti, hogy a projekt
+  meglévő, `packages/core`-beli LLM-hívó épületkövei (`hyde.ts`/`rerank.ts`) mintáját követi
+  (megosztott modell-választás, önálló, tesztelhető függvény), nem egy elszigetelt, egyedi hívást.
+  A `Thread` modell kap egy nullable `title` mezőt (`packages/db/prisma/schema.prisma`), amit
+  `apps/server/src/app.ts` az ÚJ thread létrehozásakor tölt ki, a `generateThreadTitle()`
+  eredményével. Perzisztált mező, nem minden listázáskor on-the-fly számított — elkerüli az extra
+  LLM-hívást/join-t szálanként minden listázásnál. A kliens sosem generál saját maga title-t,
+  ugyanaz az elv, mint a `Thread.id`-nál (G4) — a szerver-oldali logika az egyetlen hely, ami
+  tudja, hogy egy adott üzenet az első-e a szálon. Régi, cím nélküli szálaknál a `ThreadSidebar` a
+  meglévő dátum-fallbackre esik vissza. **Tudatos, elfogadott ár**: egy plusz, gyors (haiku)
+  modellhívás szálanként egyszer, új szál nyitásakor — ezzel nő az első válasz "time to first
+  token"-je egy kicsit, ha a `generateThreadTitle()` hívás a `streamText`-hívás elé, szekvenciálisan
+  kerül (a legegyszerűbb, a meglévő kód-struktúrába illő megoldás; a két hívás párhuzamosítása
+  `Promise.all`-lal egy lehetséges, de nem kötelező finomítás végrehajtáskor).
 
 ---
 
@@ -97,24 +113,30 @@ user-üzenetben véletlenül szereplő `*` karakter nem alakul formázássá.
 **Commit:** `feat: render assistant responses as Markdown with ai-elements Message`
 → megállok, kérem a tesztelést.
 
-### H3 — Szál-elnevezés az első kérdés alapján ⏳ NYITOTT
+### H3 — Szál-elnevezés az első kérdés alapján, LLM-összefoglalással ⏳ NYITOTT
 
+- `packages/core/src/title-agent.ts` (ÚJ): `generateThreadTitle(question: string): Promise<string>`
+  — egyetlen `generateText` hívás, `anthropic(resolveModel())` modellel, a `hyde.ts` mintáját
+  követve. A `packages/core/src/index.ts` publikus felülete exportálja.
 - `packages/db/prisma/schema.prisma`: `Thread.title String?` mező (nullable), migráció.
-- `apps/server/src/app.ts`: az `!existingThread` ágban a `prisma.thread.create` hívás kap egy
-  `title`-t a `questionText`-ből (60 karakteres csonkolás, szóhatáron, `…` a vágás jelzésére).
+- `apps/server/src/app.ts`: az `!existingThread` ágban a `prisma.thread.create` hívás előtt
+  meghívja a `generateThreadTitle(questionText)`-et, és az eredményt adja át `title`-ként.
 - `apps/web/src/app/thread-sidebar.tsx`: a `ThreadSummary` típus bővítve `title: string | null`-lal,
   a lista-elem szövege `thread.title ?? formatDate(thread.updatedAt)`.
 
-**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld. **A meglévő
-`apps/server/src/app.spec.ts` "creates a new thread…" esete frissítendő** — jelenleg
-`expect(threadCreateMock).toHaveBeenCalledWith({ data: { id: 'new-thread' } })`-et vár, ami a
-`title` mező hozzáadása után elbukna; ki kell egészíteni a várt `title`-lel, plusz egy ÚJ eset a
-csonkolási logikára (egy 60 karakternél hosszabb kérdés → csonkolt, `…`-re végződő cím). **Meglévő
-`thread-sidebar.spec.tsx`** frissítve/kiegészítve, hogy a mock-threadeknek van `title`-je, és a
-lista ezt jeleníti meg, nem a dátumot. **CLI-regresszió**: `plantbase ask "..."` a séma-változás
-után is működik. Kézi böngészős teszt: új szál nyitása után a sidebar az első kérdés szövegéből
-vett címmel jelenik meg; egy régi, cím nélküli szál a dátum-fallbackkel jelenik meg továbbra is.
-**Commit:** `feat: derive thread titles from the first question`
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld. **ÚJ**
+`packages/core/src/title-agent.spec.ts` — a `hyde.spec.ts` mintájára (`vi.mock('ai')` +
+`vi.mock('@ai-sdk/anthropic')`), ellenőrizve, hogy a helyes promptot építi és a modell szövegét
+adja vissza. **A meglévő `apps/server/src/app.spec.ts` "creates a new thread…" esete
+frissítendő** — jelenleg `expect(threadCreateMock).toHaveBeenCalledWith({ data: { id: 'new-thread'
+} })`-et vár, ami a `title` mező hozzáadása után elbukna; a teszt `vi.mock`-olja a
+`generateThreadTitle`-t (ugyanúgy, mint a `streamText`/Prisma-mockok), és ellenőrzi, hogy a
+mockolt cím ténylegesen bekerül a `thread.create` hívásba. **Meglévő `thread-sidebar.spec.tsx`**
+frissítve/kiegészítve, hogy a mock-threadeknek van `title`-je, és a lista ezt jeleníti meg, nem a
+dátumot. **CLI-regresszió**: `plantbase ask "..."` a séma-változás után is működik. Kézi böngészős
+teszt: új szál nyitása után a sidebar egy valós, LLM-generált, értelmes rövid címmel jelenik meg
+(nem félbevágott mondattal); egy régi, cím nélküli szál a dátum-fallbackkel jelenik meg továbbra is.
+**Commit:** `feat: derive thread titles from the first question via a title-generation agent`
 → megállok, kérem a tesztelést.
 
 ## A most végrehajtandó lépés
