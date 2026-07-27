@@ -117,21 +117,39 @@ felfelé görgetéskor) emiatt a felhasználónak kell megerősítenie böngész
 **Commit:** `feat: auto-scroll chat to the latest message with ai-elements Conversation`
 → megállok, kérem a tesztelést.
 
-### H2 — Markdown-formázás az asszisztens-válaszokhoz (`ai-elements` `Message`) ⏳ NYITOTT
+### H2 — Markdown-formázás az asszisztens-válaszokhoz (`ai-elements` `Message`) ✅ KÉSZ
 
-- `npx ai-elements@latest add message` (vagy shadcn CLI-s ekvivalens) — `Message`/`MessageContent`/
-  `MessageResponse` (`Streamdown`-alapú) `apps/web/src/components/ai-elements/message.tsx`-be.
-- `apps/web/src/app/chat.tsx`: az üzenet-buborék `messages.map` átépül `Message`
+- `npx ai-elements@latest add message`, az `apps/web` könyvtárból futtatva (H1-nél talált,
+  szükséges gyakorlat) — `Message`/`MessageContent`/`MessageResponse` (`Streamdown`-alapú)
+  `apps/web/src/components/ai-elements/message.tsx`-be.
+- `apps/web/src/app/chat.tsx`: az üzenet-buborék `messages.map` átépült `Message`
   (`from={message.role}`) + `MessageContent` szerkezetre; a `text` part-ok `role === 'assistant'`
-  esetén `<MessageResponse>`-ban, `user`-nél változatlan nyers szövegként; a tool part-ok
-  (`isToolUIPart`) továbbra is a meglévő `ToolCallCard`-dal (G5, változatlan).
+  esetén `<MessageResponse>`-ban, `user`-nél változatlan nyers szövegként (`whitespace-pre-wrap`
+  `span`); a tool part-ok (`isToolUIPart`) továbbra is a meglévő `ToolCallCard`-dal (G5,
+  változatlan).
+- **Menet közben talált, valós méret-probléma és javítása**: az `ai-elements` alapértelmezett
+  `MessageResponse` a `Streamdown`-t `cjk`/`code`/`math`/`mermaid` pluginokkal csomagolja —
+  ez ~1,47 MB-ra (443 KB gzip) hízlalta a production build fő JS-csomagját, dozens of extra
+  chunk-fájllal (shiki minden nyelvhez, katex, mermaid+cytoscape), amikre egy magyar
+  növénygondozási chatnek nincs szüksége. Mivel a telepített komponens-fájl a saját kódbázisunk
+  része (nem egy fekete dobozos npm-csomag), a pluginok kivehetők: a bundle ~874 KB-ra
+  (258 KB gzip) csökkent, a `@streamdown/{cjk,code,math,mermaid}` csomagok eltávolítva a
+  `package.json`-ból.
+- **A felhasználó élő böngészős tesztje talált egy második, valós vizuális regressziót**: az
+  `ai-elements` `MessageContent` alapértelmezett stílusa csak a user-üzeneteknek ad hátteres
+  buborékot (`bg-secondary`), az asszisztensnek semmit (ChatGPT-stílusú, aszimmetrikus design) —
+  ez eltávolította a plantbase eredeti, szimmetrikus buborék-dizájnját (mindkét oldalnak van
+  háttere). Javítva: `message.tsx` `MessageContent`-je testreszabva, visszaállítva a
+  `bg-primary`/`bg-muted` buborék-párt mindkét szerepre.
 
-**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, a meglévő `chat.spec.tsx`
-kiegészítve egy esettel, ami egy `**félkövér**`-t tartalmazó asszisztens-üzenetet renderel, és
-ellenőrzi, hogy `<strong>` elemként jelenik meg, NEM nyers `**`-ként. Kézi böngészős teszt: egy
-kérdésre adott válaszban a félkövér/lista formázás ténylegesen renderelt HTML-ként jelenik meg,
-streamelés közben is korrekt (nem villódzik/törik a félbeszakadt markdown-szintaxis miatt); egy
-user-üzenetben véletlenül szereplő `*` karakter nem alakul formázássá.
+**Teszt:** `pnpm exec nx run-many -t build,typecheck,test,lint` zöld, két tiszta futtatással is
+stabil. `chat.spec.tsx` két ÚJ esettel: egy `**félkövér**`-t tartalmazó asszisztens-üzenet
+`[data-streamdown="strong"]` span-ként jelenik meg (a Streamdown NEM natív `<strong>`-öt használ —
+ez menet közben derült ki, a terv eredetileg `<strong>`-öt feltételezett), nem nyers `**`-ként;
+egy user-üzenetben szereplő `*` karakter szó szerint, formázás nélkül jelenik meg.
+**CLI-regresszió**: `plantbase ask "..."` valós API-hívással működik. **Felhasználó által élőben
+megerősítve böngészőben**: a Markdown-formázás helyesen jelenik meg; a talált buborék-hiány
+javítás után "tökéletes"-nek minősítve.
 **Commit:** `feat: render assistant responses as Markdown with ai-elements Message`
 → megállok, kérem a tesztelést.
 
