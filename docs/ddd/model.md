@@ -77,9 +77,9 @@ után a `ToolCallCard` (G5) eltűnt — élő streamelés közben mindig helyese
 DB-ből visszatöltött történetnél nem, mert korábban a `Message` sosem tárolt tool-adatot.
 
 **`Thread.title` (H3)**: nullable — a szerver tölti ki egy rövid, LLM-generált összefoglalóval
-(`generateThreadTitle()`, `packages/core/src/title-agent.ts`) az ÚJ szál első kérdéséből, nem a
+(`generateThreadTitle()`, `packages/core/src/agent/title-agent.ts`) az ÚJ szál első kérdéséből, nem a
 kliens. A H3 előtt létrehozott szálaknál `null` marad (nincs visszamenőleges kitöltés) — a
-webes UI ekkor egy dátum-fallbackre esik vissza (`apps/web/src/app/thread-sidebar.tsx`).
+webes UI ekkor egy dátum-fallbackre esik vissza (`apps/web/src/components/chat/thread-sidebar.tsx`).
 
 **`Thread.id` String, NEM autoincrement (G4-től)**: az AI SDK `useChat` natív mintájában a chat
 id-t a kliens generálja (`generateId()`), mielőtt az első üzenet elmenne — a szerver sosem talál

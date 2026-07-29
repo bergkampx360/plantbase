@@ -1,7 +1,7 @@
 import { generateId, type UIMessage } from 'ai';
 import { useState } from 'react';
-import { Chat } from './chat';
-import { ThreadSidebar } from './thread-sidebar';
+import { Chat } from '../components/chat/chat';
+import { ThreadSidebar } from '../components/chat/thread-sidebar';
 
 const THREADS_URL = 'http://localhost:3001/api/threads';
 

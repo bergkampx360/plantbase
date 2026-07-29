@@ -70,7 +70,7 @@ mintája, G4-től — **nem** `{ question, threadId }`, ahogy G2/G3-ban eredetil
 **kliens generálja** (`generateId()` az `'ai'`-ból) egy új beszélgetés indításakor, mielőtt az
 első üzenet elmenne — a szerver sosem talál ki saját azonosítót, csak arra perzisztál, amit kap.
 A `message` csak az UTOLSÓ (legújabb) `UIMessage`, nem a teljes history — a szerver tölti be a
-korábbi kört a DB-ből (`prepareSendMessagesRequest` a kliensen, ld. `apps/web/src/app/chat.tsx`).
+korábbi kört a DB-ből (`prepareSendMessagesRequest` a kliensen, ld. `apps/web/src/components/chat/chat.tsx`).
 Hiányzó `id`/`message`, vagy üres szöveges tartalom → `400`. **Nem** az `askAgent()`-en keresztül
 megy — `apps/server/src/main.ts` egy saját, önálló `streamText`-hívást épít a `packages/core`-ból
 exportált tool-okból (`RUN_SQL_TOOL`/`LIST_CATEGORIES_TOOL`/`SEARCH_KNOWLEDGE_TOOL`),
@@ -112,7 +112,7 @@ alapértelmezett 5173-at). Port: `PORT` env-változó (alapértelmezett `3001`).
 
 `GET /api/threads` — a `Thread`-ek listája (`id`, `title`, `createdAt`, `updatedAt`), `updatedAt`
 szerint csökkenő sorrendben (legutóbb aktív szál elöl). `title` nullable — a H3 előtt létrehozott
-szálaknak nincs (a kliens ilyenkor dátum-fallbackre esik vissza, `apps/web/src/app/thread-sidebar.tsx`).
+szálaknak nincs (a kliens ilyenkor dátum-fallbackre esik vissza, `apps/web/src/components/chat/thread-sidebar.tsx`).
 
 `GET /api/threads/:id` — egy `Thread` a hozzá tartozó `Message`-ekkel (`createdAt` szerint
 növekvő sorrendben). `id` egy String (G4-től, ld. `packages/db/prisma/schema.prisma`), nem szám —
