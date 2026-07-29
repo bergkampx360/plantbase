@@ -1,9 +1,9 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import { stepCountIs, streamText, type ModelMessage } from 'ai';
-import { LIST_CATEGORIES_TOOL } from './list-categories';
-import { logInteraction } from './log-interaction';
-import { RUN_SQL_TOOL } from './run-sql';
-import { SEARCH_KNOWLEDGE_TOOL } from './search-knowledge';
+import { LIST_CATEGORIES_TOOL } from '../tools/list-categories';
+import { logInteraction } from '../infra/log-interaction';
+import { RUN_SQL_TOOL } from '../tools/run-sql';
+import { SEARCH_KNOWLEDGE_TOOL } from '../tools/search-knowledge';
 import { SYSTEM_PROMPT } from './system-prompt';
 
 export type AskResult = {

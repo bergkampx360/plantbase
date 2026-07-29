@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { getPool } from './db-pool';
+import { getPool } from '../infra/db-pool';
 
 const ListCategoriesInput = z.object({});
 

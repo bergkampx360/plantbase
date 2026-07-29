@@ -20,17 +20,17 @@ vi.mock('@ai-sdk/anthropic', () => ({
   anthropic: anthropicMock,
 }));
 
-vi.mock('./log-interaction', () => ({
+vi.mock('../infra/log-interaction', () => ({
   logInteraction: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('./db-pool', () => ({
+vi.mock('../infra/db-pool', () => ({
   getPool: vi.fn(),
   getWritePool: vi.fn(),
 }));
 
 import { askAgent, MAX_TOOL_ITERATIONS } from './ask-agent';
-import { logInteraction } from './log-interaction';
+import { logInteraction } from '../infra/log-interaction';
 
 const mockedLogInteraction = vi.mocked(logInteraction);
 

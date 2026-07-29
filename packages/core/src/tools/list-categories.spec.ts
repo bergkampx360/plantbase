@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getPool } from './db-pool';
+import { getPool } from '../infra/db-pool';
 import { LIST_CATEGORIES_TOOL, listCategories } from './list-categories';
 
-vi.mock('./db-pool', () => ({
+vi.mock('../infra/db-pool', () => ({
   getPool: vi.fn(),
 }));
 

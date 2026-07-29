@@ -1,4 +1,4 @@
-import { getPool, getWritePool } from '../db-pool';
+import { getPool, getWritePool } from '../infra/db-pool';
 import type { ArticleChunk } from './chunk';
 
 export interface StoredChunk {

@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { getPool } from './db-pool';
+import { getPool } from '../infra/db-pool';
 
 const RunSqlInput = z.object({
   query: z.string().min(1).describe('A futtatandó SELECT SQL lekérdezés.'),
