@@ -37,13 +37,13 @@ teszt, mind az 5 döntésre + F11-ben pótolt edge case-ek).
 **Kért elemek**: embedding+vektor-tárolás, HyDE, rerank, grounding (forráshivatkozás + explicit
 "nincs találat" kimondás), multi-provider routing (≥2 provider, indokolt szereposztás).
 
-| Elem                                         | Hol                                                                                                                                                   |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Embedding + vektor-tárolás (pgvector)        | `packages/core/src/rag/embed.ts`, `knowledge-store.ts`; `docs/tech/infra.md` (pgvector-döntés)                                                        |
-| HyDE                                         | `packages/core/src/rag/hyde.ts`                                                                                                                       |
-| Rerank                                       | `packages/core/src/rag/rerank.ts`                                                                                                                     |
-| Grounding (forráshivatkozás + "nincs infóm") | `packages/core/src/system-prompt.ts` / `docs/system-prompt.md` szabályok; valós bizonyíték: `docs/rag-pipeline.md` "Agent-szintű bizonyíték" szakasza |
-| Multi-provider routing + indoklás            | `docs/rag-pipeline.md` "Multi-provider routing" szakasz (OpenAI: embedding+rerank, Anthropic: HyDE+végső válasz)                                      |
+| Elem                                         | Hol                                                                                                                                                         |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Embedding + vektor-tárolás (pgvector)        | `packages/core/src/rag/embed.ts`, `knowledge-store.ts`; `docs/tech/infra.md` (pgvector-döntés)                                                              |
+| HyDE                                         | `packages/core/src/rag/hyde.ts`                                                                                                                             |
+| Rerank                                       | `packages/core/src/rag/rerank.ts`                                                                                                                           |
+| Grounding (forráshivatkozás + "nincs infóm") | `packages/core/src/agent/system-prompt.ts` / `docs/system-prompt.md` szabályok; valós bizonyíték: `docs/rag-pipeline.md` "Agent-szintű bizonyíték" szakasza |
+| Multi-provider routing + indoklás            | `docs/rag-pipeline.md` "Multi-provider routing" szakasz (OpenAI: embedding+rerank, Anthropic: HyDE+végső válasz)                                            |
 
 **Eltérés**: nincs.
 
