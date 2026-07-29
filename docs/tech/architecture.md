@@ -15,15 +15,18 @@ packages/core/src/
 ├── index.ts               a csomag publikus felülete (askAgent, MAX_TOOL_ITERATIONS, resolveModel,
 │                           RUN_SQL_TOOL, LIST_CATEGORIES_TOOL, SEARCH_KNOWLEDGE_TOOL, SYSTEM_PROMPT,
 │                           generateThreadTitle)
-├── ask-agent.ts          az askAgent (Vercel ai SDK streamText+tool()+stopWhen, G1, MAX_TOOL_ITERATIONS=5)
-├── system-prompt.ts      az élő system prompt (SYSTEM_PROMPT konstans) — docs/system-prompt.md szinkronban tartva
-├── title-agent.ts         generateThreadTitle() — a hyde.ts mintáját követő, egyszerű generateText
+├── agent/                 agent-orkesztráció (I1, docs/implementation/08-source-structure-refactor.md)
+│   ├── ask-agent.ts        az askAgent (Vercel ai SDK streamText+tool()+stopWhen, G1, MAX_TOOL_ITERATIONS=5)
+│   ├── system-prompt.ts    az élő system prompt (SYSTEM_PROMPT konstans) — docs/system-prompt.md szinkronban tartva
+│   └── title-agent.ts      generateThreadTitle() — a hyde.ts mintáját követő, egyszerű generateText
 │                           hívás, szál-cím rövid összefoglalása az első kérdésből (H3)
-├── db-pool.ts            getPool() (RO, DATABASE_URL_READONLY) / getWritePool() (RW, DATABASE_URL)
-├── run-sql.ts            runSql tool (products katalógus, read-only SQL)
-├── list-categories.ts    listCategories tool (products.category distinct lista)
-├── search-knowledge.ts   searchKnowledge tool (F6) — a rag/ réteg orkesztrálását adja tool-ként
-├── log-interaction.ts    JSONL naplózás minden interakcióról
+├── tools/                 az agent-nek felkínált tool-definíciók (I1)
+│   ├── run-sql.ts          runSql tool (products katalógus, read-only SQL)
+│   ├── list-categories.ts  listCategories tool (products.category distinct lista)
+│   └── search-knowledge.ts searchKnowledge tool (F6) — a rag/ réteg orkesztrálását adja tool-ként
+├── infra/                 megosztott alacsonyszintű építőelemek (I1)
+│   ├── db-pool.ts          getPool() (RO, DATABASE_URL_READONLY) / getWritePool() (RW, DATABASE_URL)
+│   └── log-interaction.ts  JSONL naplózás minden interakcióról
 └── rag/                  RAG-pipeline (F1-F9, docs/rag-pipeline.md)
     ├── chunk.ts           H2-alapú chunkolás, kontextus-prefix, token-méretezés (F4)
     ├── embed.ts           embedTexts() — OpenAI text-embedding-3-small, ai SDK embedMany (F5)

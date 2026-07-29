@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getPool } from './db-pool';
+import { getPool } from '../infra/db-pool';
 import { RUN_SQL_TOOL, runSql } from './run-sql';
 
-vi.mock('./db-pool', () => ({
+vi.mock('../infra/db-pool', () => ({
   getPool: vi.fn(),
 }));
 

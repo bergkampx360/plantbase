@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('./rag/retrieve', () => ({ retrieve: vi.fn() }));
+vi.mock('../rag/retrieve', () => ({ retrieve: vi.fn() }));
 
-import { retrieve } from './rag/retrieve';
+import { retrieve } from '../rag/retrieve';
 import { SEARCH_KNOWLEDGE_TOOL, searchKnowledge } from './search-knowledge';
 
 const mockedRetrieve = vi.mocked(retrieve);

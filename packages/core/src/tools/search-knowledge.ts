@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { retrieve } from './rag/retrieve';
+import { retrieve } from '../rag/retrieve';
 
 const SearchKnowledgeInput = z.object({
   query: z

@@ -11,7 +11,7 @@
 `--show-prompt` flag: a teljes system prompt + üzenet-history kiírása (átláthatóság,
 `docs/architektura.md` 4. döntés). Interaktív mód: history megtartása több kérdés között.
 
-## Agent tool-ok (`askAgent`, `packages/core/src/ask-agent.ts`)
+## Agent tool-ok (`askAgent`, `packages/core/src/agent/ask-agent.ts`)
 
 Mindhárom tool ugyanazt a shape-et követi: `tool({ description, inputSchema: <zod séma>, execute })`
 a Vercel `ai` SDK-ból (G1, `docs/implementation/06-web-chat.md`) — egyetlen zod séma, amit az AI SDK
@@ -24,7 +24,7 @@ törné az agent önreflektáló újrapróbálkozását.
 
 ### `runSql(query: string)`
 
-Read-only SQL futtatása a `products` katalóguson (`packages/core/src/run-sql.ts`), a RO poolon
+Read-only SQL futtatása a `products` katalóguson (`packages/core/src/tools/run-sql.ts`), a RO poolon
 (`getPool()`, `DATABASE_URL_READONLY`). Csak `SELECT` engedélyezett; tiltott kulcsszavak,
 többszörös statement és nem-SELECT parancsok elutasítva (`docs/implementation/03-…`,
 `04-runsql-guard-refinements.md`). A generált SQL-t az `askAgent` a JSONL logba is kimenti
@@ -33,13 +33,13 @@ többszörös statement és nem-SELECT parancsok elutasítva (`docs/implementati
 ### `listCategories()`
 
 Az elérhető `products.category` értékek disztinkt listája, paraméter nélkül
-(`packages/core/src/list-categories.ts`). A system prompt szabálya szerint mielőtt egy
+(`packages/core/src/tools/list-categories.ts`). A system prompt szabálya szerint mielőtt egy
 kategorikus mezőre (category, location, light, watering, difficulty) az agent ILIKE-kal
 találgatna, ezt hívja meg.
 
 ### `searchKnowledge(query: string)` (F6)
 
-Növénygondozási tudásbázis-keresés (`packages/core/src/search-knowledge.ts`) — a `rag/retrieve.ts`
+Növénygondozási tudásbázis-keresés (`packages/core/src/tools/search-knowledge.ts`) — a `rag/retrieve.ts`
 teljes pipeline-ját hívja (HyDE → embedding → pgvector-keresés a RO poolon → rerank), és egy
 `{ chunks, hitCount, topScore, weak }` alakú JSON-t ad vissza:
 
@@ -61,7 +61,7 @@ explicit elválasztja a kettőt (gondozási/egészségügyi kérdés → `search
 ## Élő system prompt
 
 A tool-ok pontos, agentnek adott leírása és használati szabálya: `docs/system-prompt.md` (szó
-szerint szinkronban a `packages/core/src/system-prompt.ts` `SYSTEM_PROMPT` konstansával).
+szerint szinkronban a `packages/core/src/agent/system-prompt.ts` `SYSTEM_PROMPT` konstansával).
 
 ## HTTP: `POST /api/chat` (`apps/server`, G2–G4)
 
@@ -119,7 +119,7 @@ növekvő sorrendben). `id` egy String (G4-től, ld. `packages/db/prisma/schema.
 nincs formátum-validáció, csak létezés-ellenőrzés; nem létező `id` → `404`.
 
 **Szál-cím generálása (H3)**: `POST /api/chat`-ben, ÚJ szál létrehozásakor, a szerver meghívja a
-`generateThreadTitle(questionText)`-et (`packages/core/src/title-agent.ts`) — egy rövid, 2-4 szavas
+`generateThreadTitle(questionText)`-et (`packages/core/src/agent/title-agent.ts`) — egy rövid, 2-4 szavas
 cím LLM-összefoglalással, nem nyers karakter/mondat-csonkolással (ami félbevágott mondatokat adhatna,
 különösen magyar, ragozott szerkezeteknél). Egy plusz, gyors (haiku) modellhívás szálanként egyszer,
 szekvenciálisan a `streamText`-hívás előtt.

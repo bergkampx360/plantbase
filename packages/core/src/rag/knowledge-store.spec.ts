@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getPool, getWritePool } from '../db-pool';
+import { getPool, getWritePool } from '../infra/db-pool';
 
-vi.mock('../db-pool', () => ({
+vi.mock('../infra/db-pool', () => ({
   getPool: vi.fn(),
   getWritePool: vi.fn(),
 }));
@@ -77,7 +77,14 @@ describe('insertChunks', () => {
 
     expect(writeQueryMock).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO knowledge_chunks'),
-      ['x.md', 'Snake Plant Care', 'plants-101', 0, 'Snake Plant Care\n\nWater it sometimes.', '[0.1,0.2]'],
+      [
+        'x.md',
+        'Snake Plant Care',
+        'plants-101',
+        0,
+        'Snake Plant Care\n\nWater it sometimes.',
+        '[0.1,0.2]',
+      ],
     );
   });
 });
@@ -88,7 +95,9 @@ describe('clearKnowledge', () => {
 
     await clearKnowledge();
 
-    expect(writeQueryMock).toHaveBeenCalledWith('TRUNCATE TABLE knowledge_chunks');
+    expect(writeQueryMock).toHaveBeenCalledWith(
+      'TRUNCATE TABLE knowledge_chunks',
+    );
   });
 });
 

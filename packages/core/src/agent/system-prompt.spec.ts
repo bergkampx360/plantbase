@@ -22,7 +22,7 @@ describe('SYSTEM_PROMPT', () => {
   });
 
   it('stays in sync with docs/system-prompt.md', () => {
-    const docsPath = resolve(__dirname, '../../../docs/system-prompt.md');
+    const docsPath = resolve(__dirname, '../../../../docs/system-prompt.md');
     const docsContent = readFileSync(docsPath, 'utf-8');
 
     const start = docsContent.indexOf('<role>');
