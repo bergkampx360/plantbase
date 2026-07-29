@@ -20,7 +20,7 @@
 
 | Kapcsolat  | Env var                 | Szerepkör      | Jog                         | Ki használja                                                                                                                                                                           |
 | ---------- | ----------------------- | -------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Read-write | `DATABASE_URL`          | `plantbase`    | teljes (séma/migráció/seed) | Prisma (`packages/db`); F5-től a RAG-ingest RW poolja is (`packages/core/src/db-pool.ts` `getWritePool()`, `packages/core/src/rag/knowledge-store.ts` `insertChunks`/`clearKnowledge`) |
+| Read-write | `DATABASE_URL`          | `plantbase`    | teljes (séma/migráció/seed) | Prisma (`packages/db`); F5-től a RAG-ingest RW poolja is (`packages/core/src/infra/db-pool.ts` `getWritePool()`, `packages/core/src/rag/knowledge-store.ts` `insertChunks`/`clearKnowledge`) |
 | Read-only  | `DATABASE_URL_READONLY` | `plantbase_ro` | csak `SELECT`               | agent `runSql` tool (`packages/core`), F6-tól a `searchKnowledge` tool is                                                                                                              |
 
 A `plantbase_ro` szerepkör fizikailag képtelen írni (nem csak app-szinten korlátozott) —

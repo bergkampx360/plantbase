@@ -55,35 +55,41 @@ Minden fázis: saját branch → implementáció+teszt → doc-lezáró commit �
 ciklus, mint G1–G7-nél és H1–H4-nél. I1 PR-ját mergelni kell, mielőtt az I2 branch
 elindul.
 
-### I1 — `packages/core/src` átrendezése agent/tools/infra almappákra ⏳ Nyitott
+### I1 — `packages/core/src` átrendezése agent/tools/infra almappákra ✅ KÉSZ
 
-**Tervezett módosítás:**
-- `git mv` az alábbi fájlokra (forrás + `.spec.ts`):
+- `git mv` a fájlokra (forrás + `.spec.ts`):
   - `src/agent/` ← `ask-agent.ts`, `system-prompt.ts`, `title-agent.ts`
   - `src/tools/` ← `run-sql.ts`, `list-categories.ts`, `search-knowledge.ts`
   - `src/infra/` ← `db-pool.ts`, `log-interaction.ts`
   - `src/rag/` — változatlan
-- Belső import frissítések: `src/index.ts` re-exportjai; `rag/*.ts` fájlok
-  `../db-pool` importja → `../infra/db-pool`; `agent/ask-agent.ts` importjai a
-  tool-okra és `system-prompt`-ra; speckekben lévő relatív importok.
-- Doksi-frissítés külön `docs:` commitban: `docs/tech/architecture.md`,
-  `docs/tech/api.md`, `docs/tech/infra.md`, `docs/stack.md`.
+- Belső import frissítések: `src/index.ts` re-exportjai; `rag/knowledge-store.ts`
+  (+ spec) `../db-pool` importja → `../infra/db-pool`; `agent/ask-agent.ts` (+ spec)
+  importjai a `tools/`-ra és `infra/log-interaction`-re; `tools/run-sql.ts`,
+  `tools/list-categories.ts` (+ specek) `./db-pool` → `../infra/db-pool`;
+  `tools/search-knowledge.ts` (+ spec) `./rag/retrieve` → `../rag/retrieve`.
+- **Menet közben talált részlet**: `agent/system-prompt.spec.ts` a
+  `docs/system-prompt.md`-t egy `__dirname`-hez képesti relatív útvonallal olvassa
+  be szinkron-ellenőrzéshez — a fájl egy mappával mélyebbre költözött
+  (`src/system-prompt.spec.ts` → `src/agent/system-prompt.spec.ts`), ezért a
+  relatív mélység `../../../docs/...` → `../../../../docs/...`-ra nőtt. Enélkül a
+  teszt `ENOENT`-tel bukott volna.
+- Doksi-frissítés külön `docs:` commitban: `docs/tech/architecture.md` (a
+  `packages/core/src/` fájlfa-diagram átrajzolva az új almappákkal),
+  `docs/tech/api.md`, `docs/tech/infra.md`, `docs/stack.md` (konkrét
+  fájlútvonal-hivatkozások frissítve).
 
-**Teszt-terv:**
-```
-pnpm exec nx run-many -t typecheck,lint,test,build --projects=core,cli,server
-```
-Lefedi a TS-t (eltévedt importok felszínre kerülnek), ESLint-et, a teljes Vitest
-suite-ot (`ask-agent`, `run-sql`, `list-categories`, `search-knowledge`,
-`title-agent`, `system-prompt`, `log-interaction`, `rag/*` specek) és a
-`core`/`cli`/`server` buildet. CLI-regresszió: `plantbase ask "..."` valós hívással.
-
+**Teszt:** `pnpm exec nx run-many -t typecheck,lint,test,build --projects=core,cli,server`
+zöld — 70/70 teszt (core), typecheck/lint/build mindhárom projektre.
+**CLI-regresszió:** `pnpm plantbase ask "Milyen kategóriák vannak a katalógusban?"`
+valós Anthropic-hívással helyesen visszaadta a kategória-listát (a `list-categories`
+tool az új `tools/` mappából is helyesen fut).
 **Commit:** `refactor: group packages/core/src into agent/tools/infra folders`
 → megállok, kérem a tesztelést.
 
 ### I2 — `apps/web/src/app` chat-komponensek átrendezése ⏳ Nyitott
 
 **Tervezett módosítás:**
+
 - `app.tsx` (+ spec) marad `apps/web/src/app/` alatt (root komponens).
 - `git mv` `chat.tsx`, `thread-sidebar.tsx`, `tool-call.tsx` (+ specek) →
   `apps/web/src/components/chat/`.
@@ -91,9 +97,11 @@ suite-ot (`ask-agent`, `run-sql`, `list-categories`, `search-knowledge`,
 - Doksi-frissítés külön `docs:` commitban: `docs/ddd/model.md`.
 
 **Teszt-terv:**
+
 ```
 pnpm exec nx run-many -t typecheck,lint,test,build --projects=web
 ```
+
 Web specek: `app`, `chat`, `thread-sidebar`, `tool-call`. Mivel UI-t érintő
 mozgatás, `nx serve web` + böngészős smoke-check (chat oldal betöltése, egy
 üzenetváltás) is szükséges a build/teszt mellett.
