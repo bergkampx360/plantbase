@@ -86,25 +86,33 @@ tool az új `tools/` mappából is helyesen fut).
 **Commit:** `refactor: group packages/core/src into agent/tools/infra folders`
 → megállok, kérem a tesztelést.
 
-### I2 — `apps/web/src/app` chat-komponensek átrendezése ⏳ Nyitott
+### I2 — `apps/web/src/app` chat-komponensek átrendezése ✅ KÉSZ
 
-**Tervezett módosítás:**
-
-- `app.tsx` (+ spec) marad `apps/web/src/app/` alatt (root komponens).
+- `app.tsx` (+ spec) helyben maradt `apps/web/src/app/` alatt (root komponens).
 - `git mv` `chat.tsx`, `thread-sidebar.tsx`, `tool-call.tsx` (+ specek) →
   `apps/web/src/components/chat/`.
-- `app.tsx` importjai frissülnek (`./chat` → `../components/chat/chat` stb.).
-- Doksi-frissítés külön `docs:` commitban: `docs/ddd/model.md`.
+- `app.tsx` importjai frissültek (`./chat` → `../components/chat/chat`,
+  `./thread-sidebar` → `../components/chat/thread-sidebar`). A `components/chat/`
+  mappán belüli same-dir importok (`chat.tsx` → `./tool-call`, a specek a saját
+  komponensükre) változatlanok maradtak, mivel a három fájl együtt mozgott.
+- **Menet közben talált, I1-ből maradt hiányosság**: `docs/ddd/model.md` egy
+  `packages/core/src/title-agent.ts` hivatkozást is tartalmazott, amit az I1
+  doksi-frissítése kihagyott (a fájl akkor nem szerepelt az érintett listában) —
+  ezzel együtt javítva `packages/core/src/agent/title-agent.ts`-re. Ugyanitt a
+  `thread-sidebar.tsx` hivatkozás az új `components/chat/` útvonalra frissült.
+  `docs/tech/api.md` két további `apps/web/src/app/chat.tsx` /
+  `.../thread-sidebar.tsx` hivatkozása is frissült (az `app.tsx`-re mutató
+  hivatkozás változatlan, mert az a fájl nem mozgott).
+- Doksi-frissítés külön `docs:` commitban: `docs/ddd/model.md`, `docs/tech/api.md`.
 
-**Teszt-terv:**
-
-```
-pnpm exec nx run-many -t typecheck,lint,test,build --projects=web
-```
-
-Web specek: `app`, `chat`, `thread-sidebar`, `tool-call`. Mivel UI-t érintő
-mozgatás, `nx serve web` + böngészős smoke-check (chat oldal betöltése, egy
-üzenetváltás) is szükséges a build/teszt mellett.
-
+**Teszt:** `pnpm exec nx run-many -t typecheck,lint,test,build --projects=web`
+zöld — 14/14 teszt (`app`, `chat`, `thread-sidebar`, `tool-call` specek),
+typecheck/lint/build sikeres.
+**Dev-szerver ellenőrzés**: `nx serve web` háttérben elindítva, `curl` `200`-at
+kapott a gyökér útvonalra. **Interaktív böngészős teszt nem történt** — a
+`claude-in-chrome` ebben a munkamenetben sem volt csatlakoztatva (ugyanaz a
+korlátozás, mint H1-nél). A tényleges chat-oldal viselkedését (üzenetváltás,
+tool-kártyák, szál-váltás) emiatt a felhasználónak kell megerősítenie
+böngészőben.
 **Commit:** `refactor: move chat feature components under components/chat`
 → megállok, kérem a tesztelést.
