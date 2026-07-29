@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import request from 'supertest';
 
-// az ai-mock ugyanaz a minta, mint packages/core/src/ask-agent.spec.ts — kiegészítve
+// az ai-mock ugyanaz a minta, mint packages/core/src/agent/ask-agent.spec.ts — kiegészítve
 // convertToModelMessages-szel (identitás-mock, mert app.ts ezt is importálja 'ai'-ból) és
 // generateText-tel (a generateThreadTitle, H3, ezt hívja a title-agent.ts-en keresztül)
 const {
