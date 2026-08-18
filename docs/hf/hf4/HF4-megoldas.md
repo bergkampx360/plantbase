@@ -391,12 +391,12 @@ kontextus (3), nem munkavállalót értékel (4 — csak feltételes, jövőbeli
 Határeset-elemzés), nem ad hozzáférést/jogosultságot alapvető szolgáltatáshoz és nem értékel
 hitelképességet (5), nem bűnüldözési, migrációs vagy igazságszolgáltatási kontextusban fut (6–8).
 
-### III. melléklet 4. pont — Foglalkoztatás
+### III. melléklet 4. pont: Foglalkoztatás
 
 Toborzás, jelöltszűrés, munkaviszonnyal kapcsolatos döntés, feladatkiosztás, teljesítmény-
 monitorozás. _(A Határeset-elemzés 1. sorában hivatkozva.)_
 
-### III. melléklet 5(b) pont — Alapvető szolgáltatások
+### III. melléklet 5(b) pont: Alapvető szolgáltatások
 
 Közjuttatásra jogosultság elbírálása, **hitelképesség/hitelpontszám értékelése**, biztosítási
 kockázat árazása, segélyhívás-triázs. _(A Határeset-elemzés 2. sorában és az 5. pont
