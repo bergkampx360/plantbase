@@ -341,7 +341,13 @@ AI-jelzés és a helyes végpont-hívás ellenőrzésére, a meglévő komponens
 **Commit:** `feat: add customer-facing chat surface`
 → megállok, kérem a tesztelést.
 
-### J7 — `apps/web`: staff jóváhagyási felület ⏳ Nyitott
+### J7 — `apps/web`: staff jóváhagyási felület ✅ KÉSZ
+
+A tervhez képest nem volt eltérés — a `thread-sidebar.tsx` fetch-mintája (`useEffect` + saját
+`fetch`, `vi.stubGlobal`-lel tesztelve) elsőre, javítás nélkül átültethető volt az
+eszkaláció-listára. Interaktív böngészős kattintásteszt ezúttal sem történt (ugyanaz a korlát,
+mint J6/G4/G5-nél) — `nx serve web`+`nx serve server` mellett `curl`-lal megerősítve, hogy a
+`/staff/handoffs` út 200-at ad.
 
 Tervezett tartalom:
 

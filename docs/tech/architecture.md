@@ -115,8 +115,12 @@ hogy a belső `App` hívása változatlan maradjon), `useChat` (`@ai-sdk/react`)
 `docs/tech/api.md`); **J6-tól** `CustomerApp` (`src/app/customer-app.tsx`, ÚJ) — az ügyfél-facing
 felület: `Chat apiUrl="/api/customer/chat"`, állandó AI-jelzés sáv, nincs `ThreadSidebar` (nincs
 ügyfél-azonosítás/session-modell, 7. döntés), egy folyamatos beszélgetés böngésző-munkamenetenként.
-`main.tsx` egy minimál, függőség nélküli route-switch alapján dönt `App`/`CustomerApp` között
-(`/customer` path, nincs `react-router-dom` a repóban);
+`main.tsx` egy minimál, függőség nélküli route-switch alapján dönt `App`/`CustomerApp`/
+`StaffHandoffsPage` között (`/customer`, `/staff/handoffs` path-ok, nincs `react-router-dom`
+a repóban); **J7-től** `StaffHandoffsPage` (`src/app/staff-handoffs-page.tsx`, ÚJ) — a humán
+jóváhagyási pont UI-ja: `GET /api/handoffs?status=pending` lekérdezése (a `ThreadSidebar`
+fetch-mintáját követve), kérdés/ok/kontextus/javasolt-válasz megjelenítése, Jóváhagyás/
+Elutasítás gombok a `POST /api/handoffs/:id/approve|reject` végpontokra, utána refetch;
 `ToolCallCard` (`src/app/tool-call.tsx`, G5) — összecsukható kártya a tool-hívások/-eredmények
 megjelenítésére, az AI SDK `isToolUIPart()`/`ToolUIPart` típusaira építve (a CLI `--show-prompt`
 funkcionális megfelelője).
