@@ -25,7 +25,8 @@ packages/core/src/
 │   ├── list-categories.ts  listCategories tool (products.category distinct lista)
 │   └── search-knowledge.ts searchKnowledge tool (F6) — a rag/ réteg orkesztrálását adja tool-ként
 ├── infra/                 megosztott alacsonyszintű építőelemek (I1)
-│   ├── db-pool.ts          getPool() (RO, DATABASE_URL_READONLY) / getWritePool() (RW, DATABASE_URL)
+│   ├── db-pool.ts          getPool() (RO, DATABASE_URL_READONLY) / getWritePool() (RW, DATABASE_URL) /
+│   │                       getHandoffPool() (insert-only, DATABASE_URL_HANDOFF, J1, docs/implementation/09-customer-facing-poc.md)
 │   └── log-interaction.ts  JSONL naplózás minden interakcióról
 └── rag/                  RAG-pipeline (F1-F9, docs/rag-pipeline.md)
     ├── chunk.ts           H2-alapú chunkolás, kontextus-prefix, token-méretezés (F4)
@@ -140,6 +141,13 @@ azok változatlanul aktívak.
 
 Séma, migráció, kliens, seed (benne a `prisma/seed/knowledge/*.md` — a 202 vendorolt gondozási
 cikk, F3). Nem a repo gyökerében él, hogy a séma az Nx graph része legyen.
+
+**J1-től (`docs/implementation/09-customer-facing-poc.md`)**: `Thread` kapott egy `origin` mezőt
+(`'internal' | 'customer'`, default `'internal'`), és új `CustomerHandoff` modell
+(`customer_handoffs` tábla) — az egyetlen tábla, amibe a customer-facing agent ír, kizárólag a
+`getHandoffPool()`-on (insert-only szerepkör) keresztül, sosem Prismán. A `status`
+(`pending`/`approved`/`rejected`) UPDATE-je viszont Prismán (RW) megy, `apps/server`-ből — ember
+végzi, sosem az agent.
 
 Ld. részletesen: `docs/architektura.md` (fájlstruktúra + döntések), `docs/tech/infra.md`
 (DB-kapcsolatok, pgvector), `docs/tech/api.md` (tool/CLI felület).

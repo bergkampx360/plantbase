@@ -62,14 +62,40 @@ model KnowledgeChunk {
 // Thread.id String, NEM autoincrement (G4-től) — az AI SDK useChat natív mintájában a chat id-t
 // a kliens generálja (generateId(), az 'ai' csomagból) egy új beszélgetés indításakor, mielőtt az
 // első üzenet elmenne; a szerver sosem talál ki saját azonosítót, csak arra perzisztál, amit kap.
+// origin (J1, HF5, docs/implementation/09-customer-facing-poc.md, 8. döntés): 'internal' | 'customer'
+// — a /api/customer/chat 'customer'-rel hozza létre a threadet, a /api/threads(/:id) alapértelmezésben
+// csak 'internal'-t ad vissza, hogy az ügyfél-beszélgetések ne keveredjenek a lakberendezői
+// előzményekkel a belső ThreadSidebar-ban.
 model Thread {
   id        String    @id
   title     String?
+  origin    String    @default("internal")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   messages  Message[]
 
   @@map("threads")
+}
+
+// Ügyfél-eszkalációs sor (J1, HF5, docs/implementation/09-customer-facing-poc.md, 2. döntés) —
+// az EGYETLEN tábla, amibe a customer-facing agent (requestHumanHandoff tool) valaha ír, egy
+// szűk, INSERT-only DB-szerepkörön (DATABASE_URL_HANDOFF) keresztül, ami magát a táblát sem
+// tudja visszaolvasni. Az agent sosem UPDATE-el/DELETE-el semmit, és sosem küld ki választ a
+// customernek — azt csak egy ember teheti meg a staff felületen (/staff/handoffs, Prisma RW,
+// apps/server), a status mezőt approved/rejected-re állítva.
+model CustomerHandoff {
+  id         Int       @id @default(autoincrement())
+  question   String
+  context    String?
+  reason     String
+  draftReply String?   @map("draft_reply")
+  status     String    @default("pending")
+  reviewer   String?
+  reviewNote String?   @map("review_note")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  reviewedAt DateTime? @map("reviewed_at")
+
+  @@map("customer_handoffs")
 }
 
 model Message {

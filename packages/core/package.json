@@ -7,7 +7,8 @@
   "types": "./src/index.d.ts",
   "scripts": {
     "ingest-knowledge": "tsx src/rag/ingest.ts",
-    "golden-set": "tsx src/rag/golden-set.ts"
+    "golden-set": "tsx src/rag/golden-set.ts",
+    "test:integration": "vitest run --config vitest.integration.config.mts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.0",

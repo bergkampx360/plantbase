@@ -89,7 +89,27 @@ Minden fázis: saját branch → implementáció + teszt → doc-lezáró commit
 ciklus, mint a korábbi részeknél (A–I). A következő fázis branch-e csak az előző PR
 mergelése után indul.
 
-### J1 — `CustomerHandoff` adatmodell + `DATABASE_URL_HANDOFF` szerepkör ⏳ Nyitott
+### J1 — `CustomerHandoff` adatmodell + `DATABASE_URL_HANDOFF` szerepkör ✅ KÉSZ
+
+**Valódi eltérések a tervhez képest, implementáció közben találva** (a G1 mintájára — a
+lenti bullet-ök ehhez képest pontosítva):
+
+- **A `plantbase_handoff` role INSERT grantja önmagában nem volt elég.** A `customer_handoffs.id`
+  `autoincrement()` mezője egy Postgres `SERIAL`/sequence-re épül — a `nextval()`-hoz a role-nak
+  külön `GRANT USAGE ON SEQUENCE customer_handoffs_id_seq` is kell, a tábla-szintű `INSERT` grant
+  nem elég. Kézi ellenőrzéssel (`docker compose exec ... psql -U plantbase_handoff -c "INSERT
+..."`) derült ki — az első próbálkozás `permission denied for sequence
+customer_handoffs_id_seq` hibával bukott. Javítva: `02-handoff-role.sql` külön sort kapott
+  erre, és a manuális ellenőrzés (mind a 3 eset: handoff-INSERT sikerül, handoff-SELECT bukik,
+  `plantbase_ro`-SELECT bukik) újra lefutott, most már sikeresen.
+- **Az ESLint `@nx/dependency-checks` szabály elakadt az új `vitest.integration.config.mts`-en**
+  (import a `@nx/vite/plugins/*`-ból) — a `packages/core/eslint.config.mjs` `ignoredFiles`
+  listája eddig csak a `vitest.config.{js,ts,mjs,mts}` mintát tartalmazta, nem az
+  `.integration.config.mts` variánst. Bővítve.
+- A `db-role-setup` skill maga (`.claude/skills/db-role-setup/SKILL.md`) is frissült — nem csak
+  a tervben leírt SQL-fájl, hanem maga a runbook is (3b. lépés, harmadik szerepkör a "When to run
+  this"/leíró szakaszban, bővített 5. lépés a három engedély-eset ellenőrzésére) —, hogy jövőbeli
+  DB-resetek után is dokumentált maradjon, nem csak ennek a fázisnak a tervében.
 
 Tervezett tartalom:
 
@@ -103,15 +123,29 @@ Tervezett tartalom:
 - Migráció (`prisma migrate dev --name add_customer_handoff_and_thread_origin`).
 - `db-role-setup` skill bővítése: új szerepkör, ami kizárólag INSERT-et kap a
   `customer_handoffs` táblára (a `plantbase_ro` létrehozásának mintájára), skill
-  újrafuttatása a helyi Postgresen.
+  újrafuttatása a helyi Postgresen. **Kritikus, eddig fel nem ismert kiegészítés**: a
+  skill jelenlegi `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO
+plantbase_ro` sora — mivel nincs explicit `FOR ROLE` megadva — automatikusan SELECT-et ad
+  `plantbase_ro`-nak **minden, a migrációkat futtató role által ezután létrehozott
+  táblára**, tehát a `customer_handoffs`-ra is, amint a migráció lefut. Enélkül a belső
+  `runSql` tool (szabad, LLM-generált SELECT, a lakberendező-oldalon) alapból olvashatná az
+  ügyfelek kérdéseit/panaszait és a staff válasz-vázlatait — ez aláásná a 2. döntés célját,
+  ami nemcsak az ÚJ szerepkörre vonatkozik, hanem arra is, hogy a MEGLÉVŐ `plantbase_ro` se
+  lássa ezt a táblát. Ezért a skill-bővítés kap egy explicit
+  `REVOKE SELECT ON customer_handoffs FROM plantbase_ro;` lépést a migráció/GRANT-ok után,
+  a `docker/postgres/initdb/01-readonly-role.sql`-hez hasonló, verziózott SQL-ként.
 - `.env.example`: új `DATABASE_URL_HANDOFF` blokk, a `DATABASE_URL_READONLY` kommentstílusát
   követve.
 - `packages/db/src/index.ts`: `CustomerHandoff` típus export a `Thread` mintájára.
 - `packages/core/src/infra/db-pool.integration.spec.ts` (ÚJ): **automata** integrációs
-  teszt a helyi teszt-DB ellen — a `getHandoffPool()`-lal futtatott `SELECT * FROM
-customer_handoffs` jogosultsági hibával bukjon, egy `INSERT INTO customer_handoffs (...)`
-  viszont sikerüljön. Ez a legérzékenyebb, biztonság-kritikus garancia a J részben (az agent
-  csak INSERT-elhet, SELECT-et sem lát), ezért ez sem maradhat kézi ellenőrzés.
+  teszt a helyi teszt-DB ellen, három esettel: (1) a `getHandoffPool()`-lal futtatott
+  `SELECT * FROM customer_handoffs` jogosultsági hibával bukjon; (2) ugyanezen a poolon egy
+  `INSERT INTO customer_handoffs (...)` viszont sikerüljön; (3) a **meglévő** `getPool()`
+  (`plantbase_ro`) `SELECT * FROM customer_handoffs` hívása is jogosultsági hibával
+  bukjon — ez igazolja a fenti `REVOKE`-ot, hogy a belső, szabad-SQL-es `runSql` tool ne
+  férjen hozzá az ügyfél-eszkalációkhoz. Ez a legérzékenyebb, biztonság-kritikus garancia a
+  J részben (az agent csak INSERT-elhet, SELECT-et sem lát, és a belső agent SELECT-je sem
+  ér el idáig), ezért ez sem maradhat kézi ellenőrzés.
   **Fontos elhatárolás a meglévő tesztelési stratégiától** (`docs/testing-strategy.md`):
   az ottani "Kimarad" lista explicit kimondja, hogy a **read-only** (`plantbase_ro`)
   szerepkörre nincs és nem is lesz automatizált integrációs teszt — ez tudatos döntés
@@ -131,7 +165,8 @@ customer_handoffs` jogosultsági hibával bukjon, egy `INSERT INTO customer_hand
 
 **Teszt:** migráció ténylegesen lefut a helyi docker-compose Postgresen (kézi ellenőrzés);
 a fenti `db-pool.integration.spec.ts` — külön, `test:integration` scripttel futtatva —
-automatán igazolja a SELECT-tiltást/INSERT-engedélyt a `DATABASE_URL_HANDOFF` szerepkörön;
+automatán igazolja a SELECT-tiltást/INSERT-engedélyt a `DATABASE_URL_HANDOFF` szerepkörön,
+ÉS hogy a meglévő `plantbase_ro` se lásson SELECT-tel a `customer_handoffs`-ra;
 `pnpm exec nx run-many -t build,typecheck,test,lint` zöld (az alap `test` target
 változatlanul gyors és DB-független marad).
 **Commit:** `feat: add CustomerHandoff model and insert-only DB role`

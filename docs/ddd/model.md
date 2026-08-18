@@ -105,3 +105,40 @@ token-használatot, azok kizárólag a CLI naplójában élnek. A CLI és a Web 
 egyesül: egy CLI-munkamenet nem
 jelenik meg a webes "korábbi beszélgetések" listában, és fordítva sincs átjárás (tudatos,
 egyszerűsítő döntés, `06-web-chat.md` 9–10. döntése).
+
+**`Thread.origin` (J1, HF5, `docs/implementation/09-customer-facing-poc.md`)**: `String`, default
+`"internal"`, értékkészlete `'internal' | 'customer'`. A meglévő (belső, lakberendezői) chat
+threadjei visszamenőlegesen `'internal'`-t kapnak a migráció defaultja miatt. J5-től a
+`POST /api/customer/chat` `'customer'`-rel hozza létre az új threadeket; a `GET /api/threads`
+és `GET /api/threads/:id` alapértelmezésben csak `'internal'`-t ad vissza, hogy az
+ügyfél-beszélgetések ne keveredjenek a belső `ThreadSidebar` listájával/részlet-nézetével.
+
+## Ügyfél-eszkaláció domain (J rész, HF5, `docs/implementation/09-customer-facing-poc.md`)
+
+### `CustomerHandoff` (entitás, `customer_handoffs` tábla, Prisma `CustomerHandoff` modell)
+
+```
+CustomerHandoff
+├── id
+├── question    (az ügyfél eredeti kérdése)
+├── context     (nullable, beszélgetés-kivonat)
+├── reason      ('weak_knowledge' | 'out_of_scope' | 'complaint_or_judgment')
+├── draftReply  (nullable, az agent javasolt válasz-vázlata)
+├── status      ('pending' | 'approved' | 'rejected', default 'pending')
+├── reviewer    (nullable, szabad szöveg — nincs auth-modell)
+├── reviewNote  (nullable)
+├── createdAt
+└── reviewedAt  (nullable)
+```
+
+Önálló entitás, nincs `Thread`-hez kapcsolva (a J-rész scope-ja nem köti össze a két domaint —
+az eszkaláció a beszélgetésből kimásolt `question`/`context` szöveget hordozza, nem élő
+FK-kapcsolatot). **Az egyetlen tábla, amibe a customer-facing agent valaha ír** — kizárólag
+INSERT-tel, a `requestHumanHandoff` tool `getHandoffPool()`-ján (insert-only DB-szerepkör,
+`docs/tech/infra.md`). A `status` mezőt (jóváhagyás/elutasítás) sosem az agent állítja —
+kizárólag ember, a staff felületen (`/staff/handoffs`, `apps/server`, Prisma RW).
+
+**Perzisztencia-kettősség, tudatosan**: az INSERT egy nyers `pg.Pool`-on megy (nem Prismán,
+nem a rendes RW kapcsolaton), az UPDATE (jóváhagyás/elutasítás) viszont Prismán (RW) — ugyanaz
+a tábla, két külön kliens/szerepkör, mert a két írási út szándékosan eltérő jogosultsági
+szinten fut (agent: csak INSERT; ember/staff-felület: teljes RW).
