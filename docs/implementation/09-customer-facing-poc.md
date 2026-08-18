@@ -73,7 +73,12 @@ konzisztens, de ez nem javítja az emberi stáb közti eltérést), #10 (churn-e
    `origin: 'customer'`-rel hozza létre a threadet; a `GET /api/threads` alapértelmezésben
    (query nélkül, a meglévő belső hívó viselkedése változatlan marad) csak
    `origin: 'internal'`-t ad vissza — ez a valódi elhatárolás a két felhasználói kör
-   előzményei között, nem csak dokumentált korlátozás.
+   előzményei között, nem csak dokumentált korlátozás. **Ugyanez vonatkozik a `GET
+/api/threads/:id` részlet-végpontra is** — enélkül a lista eltűnne a sidebarból, de egy
+   ismert/kitalált ügyfél-thread-id-vel a belső detail-végponton keresztül továbbra is
+   lekérdezhető maradna, ami félbehagyná az elhatárolást: a belső hívó csak
+   `origin: 'internal'` threadet kaphat vissza (más `origin`-re 404, ugyanúgy, mint egy nem
+   létező id-re).
 
 ---
 
@@ -196,6 +201,9 @@ Tervezett tartalom:
   threadeket ad vissza — a meglévő belső hívó (`ThreadSidebar`) viselkedése így
   változatlan marad, csak most már ténylegesen elhatárolva az ügyfél-threadektől
   (8. döntés).
+- `GET /api/threads/:id` bővítése: csak `origin: 'internal'` threadet ad vissza — ha a
+  megtalált thread `origin: 'customer'`, ugyanaz a 404-ág fut, mint nem létező id-re
+  (8. döntés, a lista-szűréssel szimmetrikusan).
 - `GET /api/handoffs` (query: `status`, default `pending`), `POST
 /api/handoffs/:id/approve`, `POST /api/handoffs/:id/reject` — sima Prisma RW, a
   `/api/threads/:id` guard-mintáját követve (400/404).
@@ -205,9 +213,10 @@ eszkaláció-ág — **fontos pontosítás**: a `requestHumanHandoff` tool a `ge
 (nyers `pg.Pool`, `DATABASE_URL_HANDOFF`) ír, NEM Prisma-n keresztül (2. döntés), tehát az
 INSERT ellenőrzése a `getHandoffPool()` mockolásával/stubolásával történik, nem
 `vi.mock('@plantbase/db')`-vel; a `GET /api/threads` `origin`-szűrése (csak internal jön
-vissza query nélkül); `/api/handoffs` lista, jóváhagyás/elutasítás státuszváltás (ez viszont
-valóban Prisma RW-n megy, itt helyes a `vi.mock('@plantbase/db')` minta); 400/404 ágak.
-`nx test server` zöld.
+vissza query nélkül); a `GET /api/threads/:id` `origin`-szűrése (`origin: 'customer'`
+thread id-jére 404, ugyanúgy, mint nem létező id-re); `/api/handoffs` lista,
+jóváhagyás/elutasítás státuszváltás (ez viszont valóban Prisma RW-n megy, itt helyes a
+`vi.mock('@plantbase/db')` minta); 400/404 ágak. `nx test server` zöld.
 **Commit:** `feat: add customer chat endpoint and staff handoff review routes`
 → megállok, kérem a tesztelést.
 
@@ -284,6 +293,7 @@ seed-adaton.
 manuális, böngészős végigfuttatása (`nx serve server` + `nx serve web`); `logs/*.jsonl` és a
 `customer_handoffs` tábla ellenőrzése; a belső (`/`) felület regressziómentessége — beleértve
 explicit annak ellenőrzését, hogy a demó közben létrejött ügyfél-threadek NEM jelennek meg a
-belső `ThreadSidebar`-ban (8. döntés, `origin`-szűrés).
+belső `ThreadSidebar`-ban, ÉS egy ügyfél-thread id-jét kézzel a belső `GET /api/threads/:id`
+végpontra próbálva 404-et ad (8. döntés, lista- és részlet-szűrés is).
 **Commit:** `docs: HF5 — ügyfélirányú PoC leadandók (business case, mérési terv, kérdéslap)`
 → megállok, kérem a tesztelést.
