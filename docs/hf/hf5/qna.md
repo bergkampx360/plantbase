@@ -17,10 +17,12 @@ tájékoztatás, hogy ne osszon meg azonosító adatot).
 **2. Hol fut a modell, hova utazik az adat, és mi az, ami sosem hagyja el a saját
 környezetünket?**
 
-A válaszgenerálás az Anthropic infrastruktúráján fut (egy gyors, olcsó modell), a gondozási
-tudásbázis-keresés embedding- és rendezési lépései pedig az OpenAI-nál — mindkettő
-amerikai, harmadik féltől üzemeltetett szolgáltatás. Ami sosem hagyja el a saját
-környezetünket: a termékkatalógus és a gondozási cikkek tárolása (helyi Postgres), a
+A válaszgenerálás az Anthropic infrastruktúráján fut (egy gyors, olcsó modell). Gondozási
+kérdésnél a nyers vásárlói kérdés ténylegesen **két külön ponton** jut ki: egyszer az
+Anthropic-nak egy hipotetikus-válasz-generáló lépéshez (ez javítja a keresés
+pontosságát), és — a belőle számított embedding mellett — közvetlenül is az OpenAI-nak a
+találatok relevancia-pontozásához. Mindkét szolgáltató amerikai, harmadik fél. Ami sosem
+hagyja el a saját környezetünket: a termékkatalógus és a gondozási cikkek tárolása (helyi Postgres), a
 beszélgetés-előzmény és az eszkalációs várólista adatbázis-táblái, valamint a
 JSONL-naplófájlok — ezek mind a saját, helyi infrastruktúránkon élnek.
 
@@ -53,7 +55,7 @@ dokumentált előfeltétele lenne egy éles bevezetésnek, nem megoldott kérdé
 A legrosszabb eset az, amikor a rendszer egy hibás, de magabiztosnak tűnő választ ad
 közvetlenül a vásárlónak anélkül, hogy eszkalálna — erre ma nincs automatikus védőháló,
 csak a mérési tervben szereplő, havi mintavételes emberi audit deríthetné ki utólag. Az
-egyetlen tényleges *írás*, amit a rendszer végez (az eszkalációs várólista-sor létrehozása),
+egyetlen tényleges _írás_, amit a rendszer végez (az eszkalációs várólista-sor létrehozása),
 triviálisan visszaállítható: egy elutasított vagy tévesen létrejött sor egyszerűen elutasított
 állapotba kerül, semmilyen más adatot nem módosít, tehát nincs kaszkádolt hatás, amit vissza
 kellene görgetni.
@@ -83,7 +85,7 @@ automatizált lekérdezésekre, amik költséget generálnak, vagy a jóváhagy�
 elárasztására). Ez egy olyan pont, amit egy publikus, valódi bevezetés előtt mindenképp
 kezelni kell — ez a PoC szándékosan demó-célra épült, hitelesítés nélkül.
 
-**8. Mi van, ha a modell egyszerűen csak *állítja*, hogy megtette a dolgát, anélkül hogy
+**8. Mi van, ha a modell egyszerűen csak _állítja_, hogy megtette a dolgát, anélkül hogy
 ténylegesen megtenné?**
 
 Ez nem elméleti kockázat volt — a fejlesztés végigviteli tesztelése során ténylegesen
