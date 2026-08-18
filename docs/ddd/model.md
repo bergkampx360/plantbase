@@ -76,6 +76,17 @@ marad, egyszerű szöveges fallback/napló céljából. H4 előtti sorokon `null
 után a `ToolCallCard` (G5) eltűnt — élő streamelés közben mindig helyesen megjelent, csak a
 DB-ből visszatöltött történetnél nem, mert korábban a `Message` sosem tárolt tool-adatot.
 
+**Fontos, J7-ben (HF5) javított hiba**: a `parts` mezőt eddig csak a **kliens-oldali**
+`toUIMessages()` olvasta ki helyesen — a **szerver-oldali** történet-visszaépítés
+(`apps/server/src/app.ts`, mindkét chat-route) a `priorMessages`-t a modellnek visszaadott
+history-hoz eddig `{ type: 'text', text: m.content }}`-ra laposította, a `parts`-ot figyelmen
+kívül hagyva. Élő, több körös teszteléssel derült ki, hogy ez oda vezetett, hogy a modell a
+saját korábbi tool-hívásait sosem látta vissza (csak a végső szöveget), és 2-3 kör után maga
+is elkezdett csak szöveget generálni valódi tool-hívás nélkül — konkrétan az ügyfél-agent
+fabrikálta, hogy eszkalált, anélkül hogy a `requestHumanHandoff` lefutott volna. Javítva:
+`priorMessagesToUIMessages()` (`apps/server/src/app.ts`) ugyanazt a fallback-logikát követi,
+mint a kliens `toUIMessages()`-e.
+
 **`Thread.title` (H3)**: nullable — a szerver tölti ki egy rövid, LLM-generált összefoglalóval
 (`generateThreadTitle()`, `packages/core/src/agent/title-agent.ts`) az ÚJ szál első kérdéséből, nem a
 kliens. A H3 előtt létrehozott szálaknál `null` marad (nincs visszamenőleges kitöltés) — a

@@ -349,6 +349,35 @@ eszkaláció-listára. Interaktív böngészős kattintásteszt ezúttal sem tö
 mint J6/G4/G5-nél) — `nx serve web`+`nx serve server` mellett `curl`-lal megerősítve, hogy a
 `/staff/handoffs` út 200-at ad.
 
+**Post-J7 kiegészítés: a felhasználó saját kezű, élő manuális tesztelése két valódi hibát
+talált**, még a J8-as dokumentáció megírása előtt (ahogy a felhasználó kérte, előbb
+végigpróbálta a teljes folyamatot). Mindkét javítás ezen a PR-on ment be, a felhasználó
+explicit kérésére:
+
+1. **Történet-visszaépítési hiba** (`apps/server/src/app.ts`, mindkét chat-route-ot érintette,
+   nem csak a J5-öset): a `priorMessages` visszaépítése eddig `{ type: 'text', text:
+m.content }}`-ra laposította a korábbi köröket, eldobva a H4 óta ténylegesen tárolt
+   `Message.parts`-ot. A modell így a saját korábbi tool-hívásait sosem látta vissza — csak a
+   végső szöveget —, és több körös beszélgetésben ezt a mintát utánozva a 2-3. körtől kezdve
+   maga is csak szöveget generált, valódi tool-hívás nélkül. Konkrétan: az ügyfél-agent egy
+   3-körös beszélgetésben azt írta, hogy "Ezt a kérést kollégának továbbítottam", anélkül hogy
+   a `requestHumanHandoff` valaha lefutott volna — az eszkaláció teljesen fabrikált volt, a
+   `/api/handoffs` üresen maradt. Javítva egy megosztott `priorMessagesToUIMessages()`
+   segédfüggvénnyel (a kliens-oldali `toUIMessages()` fallback-logikáját tükrözve).
+2. **Maradék, mélyebb probléma a javítás után is**: még a történet-javítás után is
+   reprodukálhatóan (kétszer egymás után) hallucinálta az eszkalációt a modell a beszélgetés 3. körében — izolált teszttel megerősítve, hogy ugyanaz az üzenet 1. vagy 2. körként helyesen
+   eszkalál, csak a 3.+ körnél bukott. Ez a `claude-haiku-4-5` modell egy valódi, több-körös
+   instrukció-követési gyengesége volt, nem drótozási hiba. Javítva a `SYSTEM_PROMPT_CUSTOMER`
+   explicit, ismételt "sosem írd le, hogy eszkaláltál, ha nem hívtad meg ténylegesen a toolt,
+   függetlenül attól, hányadik kör" szabályával — 3 egymást követő élő újrafuttatással
+   megerősítve, hogy a pontos, korábban bukó forgatókönyv immár mindháromszor helyesen
+   eszkalál, valós, ellenőrizhető sorral a `customer_handoffs` táblában.
+
+Mindkét hiba dokumentálásra érdemes tanulság a HF5 kérdéslaphoz (J8): pontosan azt a fajta
+"a rendszer bizonytalan és emberhez irányít" garanciát ássa alá, amit a feladat kifejezetten
+megkövetel, és amit élő, több körös teszteléssel — nem egyetlen izolált kérdéssel — lehetett
+csak feltárni.
+
 Tervezett tartalom:
 
 - Új `apps/web/src/app/staff-handoffs-page.tsx`: a `thread-sidebar.tsx` fetch-mintáját
