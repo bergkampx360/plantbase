@@ -27,6 +27,7 @@ elkészült — ld. [`docs/rag-pipeline.md`](docs/rag-pipeline.md), [`docs/rag-a
 G rész (webes chat felület) is kész: streamelő `apps/server` (Express) + `apps/web` (React,
 `useChat`, tool-kártyák, "Új chat"/history-sáv) ugyanazokra a `packages/core`-építőelemekre épül,
 mint a CLI, DB-alapú (`Thread`/`Message`) beszélgetés-történettel — ld. "Futtatás és tesztelés".
+J rész (HF5, ügyfélirányú PoC) is kész — ld. "Ügyfélirányú PoC (HF5)" lent.
 
 ### Költség (RAG)
 
@@ -117,6 +118,19 @@ pnpm exec nx serve web      # Vite dev-szerver, alapértelmezett port 4200 (nem 
 
 Ezután a böngészőben a `http://localhost:4200` cím alatt érhető el a chat UI. A `PORT`/`CORS_ORIGIN`
 env-változók (`.env.example`) opcionálisak, van kódbeli fallback mindkettőre.
+
+**Ügyfélirányú PoC** (J rész, HF5) — ugyanaz a két folyamat (`nx serve server` + `nx serve
+web`), két új útvonallal:
+
+- `http://localhost:4200/customer` — a webshop vásárlóinak szánt chat (nem a
+  lakberendezőknek), szűkített tool-készlettel és emberi jóváhagyási ponttal.
+- `http://localhost:4200/staff/handoffs` — a staff felülete, ahol a bizonytalan/hatókörön
+  kívüli kérdéseket jóváhagyják vagy elutasítják, mielőtt bármi eljutna a vásárlóhoz.
+
+Előfeltétel: a séma migrálva legyen (`prisma migrate dev`), és a `db-role-setup` skill
+lefusson (a `docker/postgres/initdb/02-handoff-role.sql` hozza létre az agent szűk,
+csak-beszúró adatbázis-jogosultságát). Részletek, a megoldott/nem megoldott fájdalmak
+listája és a demó-forgatókönyv: [`docs/hf/hf5/HF5-megoldas.md`](docs/hf/hf5/HF5-megoldas.md).
 
 **RAG golden-set kiértékelés** (reprodukálható, `docs/rag-pipeline.md` "Golden set" szakaszának alapja) — nyers vektorkeresés vs. teljes HyDE+rerank pipeline összevetése a 8 tesztkérdésre, valós DB/API-hívásokkal:
 
