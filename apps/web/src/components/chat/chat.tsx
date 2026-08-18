@@ -23,10 +23,17 @@ export function Chat({
   id,
   initialMessages,
   onFinish,
+  // apiUrl/title prop-osítva (J5, docs/implementation/09-customer-facing-poc.md) — a default
+  // a jelenlegi, változatlan belső API_URL/cím, hogy a belső App hívása ne változzon; a
+  // customer-app.tsx (J6) ad át eltérő értéket a /api/customer/chat végponthoz
+  apiUrl = API_URL,
+  title = 'Plantbase',
 }: {
   id: string;
   initialMessages: UIMessage[];
   onFinish?: () => void;
+  apiUrl?: string;
+  title?: string;
 }) {
   const [input, setInput] = useState('');
 
@@ -35,7 +42,7 @@ export function Chat({
     messages: initialMessages,
     onFinish,
     transport: new DefaultChatTransport({
-      api: API_URL,
+      api: apiUrl,
       // csak az utolsó üzenetet küldjük — a szerver a DB-ből tölti be a korábbi
       // kört, a DB az igazságforrás (G-rész eredeti "Thread-perzisztencia" döntése)
       prepareSendMessagesRequest: ({
@@ -65,7 +72,7 @@ export function Chat({
         <span role="img" aria-label="növény">
           🌱
         </span>{' '}
-        Plantbase
+        {title}
       </h1>
 
       <Conversation className="flex-1">

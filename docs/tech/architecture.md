@@ -106,11 +106,17 @@ Tailwind v4 (`@tailwindcss/vite` plugin, nincs `tailwind.config.js`) és shadcn/
 path-alias `tsconfig.json`/`tsconfig.app.json`-ban és `vite.config.mts`-ben.
 
 Fő komponensek: `App` (`src/app/app.tsx`, G6) — az `activeThreadId`/`initialMessages`/`refreshKey`
-állapot gazdája, összefogja a `ThreadSidebar`-t és a `Chat`-et; `Chat` (`src/app/chat.tsx`) —
+állapot gazdája, összefogja a `ThreadSidebar`-t és a `Chat`-et; `Chat` (`src/components/chat/chat.tsx`) —
 kontrollált komponens (`id`/`initialMessages`/`onFinish` propok, G6-tól — korábban maga generálta
-a `chatId`-t belül), `useChat` (`@ai-sdk/react`) + `DefaultChatTransport`; `ThreadSidebar`
-(`src/app/thread-sidebar.tsx`, ÚJ, G6) — `GET /api/threads` lekérdezése, "Új chat" gomb, kattintható
-szál-lista dátummal (nincs cím/preview-mező a `Thread`-modellben, ld. `docs/tech/api.md`);
+a `chatId`-t belül; J6-tól `apiUrl`/`title` propokkal is, default a belső `/api/chat`/"Plantbase",
+hogy a belső `App` hívása változatlan maradjon), `useChat` (`@ai-sdk/react`) + `DefaultChatTransport`;
+`ThreadSidebar` (`src/components/chat/thread-sidebar.tsx`, ÚJ, G6) — `GET /api/threads` lekérdezése,
+"Új chat" gomb, kattintható szál-lista dátummal (nincs cím/preview-mező a `Thread`-modellben, ld.
+`docs/tech/api.md`); **J6-tól** `CustomerApp` (`src/app/customer-app.tsx`, ÚJ) — az ügyfél-facing
+felület: `Chat apiUrl="/api/customer/chat"`, állandó AI-jelzés sáv, nincs `ThreadSidebar` (nincs
+ügyfél-azonosítás/session-modell, 7. döntés), egy folyamatos beszélgetés böngésző-munkamenetenként.
+`main.tsx` egy minimál, függőség nélküli route-switch alapján dönt `App`/`CustomerApp` között
+(`/customer` path, nincs `react-router-dom` a repóban);
 `ToolCallCard` (`src/app/tool-call.tsx`, G5) — összecsukható kártya a tool-hívások/-eredmények
 megjelenítésére, az AI SDK `isToolUIPart()`/`ToolUIPart` típusaira építve (a CLI `--show-prompt`
 funkcionális megfelelője).

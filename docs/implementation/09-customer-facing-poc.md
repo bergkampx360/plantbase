@@ -312,7 +312,17 @@ jóváhagyás/elutasítás státuszváltás (ez viszont valóban Prisma RW-n meg
 **Commit:** `feat: add customer chat endpoint and staff handoff review routes`
 → megállok, kérem a tesztelést.
 
-### J6 — `apps/web`: ügyfél-chat felület ⏳ Nyitott
+### J6 — `apps/web`: ügyfél-chat felület ✅ KÉSZ
+
+A tervhez képest egy apró, kódminőségi eltérés: a `customer-app.tsx` első verziója a 🤖
+emojit közvetlenül írta ki (`eslint-plugin-jsx-a11y` `accessible-emoji` figyelmeztetés) — a
+`chat.tsx`-ben már meglévő `<span role="img" aria-label="...">` mintát követve javítva, `nx
+run-many` így 0 figyelmeztetéssel fut. Interaktív böngészős kattintásteszt ezúttal sem
+történt (nincs böngésző-automatizálási eszköz ebben a környezetben, ugyanaz a korlát, mint
+G4/G5-nél) — helyette valós `nx serve web`/`nx serve server` mellett `curl`-lal ellenőrizve,
+hogy mind a `/`, mind a `/customer` út 200-at ad, és a `/customer` a helyes SPA-shellt
+szolgálja ki (a Vite dev-szerver fallback-je működik kézi route-switchhez is, `react-router-dom`
+nélkül).
 
 Tervezett tartalom:
 
