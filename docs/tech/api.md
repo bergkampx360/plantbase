@@ -108,15 +108,55 @@ CORS: `CORS_ORIGIN` env-változó (alapértelmezett `http://localhost:4200` — 
 generátor ezt a portot állítja be alapértelmezetten `apps/web`-hez, nem az általános Vite-
 alapértelmezett 5173-at). Port: `PORT` env-változó (alapértelmezett `3001`).
 
-## HTTP: `GET /api/threads`, `GET /api/threads/:id` (`apps/server`, G3–G4, H3)
+## HTTP: `GET /api/threads`, `GET /api/threads/:id` (`apps/server`, G3–G4, H3, J5)
 
 `GET /api/threads` — a `Thread`-ek listája (`id`, `title`, `createdAt`, `updatedAt`), `updatedAt`
 szerint csökkenő sorrendben (legutóbb aktív szál elöl). `title` nullable — a H3 előtt létrehozott
 szálaknak nincs (a kliens ilyenkor dátum-fallbackre esik vissza, `apps/web/src/components/chat/thread-sidebar.tsx`).
+**J5-től**: mindig `origin: 'internal'`-ra szűkítve — a `POST /api/customer/chat` által
+létrehozott ügyfél-threadek sosem jelennek meg ebben a listában (`docs/implementation/09-customer-facing-poc.md`, 8. döntés).
 
 `GET /api/threads/:id` — egy `Thread` a hozzá tartozó `Message`-ekkel (`createdAt` szerint
 növekvő sorrendben). `id` egy String (G4-től, ld. `packages/db/prisma/schema.prisma`), nem szám —
-nincs formátum-validáció, csak létezés-ellenőrzés; nem létező `id` → `404`.
+nincs formátum-validáció, csak létezés-ellenőrzés; nem létező `id` → `404`. **J5-től**: egy
+`origin: 'customer'` thread id-jére is `404` — szimmetrikus a lista-szűréssel, nem csak a
+listából tűnik el.
+
+## HTTP: `POST /api/customer/chat` (`apps/server`, J5)
+
+Ugyanaz a body-alak és `Thread`/`Message`-perzisztencia, mint a `POST /api/chat`-nél, de:
+
+- `SYSTEM_PROMPT_CUSTOMER` + három tool: `searchProducts`, `searchKnowledge`,
+  `requestHumanHandoff` — **nincs** `runSql`/`listCategories`, ezek csak a belső perzónának
+  elérhetők.
+- Az ÚJ threadet `origin: 'customer'`-rel hozza létre.
+- A `toUIMessageStream`-`onFinish` végén (a `Message`-mentés után) meghívja a
+  `logInteraction`-t (`packages/core`) — a meglévő `POST /api/chat` sosem tette ezt (csak a
+  CLI naplózott JSONL-be), itt viszont ez adja a mérési terv válaszidő-/eszkalációs-arány
+  sorainak valós adatforrását: `durationMs` (a `streamText`-hívás körül mérve),
+  `escalated` (igaz, ha a `steps` bármelyike `requestHumanHandoff` tool-hívást tartalmaz),
+  `persona: 'customer'`.
+
+Valós `curl`-lel és élő Anthropic/Postgres-hívással ellenőrizve mindkét ág: közvetlen
+`searchProducts`-válasz és `requestHumanHandoff`-fal záruló eszkaláció (részletek:
+`docs/implementation/09-customer-facing-poc.md`, J5).
+
+## HTTP: `GET /api/handoffs`, `POST /api/handoffs/:id/approve`, `POST /api/handoffs/:id/reject` (`apps/server`, J5)
+
+Sima Prisma RW olvasás/írás a `customer_handoffs` táblán — nincs LLM-hívás. Ez a humán
+jóváhagyási pont: a `requestHumanHandoff` tool csak `pending` sort INSERT-elhet (insert-only
+DB-szerepkör, J1–J2), a `status` mezőt (`approved`/`rejected`) kizárólag ezek a végpontok
+állíthatják, emberi művelet nyomán.
+
+`GET /api/handoffs` — `status` query-paraméter (alapértelmezett `pending`), `createdAt` szerint
+növekvő sorrendben.
+
+`POST /api/handoffs/:id/approve` / `.../reject` — body: `{ reviewer?: string, reviewNote?:
+string }` (mindkettő opcionális; hiányzó body esetén `{}`-ként kezelve, nem dob hibát). Nem
+szám `id` → `400`; nem létező handoff → `404`. Sikeres válasz: a frissített `CustomerHandoff`
+sor (`status`, `reviewer`, `reviewNote`, `reviewedAt` kitöltve). **Fontos korlát**: az
+"approve" a PoC-ban csak a sor állapotát állítja — tényleges ügyfél-értesítési csatorna nincs
+(explicit dokumentált korlát, ld. `docs/hf/hf5/HF5-megoldas.md`, J8).
 
 **Szál-cím generálása (H3)**: `POST /api/chat`-ben, ÚJ szál létrehozásakor, a szerver meghívja a
 `generateThreadTitle(questionText)`-et (`packages/core/src/agent/title-agent.ts`) — egy rövid, 2-4 szavas

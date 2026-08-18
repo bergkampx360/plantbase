@@ -66,9 +66,13 @@ egy külön RW poolon fut, és sosem az agent útján hívódik.
 `ask-agent.ts` a modell-providert (`anthropic(...)`) nem modul-szinten, hanem `askAgent()`
 hívásonként hozza létre.
 
-## `apps/server` — HTTP belépési pont (G2)
+## `apps/server` — HTTP belépési pont (G2, J5)
 
-Egyetlen `POST /api/chat` route (`apps/server/src/main.ts`). **Nem** az `askAgent()`-en keresztül
+`POST /api/chat` route (`apps/server/src/app.ts`), **J5-től** kiegészülve `POST
+/api/customer/chat` (ügyfél-perzóna, saját tool-készlet és system prompt, `logInteraction`
+hívással) és a staff jóváhagyási végpontokkal (`GET /api/handoffs`, `POST
+/api/handoffs/:id/approve|reject`) — részletek: `docs/tech/api.md`, `docs/implementation/09-customer-facing-poc.md`.
+**Nem** az `askAgent()`-en keresztül
 megy — a CLI-vel csak a `packages/core/src/index.ts` építőelemeit osztja meg (tool-definíciók,
 `SYSTEM_PROMPT`, `resolveModel`), egy saját, önálló `streamText`-hívást épít belőlük, streamelő
 fogyasztással a standalone `pipeUIMessageStreamToResponse({ response, stream })` függvényen
