@@ -89,7 +89,27 @@ Minden fázis: saját branch → implementáció + teszt → doc-lezáró commit
 ciklus, mint a korábbi részeknél (A–I). A következő fázis branch-e csak az előző PR
 mergelése után indul.
 
-### J1 — `CustomerHandoff` adatmodell + `DATABASE_URL_HANDOFF` szerepkör ⏳ Nyitott
+### J1 — `CustomerHandoff` adatmodell + `DATABASE_URL_HANDOFF` szerepkör ✅ KÉSZ
+
+**Valódi eltérések a tervhez képest, implementáció közben találva** (a G1 mintájára — a
+lenti bullet-ök ehhez képest pontosítva):
+
+- **A `plantbase_handoff` role INSERT grantja önmagában nem volt elég.** A `customer_handoffs.id`
+  `autoincrement()` mezője egy Postgres `SERIAL`/sequence-re épül — a `nextval()`-hoz a role-nak
+  külön `GRANT USAGE ON SEQUENCE customer_handoffs_id_seq` is kell, a tábla-szintű `INSERT` grant
+  nem elég. Kézi ellenőrzéssel (`docker compose exec ... psql -U plantbase_handoff -c "INSERT
+..."`) derült ki — az első próbálkozás `permission denied for sequence
+customer_handoffs_id_seq` hibával bukott. Javítva: `02-handoff-role.sql` külön sort kapott
+  erre, és a manuális ellenőrzés (mind a 3 eset: handoff-INSERT sikerül, handoff-SELECT bukik,
+  `plantbase_ro`-SELECT bukik) újra lefutott, most már sikeresen.
+- **Az ESLint `@nx/dependency-checks` szabály elakadt az új `vitest.integration.config.mts`-en**
+  (import a `@nx/vite/plugins/*`-ból) — a `packages/core/eslint.config.mjs` `ignoredFiles`
+  listája eddig csak a `vitest.config.{js,ts,mjs,mts}` mintát tartalmazta, nem az
+  `.integration.config.mts` variánst. Bővítve.
+- A `db-role-setup` skill maga (`.claude/skills/db-role-setup/SKILL.md`) is frissült — nem csak
+  a tervben leírt SQL-fájl, hanem maga a runbook is (3b. lépés, harmadik szerepkör a "When to run
+  this"/leíró szakaszban, bővített 5. lépés a három engedély-eset ellenőrzésére) —, hogy jövőbeli
+  DB-resetek után is dokumentált maradjon, nem csak ennek a fázisnak a tervében.
 
 Tervezett tartalom:
 
