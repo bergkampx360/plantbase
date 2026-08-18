@@ -10,7 +10,7 @@
 
 ### Mit csinál ténylegesen a plantbase
 
-Agent, amit a **belsőépítész** (nem a végfelhasználó/vásárló) használ: természetes nyelvű
+Agent, amit a **lakberendező** (nem a végfelhasználó/vásárló) használ: természetes nyelvű
 kérdést fordít SQL-re a növény-katalógus (`products`) felett, read-only lekérdez, és
 gondozási-tanácsadó RAG-válaszokat ad egy cikk-tudásbázisból. Két felületen érhető el: **CLI**-n
 (`apps/cli`) és egy **böngészőben futó webes chat-felületen** (`apps/web`: React SPA, streamelt
@@ -23,7 +23,7 @@ kapcsolat), hogy a "korábbi beszélgetések" lista működjön. Nincs vásárl�
 rendelés-írás, nincs pontozás vagy döntés természetes személyekről — a kimenet mindkét felületen
 egy növénylista-javaslat egy szobához. **Fontos árnyalat**: a webes felületen nincs
 alkalmazás-szintű autentikáció/jogosultságkezelés (`docs/brs-plantbase.md` szerint ez explicit
-kívül esik a v1 hatókörön) — a "csak a belsőépítész használja" állítás jelenleg szervezési/
+kívül esik a v1 hatókörön) — a "csak a lakberendező használja" állítás jelenleg szervezési/
 hálózati hozzáférés-korlátozáson nyugszik, nem technikai kényszerítésen.
 
 ### Kockázati szint: minimális/nem szabályozott kockázat
@@ -45,9 +45,9 @@ Mivel a 6. cikk egyik feltétele sem teljesül, a rendszer **nem esik a III. fej
 kötelezettségei alá**. Ami marad: a 4. cikk szerinti AI-műveltségi (AI literacy) kötelezettség a
 csapat felé, és önkéntesen csatlakozhatunk a 95. cikk szerinti magatartási kódexekhez. Limited-risk
 (50. cikk, átláthatósági kötelezettség chatbotoknál) sem alkalmazandó szigorúan, mert a plantbase-t
-nem a végfelhasználó/vásárló használja közvetlenül, hanem a belsőépítész (szakmai, nem laikus
+nem a végfelhasználó/vásárló használja közvetlenül, hanem a lakberendező (szakmai, nem laikus
 felhasználó) — ez a webes felületre is igaz, csak a _csatorna_ böngésző, a _célközönség_ nem
-változik. Mivel viszont a belsőépítész (mint természetes személy) most már ténylegesen, élőben,
+változik. Mivel viszont a lakberendező (mint természetes személy) most már ténylegesen, élőben,
 egy böngészős chat-UI-n keresztül beszélget egy AI-rendszerrel (nem csak parancssori
 kérés-válasz), az 50. cikk szellemisége (legyen egyértelmű, hogy AI-jal beszélgetünk) gyakorlatilag
 is releváns lett, nem csak elméletileg — a plantbase-branding és a chat-UI kontextusa miatt ez ma
@@ -69,7 +69,7 @@ kínálni (SaaS-ként vagy licencben) — attól a pillanattól mi lennénk a sz
 
 | #   | Apró változtatás                                                                                                                                                                                                                                                                                                                                                                                                                                          | Miért ugratná a szintet                                                                                                                                                                                                                                                                                                                                         |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | A naplózott interakciókból **belsőépítész-teljesítmény pontszámot** vagy feladatkiosztást képeznénk (pl. "ki dolgozik gyorsabban, kire bízzunk több ügyfelet")                                                                                                                                                                                                                                                                                            | [Annex III 4. pont](#iii-melléklet-4-pont-foglalkoztatás) (foglalkoztatás: munkavállalók teljesítményének értékelése/feladatkiosztás) — a **munkavállalóra**, nem a vásárlóra vonatkozó automatizált értékelés triggereli, függetlenül attól, hogy a végfelhasználó felé a rendszer változatlan marad                                                           |
+| 1   | A naplózott interakciókból **lakberendezői teljesítmény-pontszámot** vagy feladatkiosztást képeznénk (pl. "ki dolgozik gyorsabban, kire bízzunk több ügyfelet")                                                                                                                                                                                                                                                                                           | [Annex III 4. pont](#iii-melléklet-4-pont-foglalkoztatás) (foglalkoztatás: munkavállalók teljesítményének értékelése/feladatkiosztás) — a **munkavállalóra**, nem a vásárlóra vonatkozó automatizált értékelés triggereli, függetlenül attól, hogy a végfelhasználó felé a rendszer változatlan marad                                                           |
 | 2   | Az agent elkezdene **ügyfél-fizetőképességet/hitelezhetőséget** értékelni (pl. egy jövőbeli "vásároljon most, fizessen később" bútor-finanszírozási funkcióhoz pontszámot adna a vásárlóról)                                                                                                                                                                                                                                                              | [Annex III 5(b) pont](#iii-melléklet-5b-pont-alapvető-szolgáltatások) (természetes személy hitelképességének értékelése) — még akkor is, ha a végső döntést ember hozza, az **értékelő funkció** maga triggerel, a [6. cikk (3) bekezdés](#6-cikk-3-bekezdés) szűk kivétele csak akkor védene, ha a pontszám bizonyíthatóan nem befolyásolja érdemben a döntést |
 | 3   | A meglévő webes chat-UI (`apps/web`) hozzáférését **kiterjesztenénk az ügyfélre** (pl. egy ügyfélportálra beágyazva, vagy a jelenlegi, auth nélküli felület URL-jét egyszerűen megosztva vásárlókkal) — ez **nem új komponens megépítését**, csak egy hozzáférés-kiterjesztési döntést igényelne, mert a technikai alap már készen áll — és a válaszok finomhangolt meggyőzési/sürgetési mintázatot (pl. mesterséges sürgősség, "csak ma") tartalmaznának | 5. cikk szerinti tiltott gyakorlat (manipulatív technika) kockázata — nem "egy szinttel feljebb", hanem a legszigorúbb kategóriába; **ez a sor a webes UI megléte miatt ma közelebbi, valós határeset, mint egy pusztán hipotetikus jövőbeli fejlesztés**                                                                                                       |
 
@@ -77,10 +77,10 @@ kínálni (SaaS-ként vagy licencben) — attól a pillanattól mi lennénk a sz
 
 | Szabályozás                                                 | Érinti-e?           | Indoklás                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ----------------------------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **GDPR**                                                    | **Igen**            | A belsőépítész szabad szöveges kérdésekben ügyfél-adatokat írhat be (pl. "X ügyfél nappalija, 25 m², 400e Ft büdzsé, allergiás gyermek van otthon") — ez a szöveg a jelenlegi stack szerint (`docs/stack.md`) **egy amerikai LLM-szolgáltatóhoz (Anthropic/OpenAI API)** megy ki feldolgozásra. Ha bármely mező azonosítja a természetes személy ügyfelet (név, cím), ez a GDPR hatálya alá tartozó adatkezelés (5., 6. cikk jogalap; 28. cikk adatfeldolgozói szerződés az LLM-vendorral; nemzetközi továbbítás esetén SCC/megfelelőségi mechanizmus a III. fejezet szerint). **Két, egymástól független tárolási felület** hordozza ezt az adatot: a CLI-oldali naplózás (`logs/*.jsonl`, FR4), és a webes felület `Thread`/`Message` adatbázis-táblái (Postgres, Prisma RW) — utóbbi azért is releváns, mert lekérdezhető, kereshető formában, auth nélkül elérhető UI mögött perzisztál, ami a megőrzési idő, a törlési kérelem (17. cikk) kezelhetősége és a hozzáférés-szabályozás kérdését mindkét tárolóra külön-külön felveti. |
+| **GDPR**                                                    | **Igen**            | A lakberendező szabad szöveges kérdésekben ügyfél-adatokat írhat be (pl. "X ügyfél nappalija, 25 m², 400e Ft büdzsé, allergiás gyermek van otthon") — ez a szöveg a jelenlegi stack szerint (`docs/stack.md`) **egy amerikai LLM-szolgáltatóhoz (Anthropic/OpenAI API)** megy ki feldolgozásra. Ha bármely mező azonosítja a természetes személy ügyfelet (név, cím), ez a GDPR hatálya alá tartozó adatkezelés (5., 6. cikk jogalap; 28. cikk adatfeldolgozói szerződés az LLM-vendorral; nemzetközi továbbítás esetén SCC/megfelelőségi mechanizmus a III. fejezet szerint). **Két, egymástól független tárolási felület** hordozza ezt az adatot: a CLI-oldali naplózás (`logs/*.jsonl`, FR4), és a webes felület `Thread`/`Message` adatbázis-táblái (Postgres, Prisma RW) — utóbbi azért is releváns, mert lekérdezhető, kereshető formában, auth nélkül elérhető UI mögött perzisztál, ami a megőrzési idő, a törlési kérelem (17. cikk) kezelhetősége és a hozzáférés-szabályozás kérdését mindkét tárolóra külön-külön felveti. |
 | **MDR** (orvostechnikai eszköz rendelet)                    | **Nem**             | A plantbase növénykatalógus-lekérdezés és gondozási tanács — nem diagnosztizál, nem kezel, nem orvosi rendeltetésű terméket támogat. A gondozási RAG-tartalom sem egészségügyi állapotra, hanem növényápolásra vonatkozik. Nincs átfedés.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | **DORA** (digitális működési reziliencia, pénzügyi szektor) | **Nem**             | A plantbase üzemeltetője nem DORA-hatálya alá tartozó pénzügyi entitás (nem bank, biztosító, befektetési szolgáltató); a rendszer nem kritikus pénzügyi funkciót lát el. Nincs átfedés.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| **Fogyasztóvédelmi irányelvek (UCPD)**                      | Csak látens, ma nem | Amíg az agent kimenete a belsőépítészhez megy (B2B-szerű belső eszköz), nem releváns. Ha a Határeset-elemzés táblázat 3. sora szerinti közvetlen ügyfél-interakció megvalósulna, a tisztességtelen kereskedelmi gyakorlatok szabályai (pl. megtévesztő ár-összehasonlítás, mesterséges sürgetés) élesbe lépnének.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **Fogyasztóvédelmi irányelvek (UCPD)**                      | Csak látens, ma nem | Amíg az agent kimenete a lakberendezőhöz megy (B2B-szerű belső eszköz), nem releváns. Ha a Határeset-elemzés táblázat 3. sora szerinti közvetlen ügyfél-interakció megvalósulna, a tisztességtelen kereskedelmi gyakorlatok szabályai (pl. megtévesztő ár-összehasonlítás, mesterséges sürgetés) élesbe lépnének.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ## 4. Email a jogi csapatnak
 
@@ -91,44 +91,38 @@ Tárgy: AI Act besorolási javaslat és megerősítés-kérés — plantbase bel
 
 Kedves Jogi Csapat!
 
-A plantbase egy belső AI-eszköz, amit a lakberendezőink használnak: természetes nyelven kérdeznek
-a növénykatalógusunkról (méret, fény- és vízigény, ár, készlet), az agent SQL-t generál, lekérdezi
-a (kizárólag olvasható) adatbázist, és a lakberendezőnek ad választ. Kiegészítő funkcióként egy
-gondozási cikk-adatbázisból is tud tanácsot adni, forrásra hivatkozva. Két felületen érhető el:
-parancssorból (CLI) és egy böngészőben futó webes chat-felületről (streamelt válasz, korábbi
-beszélgetések listája) — ugyanaz az agent-logika áll mindkettő mögött, csak a belépési pont más.
+A plantbase egy belső AI-eszköz: a lakberendezőink természetes nyelven kérdeznek a
+növénykatalógusunkról (méret, fény- és vízigény, ár, készlet), az agent SQL-t generál, lekérdezi a
+(kizárólag olvasható) adatbázist, és választ ad; kiegészítésként egy gondozási cikk-adatbázisból is
+tanácsot ad, forrásra hivatkozva. Két felületen érhető el — CLI és egy böngészőben futó webes
+chat-felület —, ugyanazzal az agent-logikával, csak a belépési pont más.
 
 Kulcsfontosságú tények a besoroláshoz:
-- Ki használja: kizárólag a saját, belső lakberendező kollégáink — nem a végfelhasználó/vásárló.
-  A webes felületen jelenleg nincs alkalmazás-szintű bejelentkezés/jogosultságkezelés, ezt a
-  hozzáférést szervezési/hálózati korlátozással biztosítjuk — ezt tudatosan jelezzük, mert ez a
-  besorolás egyik hallgatólagos előfeltétele.
-- Milyen adatot kezel: a növénykatalógus (nem személyes adat), valamint a lakberendező szabad
-  szöveges kérdései, amelyek alkalmanként ügyfél-releváns részleteket tartalmazhatnak (pl. szoba
-  mérete, büdzsé, esetenként az ügyfél neve). Ez a szöveg egy amerikai LLM-szolgáltató (Anthropic/
-  OpenAI) API-jához megy ki feldolgozásra. A CLI-interakciók fájlba naplózódnak, a webes felület
-  beszélgetés-története emellett adatbázisban is tárolódik (visszakereshető formában).
-- Milyen döntést hoz vagy befolyásol: az agent NEM hoz és NEM befolyásol döntést emberről —
-  növénylista-javaslatot ad egy szobához. Nincs pontozás, rangsorolás vagy értékelés természetes
-  személyről.
-- Mi történik hibánál: rossz növényjavaslat esetén a lakberendező (szakmai felhasználó) észreveszi
-  és korrigálja a végleges ajánlatban — nincs automatikus, felügyelet nélküli kimenet az ügyfél felé.
+- Ki használja: kizárólag a belső lakberendező kollégáink, nem a végfelhasználó/vásárló. A webes
+  felületen nincs alkalmazás-szintű bejelentkezés/jogosultságkezelés — a hozzáférést szervezési/
+  hálózati korlátozás biztosítja, ezt tudatosan jelezzük, mert ez a besorolás előfeltétele.
+- Milyen adatot kezel: a növénykatalógus (nem személyes adat), és a lakberendező szabad szöveges
+  kérdései, amelyek alkalmanként ügyfél-releváns részletet tartalmazhatnak (szoba mérete, büdzsé,
+  néha az ügyfél neve) — ez a szöveg egy amerikai LLM-szolgáltatóhoz (Anthropic/OpenAI) megy ki. A
+  CLI fájlba naplóz, a webes felület adatbázisban is tárolja a beszélgetés-történetet.
+- Milyen döntést hoz vagy befolyásol: nem hoz és nem befolyásol döntést emberről — csak
+  növénylista-javaslatot ad egy szobához, pontozás/értékelés nélkül.
+- Mi történik hibánál: a lakberendező (szakmai felhasználó) észreveszi és korrigálja a végleges
+  ajánlatban — nincs automatikus, felügyelet nélküli kimenet az ügyfél felé.
 
-Javasolt besorolás: az AI Act 6. cikke szerint a rendszer NEM minősül magas kockázatúnak — nem
-biztonsági komponens (I. melléklet), és egyik III. mellékleti kategóriába sem tartozik (nem
-biometrikus, nem foglalkoztatási, nem alapvető szolgáltatáshoz való hozzáférést érintő stb.).
-Javaslatom: minimális kockázat, a 4. cikk szerinti AI-műveltségi kötelezettség betartásával.
-Szerepünk: egyszerre szolgáltató és üzembe helyező (saját fejlesztés, saját belső használat).
+Javasolt besorolás: az AI Act 6. cikke szerint NEM magas kockázatú — nem biztonsági komponens
+(I. melléklet), egyik III. mellékleti kategóriába sem tartozik. Javaslatom: minimális kockázat, a
+4. cikk szerinti AI-műveltségi kötelezettség betartásával. Szerepünk: egyszerre szolgáltató és
+üzembe helyező (saját fejlesztés, saját belső használat).
 
-Amit figyelni fogunk, mert szintet ugrathat: ha a rendszert (a) munkavállalói teljesítményméréshez,
-vagy (b) ügyfél-hitelképesség/fizetőképesség értékeléséhez kezdenénk használni, vagy (c) a kimenet
-(akár a meglévő webes felület hozzáférésének kiterjesztésével) közvetlenül az ügyfélhez kerülne.
+Amit figyelni fogunk, mert szintet ugrathat: (a) munkavállalói teljesítménymérés, (b) ügyfél-
+hitelképesség/fizetőképesség értékelése, (c) a kimenet — akár a webes felület kiterjesztésével —
+közvetlenül az ügyfélhez kerülne.
 
-Kérésünk: kérjük, erősítsék meg a fenti besorolást és a szerep-meghatározást, és jelezzék, ha az
-LLM-szolgáltatóval kötött adatfeldolgozói szerződést (GDPR 28. cikk), a nemzetközi adattovábbítás
-jogalapját, vagy a webes felület auth nélküli, adatbázisban is naplózó jellegét szükségesnek látják
-felülvizsgálni, mielőtt a naplózott/tárolt ügyfél-releváns szövegmezőket éles használatban
-bővítenénk.
+Kérésünk: erősítsék meg a besorolást és a szerep-meghatározást, és jelezzék, ha az LLM-vendorral
+kötött adatfeldolgozói szerződést (GDPR 28. cikk), a nemzetközi adattovábbítás jogalapját, vagy a
+webes felület auth nélküli, adatbázisba is naplózó jellegét felül kell vizsgálni, mielőtt a
+naplózott/tárolt ügyfél-releváns adatokat éles használatban bővítenénk.
 
 Köszönjük,
 [Mérnöki csapat]
@@ -185,6 +179,15 @@ amit dokumentálni és auditálhatóan bizonyítani kell:
 
 Ha bármelyik feltétel sérül, az érvelés átbillen a "érdemi befolyásolás" oldalra, és a rendszert
 [Annex III 5(b)](#iii-melléklet-5b-pont-alapvető-szolgáltatások) alá kellene sorolni, teljes III. fejezet kötelezettséggel.
+
+**Profilalkotás-e a teljességi pontszám?** A [6. cikk (3) bekezdés](#6-cikk-3-bekezdés) végén lévő
+kivétel (profilalkotás esetén a szűk-feladat mentesség nem alkalmazható) csak akkor élesedne, ha a
+teljességi pontszám a GDPR 4. cikk (4) bekezdése szerinti "profilalkotásnak" minősülne (természetes
+személy egyes jellemzőinek automatizált értékelése). A teljességi pontszám tárgya a _beadott irat_,
+nem az _ügyfél személye_ (nem az ügyfél viselkedését, megbízhatóságát vagy tulajdonságait értékeli,
+csak azt, hogy a dokumentumcsomag hiánytalan-e) — emiatt önmagában nem profilalkotás. Ha viszont a
+teljesség hiányát a rendszer az ügyfélre visszavezetve értelmezné (pl. "ez az ügyfél megbízhatatlan,
+mert hiányosan adott be"), az már átbillenne profilalkotásba, és a kivétel-tilalom aktiválódna.
 
 **Szerep-kérdés:**
 
@@ -291,57 +294,46 @@ Köszönjük az elemzést, a besorolással egyetértünk. Az alábbiakban kötel
 műszaki/folyamat-intézkedést és a hozzá tartozó, auditkor bemutatható mérést/bizonyítékot adjuk meg.
 
 **9. cikk — Kockázatkezelési rendszer**
-Intézkedés: a fejlesztési életciklus részeként negyedéves kockázat-felülvizsgálati kör (design →
-teszt → éles üzem → monitorozás), írásos kockázatnyilvántartással (azonosított kockázat, súlyosság,
-mitigáció, felelős).
-Mérés/bizonyíték: kockázatnyilvántartás verziótörténete (ki, mikor, mit módosított); legalább 1
-dokumentált "red-team" teszteset negyedévente, ami kifejezetten a téves kompenzációs javaslat
-kockázatát célozza.
+Intézkedés: negyedéves kockázat-felülvizsgálat a teljes életcikluson (design → teszt → éles üzem →
+monitorozás), írásos kockázatnyilvántartással (kockázat, súlyosság, mitigáció, felelős).
+Mérés: a nyilvántartás verziótörténete; legalább 1 dokumentált red-team teszteset/negyedév a téves
+kompenzációs javaslat kockázatára.
 
 **10. cikk — Adat-governance**
-Intézkedés: a tanító/kontextus-adat (szerződés-, tranzakciótörténet) forrás- és minőség-ellenőrzése;
-elfogultság-vizsgálat arra, hogy a javaslat nem korrelál-e védett tulajdonsággal (pl. lakóhely,
-életkor-proxy).
-Mérés/bizonyíték: adatforrás-leltár dátumozott verzióval; negyedéves elfogultság-riport (pl.
-javasolt kompenzáció mértékének szórása demográfiai alcsoportok között, statisztikai szignifikancia-
-teszttel).
+Intézkedés: a szerződés-/tranzakciótörténet forrás- és minőség-ellenőrzése; elfogultság-vizsgálat a
+javaslat és védett tulajdonságok (lakóhely, életkor-proxy) korrelációjára.
+Mérés: dátumozott adatforrás-leltár; negyedéves elfogultság-riport (a javasolt kompenzáció
+mértékének szórása demográfiai alcsoportok közt, szignifikancia-teszttel).
 
 **12. cikk — Naplózás és eseményrögzítés**
-Intézkedés: minden javaslat-generáláshoz kötelező, törölhetetlen napló: bemenet (panasz + elért
-adatok), modellverzió, generált javaslat, emberi döntés (elfogadva/módosítva/elutasítva), időbélyeg.
-Mérés/bizonyíték: naplók megőrzési ideje és integritás-ellenőrzése (checksum/write-once tárolás);
-lekérdezhető audit-riport bármely 90 napos időszakra 1 munkanapon belül.
+Intézkedés: kötelező, törölhetetlen napló minden javaslathoz (bemenet, modellverzió, javaslat,
+emberi döntés, időbélyeg).
+Mérés: a naplók megőrzési ideje és integritás-ellenőrzése (checksum/write-once); audit-riport
+bármely 90 napos időszakra, 1 munkanapon belül.
 
 **14. cikk — Emberi felügyelet**
-Intézkedés: a rendszer kimenete kizárólag **javaslat**, jóváhagyás nélkül nem érvényesül; az
-ügyintéző felületén kötelező "miért ezt javasolja" magyarázat jelenik meg minden javaslathoz;
-"stop" gomb a rendszer teljes leállítására incidens esetén.
-Mérés/bizonyíték: havi mintavételes audit — az ügyintézők hány %-ban módosítják/utasítják el a
-javaslatot (ha ez tartósan 0% közelében van, az felülvizsgálatot indít: valódi felügyelet
-történik-e, vagy "rubber-stamping").
+Intézkedés: a kimenet kizárólag javaslat, jóváhagyás nélkül nem érvényesül; kötelező indoklás
+("miért ezt javasolja") minden javaslathoz; "stop" gomb incidens esetére.
+Mérés: havi mintavételes audit az elfogadási/elutasítási arányról — tartósan ~0%-os elutasítás
+felülvizsgálatot indít ("rubber-stamping" gyanúja).
 
 **15. cikk — Pontosság és robusztusság**
-Intézkedés: kiadás előtti és negyedéves regressziós teszt egy rögzített, emberi szakértő által
-validált golden setre (releváns, tipikus és szélsőséges panasz-esetek); célzott teszt zajos/hiányos
-bemenetre (pl. hiányos tranzakciótörténet).
-Mérés/bizonyíték: golden-set pontosság-riport (elfogadási küszöb rögzítve, pl. ≥95% egyezés a
-szakértői elbírálással); minden éles kiadás előtt kötelező, dokumentált teszt-futtatás blokkolja a
-kiadást hiba esetén.
+Intézkedés: kiadás előtti és negyedéves regressziós teszt szakértő-validált golden seten, célzott
+teszttel zajos/hiányos bemenetre (pl. hiányos tranzakciótörténet).
+Mérés: golden-set pontosság-riport (rögzített küszöb, pl. ≥95% egyezés a szakértői elbírálással);
+kiadást blokkoló, kötelező teszt-futtatás.
 
 **26. cikk — Üzembe helyezői kötelezettségek**
-Intézkedés: a rendszert kizárólag a rendeltetése szerint (kompenzációs *javaslat* előkészítés, nem
-végleges döntés) használjuk; a szolgáltatóval (ha külső) szerződésben rögzítjük a technikai
-dokumentáció és a naplózáshoz való hozzáférés biztosítását; belső képzés az ügyintézőknek a
-rendszer korlátairól.
-Mérés/bizonyíték: aláírt szolgáltatói szerződés-melléklet a dokumentáció-hozzáférésről; képzési
-jelenléti ív + éves ismétlő teszt az ügyintézőknek.
+Intézkedés: kizárólag rendeltetésszerű (javaslat, nem végleges döntés) használat; szerződésben
+rögzített dokumentáció- és naplózás-hozzáférés a szolgáltatóval; belső képzés a korlátokról.
+Mérés: aláírt szerződés-melléklet a dokumentáció-hozzáférésről; képzési jelenléti ív + éves
+ismétlő teszt.
 
 **27. cikk — Alapjogi hatásvizsgálat szükségességének vizsgálata**
-Intézkedés: elvégezzük a szükségesség-előszűrést (a rendszer alapvető szolgáltatáshoz — kártérítés/
-kompenzáció — való hozzáférést befolyásol, érintett ügyfélkör mérete jelentős) → ez alapján teljes
-alapjogi hatásvizsgálatot indítunk, jogi csapat bevonásával.
-Mérés/bizonyíték: az előszűrés és a hatásvizsgálat írásos dokumentuma, dátumozva, jóváhagyva; a
-hatásvizsgálat eredményeként azonosított mitigációk nyomon követése (backlog-tételek, határidővel).
+Intézkedés: szükségesség-előszűrés (alapvető szolgáltatáshoz — kártérítés/kompenzáció — való
+hozzáférést befolyásol, jelentős érintett kör) → teljes hatásvizsgálat jogi csapat bevonásával.
+Mérés: dátumozott, jóváhagyott írásos dokumentum; a mitigációk backlog-tételes nyomon követése
+határidővel.
 
 Kérjük, erősítsék meg, hogy ez a lefedettség és mélység megfelel az auditelvárásoknak, és jelezzék,
 ha valamelyik ponton szigorúbb mérési küszöböt (pl. konkrét %-os elfogadási határ a 15. cikknél)
@@ -415,8 +407,8 @@ biztonságára vagy alapjogaira, és az alábbi 4 feltétel valamelyike teljesü
 4. egy értékeléshez kapcsolódó **előkészítő feladatot** lát el.
 
 Fontos kivétel: ha a rendszer **természetes személyek profilalkotását** végzi, a fenti feltételek
-egyike sem menti fel a magas kockázatú besorolás alól. _(Az 5.1 pontban — "Saját elemzés" — és az
-5.2 pontban — LLM-teszt összevetés — hivatkozva a QueueGenius kapcsán.)_
+egyike sem menti fel a magas kockázatú besorolás alól. _(Az 5.1 pontban — "Saját elemzés",
+"Profilalkotás-e a teljességi pontszám?" bekezdés — vizsgálva a QueueGenius kapcsán.)_
 
 **Forrás:** Regulation (EU) 2024/1689 (AI Act), 6. cikk és I., III. melléklet — az összefoglalók a
 rendelet hivatalos szövegének és az `artificialintelligenceact.eu` cikkelyenkénti feldolgozásának
