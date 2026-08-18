@@ -32,9 +32,9 @@ Az AI Act (2024/1689 rendelet) 6. cikke szerint egy rendszer akkor magas kockáz
 melléklet szerinti uniós harmonizációs jogszabály hatálya alá tartozó termék biztonsági
 komponense, vagy (2) a III. melléklet valamelyik pontjában felsorolt céllal használják.
 
-- **[I. melléklet](#fuggelek-annex1)**: a plantbase nem biztonsági komponens semmilyen szabályozott terméktípusban
+- **[I. melléklet](#i-melléklet)**: a plantbase nem biztonsági komponens semmilyen szabályozott terméktípusban
   (nem gép, orvostechnikai eszköz, játék stb.) — nem releváns.
-- **[III. melléklet, 8 kategória](#fuggelek-annex3)** (biometria; kritikus infrastruktúra; oktatás; foglalkoztatás;
+- **[III. melléklet, 8 kategória](#iii-melléklet)** (biometria; kritikus infrastruktúra; oktatás; foglalkoztatás;
   alapvető magán- és közszolgáltatásokhoz való hozzáférés — ide tartozik pl. a hitelképesség-
   értékelés és a szociális támogatásra jogosultság elbírálása; bűnüldözés; migráció/határellenőrzés;
   igazságszolgáltatás/demokratikus folyamatok): a plantbase **egyik pontba sem tartozik**. Nem
@@ -67,11 +67,11 @@ kínálni (SaaS-ként vagy licencben) — attól a pillanattól mi lennénk a sz
 
 ### Határeset-elemzés: mitől ugrana egy szinttel feljebb
 
-| #   | Apró változtatás                                                                                                                                                                                                                                                                                                                                                                                                                                          | Miért ugratná a szintet                                                                                                                                                                                                                                                                                                            |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | A naplózott interakciókból **belsőépítész-teljesítmény pontszámot** vagy feladatkiosztást képeznénk (pl. "ki dolgozik gyorsabban, kire bízzunk több ügyfelet")                                                                                                                                                                                                                                                                                            | [Annex III 4. pont](#fuggelek-annex3-4) (foglalkoztatás: munkavállalók teljesítményének értékelése/feladatkiosztás) — a **munkavállalóra**, nem a vásárlóra vonatkozó automatizált értékelés triggereli, függetlenül attól, hogy a végfelhasználó felé a rendszer változatlan marad                                                |
-| 2   | Az agent elkezdene **ügyfél-fizetőképességet/hitelezhetőséget** értékelni (pl. egy jövőbeli "vásároljon most, fizessen később" bútor-finanszírozási funkcióhoz pontszámot adna a vásárlóról)                                                                                                                                                                                                                                                              | [Annex III 5(b) pont](#fuggelek-annex3-5b) (természetes személy hitelképességének értékelése) — még akkor is, ha a végső döntést ember hozza, az **értékelő funkció** maga triggerel, a [6. cikk (3) bekezdés](#fuggelek-art6-3) szűk kivétele csak akkor védene, ha a pontszám bizonyíthatóan nem befolyásolja érdemben a döntést |
-| 3   | A meglévő webes chat-UI (`apps/web`) hozzáférését **kiterjesztenénk az ügyfélre** (pl. egy ügyfélportálra beágyazva, vagy a jelenlegi, auth nélküli felület URL-jét egyszerűen megosztva vásárlókkal) — ez **nem új komponens megépítését**, csak egy hozzáférés-kiterjesztési döntést igényelne, mert a technikai alap már készen áll — és a válaszok finomhangolt meggyőzési/sürgetési mintázatot (pl. mesterséges sürgősség, "csak ma") tartalmaznának | 5. cikk szerinti tiltott gyakorlat (manipulatív technika) kockázata — nem "egy szinttel feljebb", hanem a legszigorúbb kategóriába; **ez a sor a webes UI megléte miatt ma közelebbi, valós határeset, mint egy pusztán hipotetikus jövőbeli fejlesztés**                                                                          |
+| #   | Apró változtatás                                                                                                                                                                                                                                                                                                                                                                                                                                          | Miért ugratná a szintet                                                                                                                                                                                                                                                                                                                                         |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | A naplózott interakciókból **belsőépítész-teljesítmény pontszámot** vagy feladatkiosztást képeznénk (pl. "ki dolgozik gyorsabban, kire bízzunk több ügyfelet")                                                                                                                                                                                                                                                                                            | [Annex III 4. pont](#iii-melléklet-4-pont-foglalkoztatás) (foglalkoztatás: munkavállalók teljesítményének értékelése/feladatkiosztás) — a **munkavállalóra**, nem a vásárlóra vonatkozó automatizált értékelés triggereli, függetlenül attól, hogy a végfelhasználó felé a rendszer változatlan marad                                                           |
+| 2   | Az agent elkezdene **ügyfél-fizetőképességet/hitelezhetőséget** értékelni (pl. egy jövőbeli "vásároljon most, fizessen később" bútor-finanszírozási funkcióhoz pontszámot adna a vásárlóról)                                                                                                                                                                                                                                                              | [Annex III 5(b) pont](#iii-melléklet-5b-pont-alapvető-szolgáltatások) (természetes személy hitelképességének értékelése) — még akkor is, ha a végső döntést ember hozza, az **értékelő funkció** maga triggerel, a [6. cikk (3) bekezdés](#6-cikk-3-bekezdés) szűk kivétele csak akkor védene, ha a pontszám bizonyíthatóan nem befolyásolja érdemben a döntést |
+| 3   | A meglévő webes chat-UI (`apps/web`) hozzáférését **kiterjesztenénk az ügyfélre** (pl. egy ügyfélportálra beágyazva, vagy a jelenlegi, auth nélküli felület URL-jét egyszerűen megosztva vásárlókkal) — ez **nem új komponens megépítését**, csak egy hozzáférés-kiterjesztési döntést igényelne, mert a technikai alap már készen áll — és a válaszok finomhangolt meggyőzési/sürgetési mintázatot (pl. mesterséges sürgősség, "csak ma") tartalmaznának | 5. cikk szerinti tiltott gyakorlat (manipulatív technika) kockázata — nem "egy szinttel feljebb", hanem a legszigorúbb kategóriába; **ez a sor a webes UI megléte miatt ma közelebbi, valós határeset, mint egy pusztán hipotetikus jövőbeli fejlesztés**                                                                                                       |
 
 ## 3. Átfedő szabályozások
 
@@ -144,14 +144,14 @@ Köszönjük,
 
 **Mi szól a "minimális kockázat" mellett:**
 
-- A [III. melléklet 5(b) pontja](#fuggelek-annex3-5b) kifejezetten a **hitelképesség értékelését vagy hitelpontszám
+- A [III. melléklet 5(b) pontja](#iii-melléklet-5b-pont-alapvető-szolgáltatások) kifejezetten a **hitelképesség értékelését vagy hitelpontszám
   megállapítását** nevesíti. A QueueGenius ezt nem végzi — a teljességi pontszám a _dokumentáció
   hiánytalanságáról_ szól (van-e minden irat), nem az ügyfél fizetőképességéről. Ez tartalmilag más
   attribútum.
 - A végső döntést minden esetben az ügyintéző hozza; az agent kimenete a munkalista sorrendje, nem
   egy ajánlás vagy pontszám a hitelkérelemről magáról.
 - Emiatt szerintem a helyes érvelési sorrend NEM az, hogy "III. mellékletbe esik, de a [6. cikk (3)
-  bekezdés](#fuggelek-art6-3) szűk kivétele miatt mégsem magas kockázatú" — hanem az, hogy a rendszer **be sem lép** a
+  bekezdés](#6-cikk-3-bekezdés) szűk kivétele miatt mégsem magas kockázatú" — hanem az, hogy a rendszer **be sem lép** a
   III. melléklet hatókörébe, mert a tervezett rendeltetése (dokumentum-teljesség + sorba rendezés)
   nem azonos az 5(b) pontban megnevezett rendeltetéssel (hitelképesség-értékelés). A 6. cikk (3)
   bekezdés csak tartalék érv, ha valaki utólag azt állítaná, hogy a teljességi pontszám burkoltan
@@ -184,7 +184,7 @@ amit dokumentálni és auditálhatóan bizonyítani kell:
    a sorrendtől (a sorrend a _feldolgozás ütemezését_, nem a _feldolgozás mélységét_ befolyásolja).
 
 Ha bármelyik feltétel sérül, az érvelés átbillen a "érdemi befolyásolás" oldalra, és a rendszert
-[Annex III 5(b)](#fuggelek-annex3-5b) alá kellene sorolni, teljes III. fejezet kötelezettséggel.
+[Annex III 5(b)](#iii-melléklet-5b-pont-alapvető-szolgáltatások) alá kellene sorolni, teljes III. fejezet kötelezettséggel.
 
 **Szerep-kérdés:**
 
@@ -360,26 +360,30 @@ Mérnöki csapat
 > pont" / "Annex III 5(b) pont" típusú állítások a rendelet szövegének külön elővétele nélkül is
 > ellenőrizhetők legyenek.
 
-<a id="fuggelek-annex1"></a>**I. melléklet** — uniós harmonizációs jogszabályok listája (pl. gépek, játékok, liftek,
+### I. melléklet
+
+Uniós harmonizációs jogszabályok listája (pl. gépek, játékok, liftek,
 rádióberendezések, orvostechnikai eszközök, repülés, gépjárművek stb.), amelyek hatálya alá tartozó
 termékekhez harmadik féltől független megfelelőségértékelés szükséges. Egy AI-rendszer az AI Act 6.
 cikk (1) bekezdése alapján akkor magas kockázatú ezen az úton, ha egy ilyen termék **biztonsági
 komponenseként** működik, vagy maga is ilyen termék. _(2. és 4. pontban hivatkozva — a plantbase nem
 ilyen termék/komponens.)_
 
-<a id="fuggelek-annex3"></a>**III. melléklet** — a 6. cikk (2) bekezdése alapján automatikusan magas kockázatúnak minősülő 8
+### III. melléklet
+
+A 6. cikk (2) bekezdése alapján automatikusan magas kockázatúnak minősülő 8
 felhasználási terület:
 
-| Pont                             | Terület                                      | Rövid tartalom                                                                                                                                                                                                                    |
-| -------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1                                | Biometria                                    | Távoli biometrikus azonosítás, biometrikus kategorizálás érzékeny tulajdonság szerint, érzelemfelismerés                                                                                                                          |
-| 2                                | Kritikus infrastruktúra                      | AI biztonsági komponensként digitális infrastruktúra, közúti forgalom, közművek (víz, gáz, fűtés, áram) kezelésében                                                                                                               |
-| 3                                | Oktatás/szakképzés                           | Felvételi döntés, tanulási eredmény értékelése, oktatási szint megállapítása, vizsga alatti magatartás-monitorozás                                                                                                                |
-| <a id="fuggelek-annex3-4"></a>4  | Foglalkoztatás                               | Toborzás, jelöltszűrés, munkaviszonnyal kapcsolatos döntés, feladatkiosztás, teljesítmény-monitorozás _(a Határeset-elemzés 1. sorában hivatkozva)_                                                                               |
-| <a id="fuggelek-annex3-5b"></a>5 | Alapvető magán-/közszolgáltatások            | Közjuttatásra jogosultság elbírálása, **hitelképesség/hitelpontszám értékelése (5(b) pont)**, biztosítási kockázat árazása, segélyhívás-triázs _(a Határeset-elemzés 2. sorában és az 5. pont QueueGenius-elemzésben hivatkozva)_ |
-| 6                                | Bűnüldözés                                   | Kockázatértékelő eszközök, poligráf-jellegű rendszerek, bizonyíték-megbízhatóság értékelése, visszaesés-előrejelzés, bűnügyi profilalkotás                                                                                        |
-| 7                                | Migráció, menekültügy, határellenőrzés       | Poligráf-alternatívák, belépési kockázatértékelés, vízumkérelem-elbírálás, személyazonosítás (úti okmány ellenőrzésén kívül)                                                                                                      |
-| 8                                | Igazságszolgáltatás, demokratikus folyamatok | Bírói jogértelmezést segítő rendszerek, választási eredményt/szavazói magatartást befolyásoló rendszerek                                                                                                                          |
+| Pont | Terület                                      | Rövid tartalom                                                                                                                                 |
+| ---- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Biometria                                    | Távoli biometrikus azonosítás, biometrikus kategorizálás érzékeny tulajdonság szerint, érzelemfelismerés                                       |
+| 2    | Kritikus infrastruktúra                      | AI biztonsági komponensként digitális infrastruktúra, közúti forgalom, közművek (víz, gáz, fűtés, áram) kezelésében                            |
+| 3    | Oktatás/szakképzés                           | Felvételi döntés, tanulási eredmény értékelése, oktatási szint megállapítása, vizsga alatti magatartás-monitorozás                             |
+| 4    | Foglalkoztatás                               | Toborzás, jelöltszűrés, munkaviszonnyal kapcsolatos döntés, feladatkiosztás, teljesítmény-monitorozás                                          |
+| 5    | Alapvető magán-/közszolgáltatások            | Közjuttatásra jogosultság elbírálása, **hitelképesség/hitelpontszám értékelése (5(b) pont)**, biztosítási kockázat árazása, segélyhívás-triázs |
+| 6    | Bűnüldözés                                   | Kockázatértékelő eszközök, poligráf-jellegű rendszerek, bizonyíték-megbízhatóság értékelése, visszaesés-előrejelzés, bűnügyi profilalkotás     |
+| 7    | Migráció, menekültügy, határellenőrzés       | Poligráf-alternatívák, belépési kockázatértékelés, vízumkérelem-elbírálás, személyazonosítás (úti okmány ellenőrzésén kívül)                   |
+| 8    | Igazságszolgáltatás, demokratikus folyamatok | Bírói jogértelmezést segítő rendszerek, választási eredményt/szavazói magatartást befolyásoló rendszerek                                       |
 
 A "plantbase egyik pontba sem tartozik" állítás (2. pont) e táblázat mind a 8 sorára nézve
 igaz: nincs biometrikus adatkezelés (1), nem kritikus infrastruktúra-komponens (2), nem oktatási
@@ -387,7 +391,20 @@ kontextus (3), nem munkavállalót értékel (4 — csak feltételes, jövőbeli
 Határeset-elemzés), nem ad hozzáférést/jogosultságot alapvető szolgáltatáshoz és nem értékel
 hitelképességet (5), nem bűnüldözési, migrációs vagy igazságszolgáltatási kontextusban fut (6–8).
 
-<a id="fuggelek-art6-3"></a>**6. cikk (3) bekezdés** — a III. mellékletben listázott rendszerek kivételt kaphatnak a magas
+### III. melléklet 4. pont — Foglalkoztatás
+
+Toborzás, jelöltszűrés, munkaviszonnyal kapcsolatos döntés, feladatkiosztás, teljesítmény-
+monitorozás. _(A Határeset-elemzés 1. sorában hivatkozva.)_
+
+### III. melléklet 5(b) pont — Alapvető szolgáltatások
+
+Közjuttatásra jogosultság elbírálása, **hitelképesség/hitelpontszám értékelése**, biztosítási
+kockázat árazása, segélyhívás-triázs. _(A Határeset-elemzés 2. sorában és az 5. pont
+QueueGenius-elemzésben hivatkozva.)_
+
+### 6. cikk (3) bekezdés
+
+A III. mellékletben listázott rendszerek kivételt kaphatnak a magas
 kockázatú besorolás alól, ha **nem jelentenek érdemi kockázatot** a természetes személyek egészségére,
 biztonságára vagy alapjogaira, és az alábbi 4 feltétel valamelyike teljesül:
 
