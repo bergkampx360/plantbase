@@ -31,6 +31,8 @@ export async function askAgent(
     { role: 'user', content: question },
   ];
 
+  const startedAt = Date.now();
+
   const result = streamText({
     model: anthropic(resolveModel()),
     system: SYSTEM_PROMPT,
@@ -78,6 +80,12 @@ export async function askAgent(
     answer: finalResult.answer,
     tokenUsage: finalResult.tokenUsage,
     generatedSql: finalResult.generatedSql,
+    durationMs: Date.now() - startedAt,
+    // askAgent() a CLI-t szolgálja ki, mindig a belső (lakberendezői) perzónával fut — a
+    // customer-facing agent apps/server-ből, egy saját streamText-hívással megy (nem
+    // askAgent()-en keresztül, docs/architektura.md 3. döntés/G1), ott állítódik
+    // 'customer'-re J5-től.
+    persona: 'internal',
   });
 
   return finalResult;

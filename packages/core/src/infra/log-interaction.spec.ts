@@ -46,10 +46,44 @@ describe('logInteraction', () => {
     const [filePath, content] = mockedAppendFile.mock.calls[0];
 
     expect(String(filePath)).toMatch(
-      new RegExp(`^${join(process.cwd(), 'logs').replace(/[/\\]/g, '\\$&')}[/\\\\].+\\.jsonl$`),
+      new RegExp(
+        `^${join(process.cwd(), 'logs').replace(/[/\\]/g, '\\$&')}[/\\\\].+\\.jsonl$`,
+      ),
     );
     expect(content).toBe(`${JSON.stringify(log)}\n`);
     expect(JSON.parse(String(content).trim())).toEqual(log);
+  });
+
+  it('writes the J4 fields (durationMs, escalated, persona) when given, additive to the pre-J4 shape', async () => {
+    const log = {
+      system: 'system prompt',
+      messages: [],
+      answer: 'válasz',
+      tokenUsage: { inputTokens: 10, outputTokens: 5 },
+      durationMs: 1234,
+      escalated: true,
+      persona: 'customer' as const,
+    };
+
+    await logInteraction(log);
+
+    const [, content] = mockedAppendFile.mock.calls[0];
+    expect(JSON.parse(String(content).trim())).toEqual(log);
+  });
+
+  it('omits the J4 fields entirely when not given (pre-J4 callers stay valid, no undefined keys written)', async () => {
+    await logInteraction({
+      system: 'system prompt',
+      messages: [],
+      answer: 'válasz',
+      tokenUsage: { inputTokens: 1, outputTokens: 1 },
+    });
+
+    const [, content] = mockedAppendFile.mock.calls[0];
+    const written = JSON.parse(String(content).trim());
+    expect(written).not.toHaveProperty('durationMs');
+    expect(written).not.toHaveProperty('escalated');
+    expect(written).not.toHaveProperty('persona');
   });
 
   it('mkdir runs before appendFile (directory must exist first)', async () => {
