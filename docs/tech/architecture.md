@@ -14,16 +14,24 @@ Nem ismeri a belépési pontokat (`apps/*`); csak `packages/db`-re hivatkozhat (
 packages/core/src/
 ├── index.ts               a csomag publikus felülete (askAgent, MAX_TOOL_ITERATIONS, resolveModel,
 │                           RUN_SQL_TOOL, LIST_CATEGORIES_TOOL, SEARCH_KNOWLEDGE_TOOL, SYSTEM_PROMPT,
-│                           generateThreadTitle)
+│                           generateThreadTitle, J2-től REQUEST_HUMAN_HANDOFF_TOOL, SEARCH_PRODUCTS_TOOL)
 ├── agent/                 agent-orkesztráció (I1, docs/implementation/08-source-structure-refactor.md)
 │   ├── ask-agent.ts        az askAgent (Vercel ai SDK streamText+tool()+stopWhen, G1, MAX_TOOL_ITERATIONS=5)
 │   ├── system-prompt.ts    az élő system prompt (SYSTEM_PROMPT konstans) — docs/system-prompt.md szinkronban tartva
 │   └── title-agent.ts      generateThreadTitle() — a hyde.ts mintáját követő, egyszerű generateText
 │                           hívás, szál-cím rövid összefoglalása az első kérdésből (H3)
 ├── tools/                 az agent-nek felkínált tool-definíciók (I1)
-│   ├── run-sql.ts          runSql tool (products katalógus, read-only SQL)
+│   ├── run-sql.ts          runSql tool (products katalógus, read-only SQL) — csak a belső,
+│   │                       lakberendezői agentnek elérhető, a customer-facing perzóna sosem kapja meg
 │   ├── list-categories.ts  listCategories tool (products.category distinct lista)
-│   └── search-knowledge.ts searchKnowledge tool (F6) — a rag/ réteg orkesztrálását adja tool-ként
+│   ├── search-knowledge.ts searchKnowledge tool (F6) — a rag/ réteg orkesztrálását adja tool-ként
+│   ├── search-products.ts  searchProducts tool (J2) — ügyfél-biztonságos, paraméterezett termékkeresés
+│   │                       (whitelistelt oszlop-/szűrő-készlet, fix LIMIT) a RO poolon; NEM runSql —
+│   │                       publikus felületről szabad SQL-generálást sosem akarunk elérhetővé tenni
+│   └── request-human-handoff.ts requestHumanHandoff tool (J2) — az EGYETLEN tool, ami bármit ír;
+│                           hardkódolt, paraméteres INSERT a getHandoffPool()-on, RETURNING nélkül
+│                           (a plantbase_handoff szerepkör a saját beírt sorát sem tudja visszaolvasni,
+│                           ld. docs/implementation/09-customer-facing-poc.md, J2 "Valódi eltérés")
 ├── infra/                 megosztott alacsonyszintű építőelemek (I1)
 │   ├── db-pool.ts          getPool() (RO, DATABASE_URL_READONLY) / getWritePool() (RW, DATABASE_URL) /
 │   │                       getHandoffPool() (insert-only, DATABASE_URL_HANDOFF, J1, docs/implementation/09-customer-facing-poc.md)

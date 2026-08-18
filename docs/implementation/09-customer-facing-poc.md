@@ -172,7 +172,18 @@ változatlanul gyors és DB-független marad).
 **Commit:** `feat: add CustomerHandoff model and insert-only DB role`
 → megállok, kérem a tesztelést.
 
-### J2 — `requestHumanHandoff` és `searchProducts` tool-ok ⏳ Nyitott
+### J2 — `requestHumanHandoff` és `searchProducts` tool-ok ✅ KÉSZ
+
+**Valódi eltérés a tervhez képest, implementáció közben találva**: az eredeti kódvázlat
+`INSERT ... RETURNING id`-t használt volna, hogy a tool visszaadja a létrehozott sor
+azonosítóját. **Kézi ellenőrzéssel** (nem feltételezésből) kiderült, hogy ez tévedés volt — a
+Postgres a `RETURNING`-ben olvasott oszlopokra `SELECT` jogot követel meg, ami a
+`plantbase_handoff` szerepkörön (J1, "SELECT-et sem lát") ténylegesen `permission denied`
+hibával bukott. Javítva: a `RETURNING` teljesen elhagyva — a tool `{status: 'pending'}`-et ad
+vissza azonosító nélkül, mert az agent-nek nincs is szüksége az id-re (a staff felület a saját,
+Prisma RW listázásán keresztül látja a pending sorokat). Ez a szigorúbb, tisztább megoldás: a
+szerepkör így **valóban, kivétel nélkül** képtelen bármit visszaolvasni, amit beírt — nem csak
+a `question`/`context`/`reason` tartalmát, hanem magát az `id`-t sem.
 
 Tervezett tartalom:
 
