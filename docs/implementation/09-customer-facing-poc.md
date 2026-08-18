@@ -235,7 +235,14 @@ megemlítve elérhető tool-ként), a `system-prompt.spec.ts` mintáján. `nx te
 **Commit:** `feat: add customer-facing system prompt`
 → megállok, kérem a tesztelést.
 
-### J4 — Naplózás bővítése (válaszidő, eszkaláció, perzóna) ⏳ Nyitott
+### J4 — Naplózás bővítése (válaszidő, eszkaláció, perzóna) ✅ KÉSZ
+
+A tervhez képest nem volt eltérés — az `askAgent()` `Date.now()`-os mérése és a
+`persona: 'internal'` hardkódolása pontosan a tervezett módon készült el. Valós,
+`plantbase ask`-os CLI-hívással ellenőrizve: a keletkezett `logs/*.jsonl` sor ténylegesen
+tartalmazza a `durationMs`/`persona` mezőket (`escalated` az `askAgent`-nél nem kerül
+kitöltésre — a belső toolkészletben nincs `requestHumanHandoff`, tehát sosem lehetne igaz;
+J5-től a `/api/customer/chat` tölti ki ténylegesen).
 
 Tervezett tartalom:
 
