@@ -1,7 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
+    "outDir": "../../dist/out-tsc/packages/core-spec",
     "types": [
       "vitest/globals",
       "vitest/importMeta",
