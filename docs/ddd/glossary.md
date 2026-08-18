@@ -53,3 +53,19 @@
   a `MAX_TOOL_ITERATIONS` korláton belül újrafogalmazott kérdéssel újra hívhatja a toolt.
 - **Ingest** — a cikkek egyszeri feldolgozási folyamata: beolvasás → chunkolás → embedding →
   RW-írás a `knowledge_chunks` táblába (F5).
+
+## Ügyfél-eszkaláció domain (`docs/implementation/09-customer-facing-poc.md`, J rész, HF5)
+
+- **Ügyfél (customer)** — a client webshopjának végfelhasználója, aki a `/customer` chaten
+  keresztül kérdez; nem azonos a lakberendezővel (aki a belső agent-felhasználó).
+- **Eszkaláció / humán jóváhagyási pont (handoff)** — az a pont, ahol az agent egy kérdést nem
+  válaszol meg közvetlenül, hanem emberi felülvizsgálatra küld (`requestHumanHandoff` tool),
+  mert bizonytalan (`searchKnowledge` `weak:true`) vagy a kérés a katalógus/gondozás hatókörén
+  kívül esik (egyedi/nagytételes rendelés, panasz).
+- **CustomerHandoff** — a `customer_handoffs` táblában rögzített, `pending` állapotú sor, amit
+  az eszkaláció létrehoz; ember hagyja jóvá vagy utasítja el a staff felületen, mielőtt bármi
+  eljutna az ügyfélhez.
+- **Insert-only szerepkör (`plantbase_handoff`)** — a customer-facing agent egyetlen írási
+  jogosultsága: kizárólag INSERT a `customer_handoffs` táblára, SELECT-et sem lát.
+- **Thread origin** — a `Thread.origin` mező (`'internal' | 'customer'`), ami elválasztja a
+  lakberendezői és az ügyfél-beszélgetéseket a megosztott `Thread`/`Message` táblákban.
