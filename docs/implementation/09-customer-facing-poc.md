@@ -102,19 +102,33 @@ Tervezett tartalom:
 - `.env.example`: új `DATABASE_URL_HANDOFF` blokk, a `DATABASE_URL_READONLY` kommentstílusát
   követve.
 - `packages/db/src/index.ts`: `CustomerHandoff` típus export a `Thread` mintájára.
-- `packages/core/src/infra/db-pool.spec.ts` (ÚJ vagy bővítve, ha már létezik): **automata**
-  integrációs teszt a helyi teszt-DB ellen — a `getHandoffPool()`-lal futtatott `SELECT *
-FROM customer_handoffs` jogosultsági hibával bukjon, egy `INSERT INTO customer_handoffs
-(...)` viszont sikerüljön. Ez a legérzékenyebb, biztonság-kritikus garancia a J részben
-  (az agent csak INSERT-elhet, SELECT-et sem lát), ezért ez sem maradhat kézi ellenőrzés —
-  a repo-konvenció szerint (`docs/dev-workflow.md`, minden bevezetett funkció automata
-  teszttel alátámasztva) ez a teszt zárja le a fázist, nem helyettesíti, hanem kiegészíti a
-  lenti kézi migrációs ellenőrzést.
+- `packages/core/src/infra/db-pool.integration.spec.ts` (ÚJ): **automata** integrációs
+  teszt a helyi teszt-DB ellen — a `getHandoffPool()`-lal futtatott `SELECT * FROM
+customer_handoffs` jogosultsági hibával bukjon, egy `INSERT INTO customer_handoffs (...)`
+  viszont sikerüljön. Ez a legérzékenyebb, biztonság-kritikus garancia a J részben (az agent
+  csak INSERT-elhet, SELECT-et sem lát), ezért ez sem maradhat kézi ellenőrzés.
+  **Fontos elhatárolás a meglévő tesztelési stratégiától** (`docs/testing-strategy.md`):
+  az ottani "Kimarad" lista explicit kimondja, hogy a **read-only** (`plantbase_ro`)
+  szerepkörre nincs és nem is lesz automatizált integrációs teszt — ez tudatos döntés
+  marad, ezt a fázis NEM bírálja felül. Az itt bevezetett teszt egy **másik, új réteg**
+  (a `testing-strategy.md`-ben már definiált, eddig egyetlen automatizált példány nélküli
+  "Integration" szint első tagja), és **nem** kerülhet a `packages/core`
+  `vitest.config.mts` alap `include` mintájába (`**/*.spec.ts`) — az minden más
+  `packages/core`-tesztet (és a `dev-workflow.md` szerinti `PostToolUse` Vitest-hookot)
+  valódi, futó Postgres nélkül, tisztán mockolva futtat, ezt nem szabad megtörni. Ezért:
+  külön fájlnév-minta (`*.integration.spec.ts`), kizárva a `vitest.config.mts` `include`
+  mintájából, saját Nx/npm script alá (`test:integration`), és env-őrzéssel (ha a
+  `DATABASE_URL_HANDOFF` nincs beállítva/DB nem elérhető, a teszt explicit skip-el, nem
+  hamis pirossal bukik).
+- `packages/core/vitest.config.mts`: `include` szűkítése úgy, hogy kizárja az
+  `*.integration.spec.ts` fájlokat az alap `test` targetből; `packages/core/package.json`:
+  új `test:integration` script, ami kifejezetten ezeket futtatja.
 
 **Teszt:** migráció ténylegesen lefut a helyi docker-compose Postgresen (kézi ellenőrzés);
-a fenti `db-pool.spec.ts` automatán igazolja a SELECT-tiltást/INSERT-engedélyt a
-`DATABASE_URL_HANDOFF` szerepkörön; `pnpm exec nx run-many -t build,typecheck,test,lint`
-zöld.
+a fenti `db-pool.integration.spec.ts` — külön, `test:integration` scripttel futtatva —
+automatán igazolja a SELECT-tiltást/INSERT-engedélyt a `DATABASE_URL_HANDOFF` szerepkörön;
+`pnpm exec nx run-many -t build,typecheck,test,lint` zöld (az alap `test` target
+változatlanul gyors és DB-független marad).
 **Commit:** `feat: add CustomerHandoff model and insert-only DB role`
 → megállok, kérem a tesztelést.
 
@@ -236,6 +250,13 @@ jóváhagyás-gomb hívja a megfelelő végpontot és frissíti a listát, a
 Tervezett tartalom:
 
 - `docs/architektura.md`: új, számozott döntés-bejegyzés a szűk írási kivételről.
+- `docs/testing-strategy.md`: a "Kimarad" lista pontosítása — a read-only (`plantbase_ro`)
+  szerepkörre vonatkozó tétel változatlanul marad (az továbbra sem automatizált, tudatos
+  döntés), de bekerül egy új mondat/tétel, hogy a J1-ben bevezetett INSERT-only
+  (`DATABASE_URL_HANDOFF`) szerepkörre **van** automata integrációs teszt
+  (`*.integration.spec.ts`, külön `test:integration` script, a `testing-strategy.md`
+  "Integration" szintjének első tényleges automatizált tagja) — enélkül a két dokumentum
+  (ez a fájl és a `testing-strategy.md`) ellentmondana egymásnak.
 - `README.md`: új szakasz a customer PoC-ról (mit csinál, megoldott/nem megoldott
   fájdalmak, előfeltételek, futtatás, hivatkozás a `docs/hf/hf5/`-re).
 - `docs/hf/hf5/HF5-megoldas.md`: use case összefoglaló, 3 megoldott + 7 nem megoldott
