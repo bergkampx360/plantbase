@@ -38,6 +38,18 @@ describe('SYSTEM_PROMPT_CUSTOMER', () => {
     expect(SYSTEM_PROMPT_CUSTOMER).toContain('tiltott gyakorlat');
   });
 
+  it('explicitly forbids claiming an escalation happened without actually calling the tool, regardless of turn count — live-testing found the model fabricating this claim by the 3rd turn of a conversation', () => {
+    expect(SYSTEM_PROMPT_CUSTOMER).toContain(
+      'a leírás sosem helyettesíti a tényleges hívást',
+    );
+    expect(SYSTEM_PROMPT_CUSTOMER).toContain(
+      'FÜGGETLEN attól, hányadik köre a beszélgetésnek',
+    );
+    expect(SYSTEM_PROMPT_CUSTOMER).toContain(
+      'a szöveg önmagában semmit nem küld el',
+    );
+  });
+
   it('stays in sync with docs/system-prompt-customer.md', () => {
     const docsPath = resolve(
       __dirname,
