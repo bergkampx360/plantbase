@@ -256,7 +256,33 @@ hogy a `durationMs`/`persona` ténylegesen átadódik. `nx test core` zöld.
 **Commit:** `feat: extend interaction logging with duration, escalation and persona fields`
 → megállok, kérem a tesztelést.
 
-### J5 — `apps/server`: ügyfél-chat és staff-jóváhagyási végpontok ⏳ Nyitott
+### J5 — `apps/server`: ügyfél-chat és staff-jóváhagyási végpontok ✅ KÉSZ
+
+**Valódi hibák a tervhez képest, implementáció közben találva** (nem csak feltételezésből,
+kézi `curl`-ellenőrzéssel is megerősítve):
+
+- **`req.body` `undefined`, nem `{}`, ha a POST body/Content-Type nélkül érkezik** —
+  `reviewHandoff` eredetileg közvetlenül destrukturálta a `req.body`-t, ami egy body nélküli
+  jóváhagyás-hívásnál (pl. a staff UI "Jóváhagyás" gombja, ha nem küld törzset) dobott, még
+  mielőtt a 404-ág lefutott volna. Javítva: `(req.body ?? {})`.
+- **Valódi, a build-cache-ben megbúvó race condition**: a `packages/core` és `packages/db`
+  `tsconfig.spec.json`-jai ugyanarra a megosztott `dist/out-tsc` mappára írtak (a
+  `tsconfig.lib.json`/`tsconfig.app.json` társaikkal ellentétben, amiket a G3-fázis már
+  saját almappára javított — `docs/implementation/06-web-chat.md`). Amikor az `nx run-many`
+  párhuzamosan typecheckelte a két projektet, a konkurens `tsc --build` írások összeütköztek —
+  az Nx maga jelezte ezt "flaky task"-ként (`core:typecheck`), a `server:typecheck` pedig
+  időszakosan "no exported member" hibával bukott olyan exportokra, amik ténylegesen léteztek.
+  Javítva: mindkét `tsconfig.spec.json` saját almappát kapott (`packages/core-spec`,
+  `packages/db-spec`); 3 egymást követő, hideg cache-es (`--skip-nx-cache`) teljes futtatással
+  megerősítve, hogy a race megszűnt.
+
+**Valós, élő végigfuttatás** (`nx serve server` + `curl`, valós Postgres és Anthropic API
+ellen, nem csak mockolt unit teszt): mindkét demó-ág működik — közvetlen `searchProducts`
+válasz (`escalated: false`, `persona: 'customer'` a keletkezett JSONL logban), és egy
+hatókörön kívüli kérés, ami ténylegesen `requestHumanHandoff`-ot hív (nem fabrikál választ),
+a sor megjelenik a `/api/handoffs`-on, jóváhagyás után `status: 'approved'`. Az ügyfél-thread
+sem a `GET /api/threads` listában, sem a `GET /api/threads/:id`-vel közvetlenül nem érhető el
+a belső oldalon (8. döntés, élesben megerősítve).
 
 Tervezett tartalom:
 

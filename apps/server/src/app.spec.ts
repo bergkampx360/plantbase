@@ -48,6 +48,9 @@ const {
   threadUpdateMock,
   messageFindManyMock,
   messageCreateMock,
+  handoffFindManyMock,
+  handoffFindUniqueMock,
+  handoffUpdateMock,
 } = vi.hoisted(() => ({
   threadFindManyMock: vi.fn(),
   threadFindUniqueMock: vi.fn(),
@@ -55,6 +58,9 @@ const {
   threadUpdateMock: vi.fn(),
   messageFindManyMock: vi.fn(),
   messageCreateMock: vi.fn(),
+  handoffFindManyMock: vi.fn(),
+  handoffFindUniqueMock: vi.fn(),
+  handoffUpdateMock: vi.fn(),
 }));
 
 vi.mock('@plantbase/db', () => ({
@@ -69,8 +75,25 @@ vi.mock('@plantbase/db', () => ({
       findMany: messageFindManyMock,
       create: messageCreateMock,
     },
+    customerHandoff: {
+      findMany: handoffFindManyMock,
+      findUnique: handoffFindUniqueMock,
+      update: handoffUpdateMock,
+    },
   },
 }));
+
+// logInteraction valódi fájlrendszer-hívást végezne (mkdir/appendFile a logs/ alá) — ez itt
+// az egyetlen dolog, amit a '@plantbase/core'-ból mockolni kell, minden más export (tool-ok,
+// system promptok) valós marad, mert azokat a mocked 'ai' `tool()` már ártalmatlanná teszi
+const { logInteractionMock } = vi.hoisted(() => ({
+  logInteractionMock: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@plantbase/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@plantbase/core')>();
+  return { ...actual, logInteraction: logInteractionMock };
+});
 
 import app from './app';
 
@@ -80,13 +103,28 @@ type ResponseMessage = { role: 'assistant'; parts: unknown[] };
 // responseMessage-t itt adja meg a teszt, az onFinish meghívása egy promise-t ad
 // vissza, amit a pipeUIMessageStreamToResponseMock (lásd fent) megvár, mielőtt
 // lezárja a választ, így a mentés determinisztikusan a válasz előtt fut le
-function streamResult(responseMessage: ResponseMessage) {
+type ToolCall = { toolName: string; input: unknown };
+type Step = { toolCalls: ToolCall[] };
+
+// steps/totalUsage/response csak a /api/customer/chat útvonalnak kell (logInteraction
+// hívásához, J5) — a meglévő /api/chat sosem olvassa ezeket, ezért az alapértékek
+// (üres steps, 0 token, üres response.messages) az ottani teszteket nem érintik
+function streamResult(
+  responseMessage: ResponseMessage,
+  options?: {
+    steps?: Step[];
+    totalUsage?: { inputTokens: number; outputTokens: number };
+  },
+) {
   return {
     toUIMessageStream: vi.fn(
-      (options: {
+      (streamOptions: {
         onFinish: (opts: { responseMessage: ResponseMessage }) => Promise<void>;
-      }) => Promise.resolve(options.onFinish({ responseMessage })),
+      }) => Promise.resolve(streamOptions.onFinish({ responseMessage })),
     ),
+    steps: options?.steps ?? [],
+    totalUsage: options?.totalUsage ?? { inputTokens: 20, outputTokens: 10 },
+    response: { messages: [responseMessage] },
   };
 }
 
@@ -99,10 +137,14 @@ beforeEach(() => {
   threadUpdateMock.mockReset();
   messageFindManyMock.mockReset();
   messageCreateMock.mockReset();
+  handoffFindManyMock.mockReset();
+  handoffFindUniqueMock.mockReset();
+  handoffUpdateMock.mockReset();
+  logInteractionMock.mockClear();
 });
 
 describe('GET /api/threads', () => {
-  it('returns the thread list ordered by updatedAt desc', async () => {
+  it('returns the thread list ordered by updatedAt desc, scoped to internal-origin threads', async () => {
     threadFindManyMock.mockResolvedValue([
       { id: 'a', createdAt: '2026-01-01', updatedAt: '2026-01-02' },
     ]);
@@ -114,15 +156,17 @@ describe('GET /api/threads', () => {
       { id: 'a', createdAt: '2026-01-01', updatedAt: '2026-01-02' },
     ]);
     expect(threadFindManyMock).toHaveBeenCalledWith({
+      where: { origin: 'internal' },
       orderBy: { updatedAt: 'desc' },
     });
   });
 });
 
 describe('GET /api/threads/:id', () => {
-  it('returns the thread with its messages when found', async () => {
+  it('returns the thread with its messages when found and internal-origin', async () => {
     threadFindUniqueMock.mockResolvedValue({
       id: 'a',
+      origin: 'internal',
       messages: [{ id: 1, role: 'user', content: 'szia' }],
     });
 
@@ -136,6 +180,18 @@ describe('GET /api/threads/:id', () => {
     threadFindUniqueMock.mockResolvedValue(null);
 
     const response = await request(app).get('/api/threads/missing');
+
+    expect(response.status).toBe(404);
+  });
+
+  it('returns 404 for a customer-origin thread — same as a nonexistent id, not just hidden from the list', async () => {
+    threadFindUniqueMock.mockResolvedValue({
+      id: 'customer-thread',
+      origin: 'customer',
+      messages: [],
+    });
+
+    const response = await request(app).get('/api/threads/customer-thread');
 
     expect(response.status).toBe(404);
   });
@@ -255,5 +311,197 @@ describe('POST /api/chat', () => {
         ]),
       }),
     );
+  });
+});
+
+describe('POST /api/customer/chat', () => {
+  const userMessage = {
+    id: 'msg-1',
+    role: 'user' as const,
+    parts: [{ type: 'text' as const, text: 'van akciós pozsgásuk?' }],
+  };
+
+  it('returns 400 when id is missing', async () => {
+    const response = await request(app)
+      .post('/api/customer/chat')
+      .send({ message: userMessage });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('returns 400 when the message has no text content', async () => {
+    const response = await request(app)
+      .post('/api/customer/chat')
+      .send({ id: 'thread-1', message: { id: 'm', role: 'user', parts: [] } });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('creates a new thread with origin "customer", using SYSTEM_PROMPT_CUSTOMER and the three customer-safe tools', async () => {
+    threadFindUniqueMock.mockResolvedValue(null);
+    streamTextMock.mockReturnValue(
+      streamResult({
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Igen, van!' }],
+      }),
+    );
+
+    const response = await request(app)
+      .post('/api/customer/chat')
+      .send({ id: 'customer-thread', message: userMessage });
+
+    expect(response.status).toBe(200);
+    expect(threadCreateMock).toHaveBeenCalledWith({
+      data: {
+        id: 'customer-thread',
+        title: 'Kaktusz-ajánlás',
+        origin: 'customer',
+      },
+    });
+
+    const call = streamTextMock.mock.calls[0][0];
+    expect(Object.keys(call.tools)).toEqual([
+      'searchProducts',
+      'searchKnowledge',
+      'requestHumanHandoff',
+    ]);
+  });
+
+  it('logs the interaction with escalated: false and persona: "customer" when requestHumanHandoff was not called', async () => {
+    threadFindUniqueMock.mockResolvedValue({ id: 'customer-thread' });
+    messageFindManyMock.mockResolvedValue([]);
+    streamTextMock.mockReturnValue(
+      streamResult(
+        { role: 'assistant', parts: [{ type: 'text', text: 'válasz' }] },
+        { steps: [{ toolCalls: [{ toolName: 'searchProducts', input: {} }] }] },
+      ),
+    );
+
+    await request(app)
+      .post('/api/customer/chat')
+      .send({ id: 'customer-thread', message: userMessage });
+
+    expect(logInteractionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ escalated: false, persona: 'customer' }),
+    );
+  });
+
+  it('logs escalated: true when requestHumanHandoff was called among the steps', async () => {
+    threadFindUniqueMock.mockResolvedValue({ id: 'customer-thread' });
+    messageFindManyMock.mockResolvedValue([]);
+    streamTextMock.mockReturnValue(
+      streamResult(
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'Kollégának továbbítottam.' }],
+        },
+        {
+          steps: [
+            { toolCalls: [{ toolName: 'searchKnowledge', input: {} }] },
+            {
+              toolCalls: [
+                {
+                  toolName: 'requestHumanHandoff',
+                  input: { reason: 'out_of_scope' },
+                },
+              ],
+            },
+          ],
+        },
+      ),
+    );
+
+    await request(app)
+      .post('/api/customer/chat')
+      .send({ id: 'customer-thread', message: userMessage });
+
+    expect(logInteractionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ escalated: true, persona: 'customer' }),
+    );
+  });
+});
+
+describe('GET /api/handoffs', () => {
+  it('defaults to status: pending when no query param is given', async () => {
+    handoffFindManyMock.mockResolvedValue([{ id: 1, status: 'pending' }]);
+
+    const response = await request(app).get('/api/handoffs');
+
+    expect(response.status).toBe(200);
+    expect(handoffFindManyMock).toHaveBeenCalledWith({
+      where: { status: 'pending' },
+      orderBy: { createdAt: 'asc' },
+    });
+  });
+
+  it('honors an explicit status query param', async () => {
+    handoffFindManyMock.mockResolvedValue([]);
+
+    await request(app).get('/api/handoffs?status=approved');
+
+    expect(handoffFindManyMock).toHaveBeenCalledWith({
+      where: { status: 'approved' },
+      orderBy: { createdAt: 'asc' },
+    });
+  });
+});
+
+describe('POST /api/handoffs/:id/approve and /reject', () => {
+  it('returns 400 for a non-numeric id', async () => {
+    const response = await request(app).post(
+      '/api/handoffs/not-a-number/approve',
+    );
+
+    expect(response.status).toBe(400);
+    expect(handoffFindUniqueMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when the handoff does not exist', async () => {
+    handoffFindUniqueMock.mockResolvedValue(null);
+
+    const response = await request(app).post('/api/handoffs/999/approve');
+
+    expect(response.status).toBe(404);
+    expect(handoffUpdateMock).not.toHaveBeenCalled();
+  });
+
+  it('approves a pending handoff and stamps reviewer/reviewedAt', async () => {
+    handoffFindUniqueMock.mockResolvedValue({ id: 1, status: 'pending' });
+    handoffUpdateMock.mockResolvedValue({ id: 1, status: 'approved' });
+
+    const response = await request(app)
+      .post('/api/handoffs/1/approve')
+      .send({ reviewer: 'anna@plantbase.hu' });
+
+    expect(response.status).toBe(200);
+    expect(handoffUpdateMock).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: {
+        status: 'approved',
+        reviewer: 'anna@plantbase.hu',
+        reviewNote: null,
+        reviewedAt: expect.any(Date),
+      },
+    });
+  });
+
+  it('rejects a pending handoff with a review note', async () => {
+    handoffFindUniqueMock.mockResolvedValue({ id: 2, status: 'pending' });
+    handoffUpdateMock.mockResolvedValue({ id: 2, status: 'rejected' });
+
+    const response = await request(app)
+      .post('/api/handoffs/2/reject')
+      .send({ reviewNote: 'duplikált kérés' });
+
+    expect(response.status).toBe(200);
+    expect(handoffUpdateMock).toHaveBeenCalledWith({
+      where: { id: 2 },
+      data: {
+        status: 'rejected',
+        reviewer: null,
+        reviewNote: 'duplikált kérés',
+        reviewedAt: expect.any(Date),
+      },
+    });
   });
 });

@@ -10,3 +10,5 @@ export { SEARCH_PRODUCTS_TOOL } from './tools/search-products';
 export { SYSTEM_PROMPT } from './agent/system-prompt';
 export { SYSTEM_PROMPT_CUSTOMER } from './agent/system-prompt-customer';
 export { generateThreadTitle } from './agent/title-agent';
+export { logInteraction } from './infra/log-interaction';
+export type { InteractionLog } from './infra/log-interaction';
