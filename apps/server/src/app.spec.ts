@@ -312,6 +312,81 @@ describe('POST /api/chat', () => {
       }),
     );
   });
+
+  it('reconstructs a prior assistant message from its stored parts (with a real tool call), not just its flattened content — regression test for a live bug where the model stopped calling tools by turn 2-3 because it only ever saw its own past answers as plain text', async () => {
+    threadFindUniqueMock.mockResolvedValue({ id: 'existing-thread' });
+    const priorAssistantParts = [
+      {
+        type: 'tool-searchKnowledge',
+        toolCallId: 'call-1',
+        state: 'output-available',
+        input: { query: 'sárguló levél' },
+        output: '{"weak":false}',
+      },
+      { type: 'text', text: 'korábbi válasz forrással' },
+    ];
+    messageFindManyMock.mockResolvedValue([
+      {
+        id: 1,
+        threadId: 'existing-thread',
+        role: 'assistant',
+        content: 'korábbi válasz forrással',
+        parts: priorAssistantParts,
+      },
+    ]);
+    streamTextMock.mockReturnValue(
+      streamResult({
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'folytatás' }],
+      }),
+    );
+
+    await request(app)
+      .post('/api/chat')
+      .send({ id: 'existing-thread', message: userMessage });
+
+    expect(streamTextMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: expect.arrayContaining([
+          expect.objectContaining({
+            role: 'assistant',
+            parts: priorAssistantParts,
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it('falls back to content-only text for a pre-H4 prior message with no stored parts', async () => {
+    threadFindUniqueMock.mockResolvedValue({ id: 'existing-thread' });
+    messageFindManyMock.mockResolvedValue([
+      {
+        id: 1,
+        threadId: 'existing-thread',
+        role: 'assistant',
+        content: 'régi, parts nélküli válasz',
+        parts: null,
+      },
+    ]);
+    streamTextMock.mockReturnValue(
+      streamResult({ role: 'assistant', parts: [{ type: 'text', text: 'x' }] }),
+    );
+
+    await request(app)
+      .post('/api/chat')
+      .send({ id: 'existing-thread', message: userMessage });
+
+    expect(streamTextMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: expect.arrayContaining([
+          expect.objectContaining({
+            role: 'assistant',
+            parts: [{ type: 'text', text: 'régi, parts nélküli válasz' }],
+          }),
+        ]),
+      }),
+    );
+  });
 });
 
 describe('POST /api/customer/chat', () => {
