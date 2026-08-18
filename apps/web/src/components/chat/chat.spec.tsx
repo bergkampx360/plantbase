@@ -134,4 +134,37 @@ describe('Chat', () => {
     // a use-stick-to-bottom belső scroll-fizikáját magát nem kell újratesztelni
     expect(screen.getByRole('log')).toBeInTheDocument();
   });
+
+  it('defaults to the internal /api/chat endpoint and "Plantbase" title when apiUrl/title are not given', () => {
+    useChatMock.mockReturnValue({ messages: [], sendMessage, status: 'ready' });
+
+    render(<Chat id="thread-1" initialMessages={[]} />);
+
+    expect(
+      screen.getByRole('heading', { name: /Plantbase/ }),
+    ).toBeInTheDocument();
+    const transport = useChatMock.mock.calls[0][0].transport;
+    expect(transport.api).toBe('http://localhost:3001/api/chat');
+  });
+
+  it('uses the given apiUrl/title when provided (J6, customer-app.tsx)', () => {
+    useChatMock.mockReturnValue({ messages: [], sendMessage, status: 'ready' });
+
+    render(
+      <Chat
+        id="thread-1"
+        initialMessages={[]}
+        apiUrl="http://localhost:3001/api/customer/chat"
+        title="Plantbase — Ügyfélszolgálati asszisztens"
+      />,
+    );
+
+    expect(
+      screen.getByRole('heading', {
+        name: /Ügyfélszolgálati asszisztens/,
+      }),
+    ).toBeInTheDocument();
+    const transport = useChatMock.mock.calls[0][0].transport;
+    expect(transport.api).toBe('http://localhost:3001/api/customer/chat');
+  });
 });
