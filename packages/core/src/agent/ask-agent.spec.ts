@@ -175,6 +175,23 @@ describe('askAgent', () => {
     );
   });
 
+  it('logs a non-negative durationMs and the internal persona (J4)', async () => {
+    streamTextMock.mockReturnValue(
+      streamResult({ text: 'válasz', responseMessages: [] }),
+    );
+
+    await askAgent('kérdés');
+
+    expect(mockedLogInteraction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        durationMs: expect.any(Number),
+        persona: 'internal',
+      }),
+    );
+    const loggedDurationMs = mockedLogInteraction.mock.calls[0][0].durationMs;
+    expect(loggedDurationMs).toBeGreaterThanOrEqual(0);
+  });
+
   it('falls back to 0 token usage when the SDK reports undefined counts', async () => {
     streamTextMock.mockReturnValue({
       text: 'válasz',

@@ -8,6 +8,12 @@ export interface InteractionLog {
   answer: string;
   tokenUsage: { inputTokens: number; outputTokens: number };
   generatedSql?: string;
+  // J4 (HF5, docs/implementation/09-customer-facing-poc.md) — additív, opcionális mezők a
+  // mérési tervhez: válaszidő és eszkalációs arány valós adatforrása, új infrastruktúra
+  // nélkül. Régi log-sorokban (J4 előtt) nincsenek, ezért mindhárom opcionális.
+  durationMs?: number;
+  escalated?: boolean;
+  persona?: 'internal' | 'customer';
 }
 
 export async function logInteraction(log: InteractionLog): Promise<void> {
