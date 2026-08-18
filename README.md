@@ -46,27 +46,28 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 
 ## Dokumentáció
 
-| Dokumentum                                                       | Miről szól                                                                          |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| [`docs/brs-plantbase.md`](docs/brs-plantbase.md)                 | Üzleti igény, megoldás, scope, követelmények, ROI-keret                             |
-| [`docs/roi.md`](docs/roi.md)                                     | ROI-levezetés pénzben, 5 fős iroda szintjén                                         |
-| [`docs/stack.md`](docs/stack.md)                                 | Tech stack, `products` séma                                                         |
-| [`docs/architektura.md`](docs/architektura.md)                   | Tervezett fájlstruktúra, kulcs technológiai döntések                                |
-| [`docs/konvenciok.md`](docs/konvenciok.md)                       | Kódkonvenciók (naming, TypeScript, hibakezelés, tesztelés)                          |
-| [`docs/testing-strategy.md`](docs/testing-strategy.md)           | Plantbase-specifikus automata tesztelési stratégia (unit/integration/E2E, coverage) |
-| [`docs/dev-workflow.md`](docs/dev-workflow.md)                   | Git-szabályok, hookok, dokumentáció-frissítés                                       |
-| [`docs/system-prompt.md`](docs/system-prompt.md)                 | Az agent system promptja                                                            |
-| [`docs/implementation/STATUS.md`](docs/implementation/STATUS.md) | Implementációs tervek státusz-indexe (kanonikus, innen linkelve minden rész-terv)   |
-| [`docs/plugin-valasztasok.md`](docs/plugin-valasztasok.md)       | Marketplace plugin és MCP szerver választások indoklása                             |
-| [`docs/rag-pipeline.md`](docs/rag-pipeline.md)                   | RAG chunking-stratégia, golden-set kiértékelés, költségbecslés (F4/F7/F9)           |
-| [`docs/rag-architektura.md`](docs/rag-architektura.md)           | RAG karbantartási architektúra-terv (hash-alapú sync, F8)                           |
-| [`docs/hf3-megfeleles.md`](docs/hf3-megfeleles.md)               | HF3 megfelelőségi összefoglaló — kereszthivatkozások + eltérések indoklással        |
-| [`docs/ddd/glossary.md`](docs/ddd/glossary.md)                   | Ubiquitous language (termék-katalógus + RAG domain fogalmak)                        |
-| [`docs/ddd/model.md`](docs/ddd/model.md)                         | Entitások, value objectek, aggregátumok                                             |
-| [`docs/tech/infra.md`](docs/tech/infra.md)                       | Postgres/pgvector infra, a két DB-kapcsolat (RO/RW)                                 |
-| [`docs/tech/architecture.md`](docs/tech/architecture.md)         | `packages/core`/`apps/cli`/`apps/server`/`apps/web` felosztás, `rag/` réteg         |
-| [`docs/tech/api.md`](docs/tech/api.md)                           | Tool/CLI felület + HTTP-felület (`/api/chat`, `/api/threads`)                       |
-| [`CLAUDE.md`](CLAUDE.md)                                         | Claude Code-nak szóló projekt-instrukciók                                           |
+| Dokumentum                                                         | Miről szól                                                                          |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| [`docs/brs-plantbase.md`](docs/brs-plantbase.md)                   | Üzleti igény, megoldás, scope, követelmények, ROI-keret                             |
+| [`docs/roi.md`](docs/roi.md)                                       | ROI-levezetés pénzben, 5 fős iroda szintjén                                         |
+| [`docs/stack.md`](docs/stack.md)                                   | Tech stack, `products` séma                                                         |
+| [`docs/architektura.md`](docs/architektura.md)                     | Tervezett fájlstruktúra, kulcs technológiai döntések                                |
+| [`docs/konvenciok.md`](docs/konvenciok.md)                         | Kódkonvenciók (naming, TypeScript, hibakezelés, tesztelés)                          |
+| [`docs/testing-strategy.md`](docs/testing-strategy.md)             | Plantbase-specifikus automata tesztelési stratégia (unit/integration/E2E, coverage) |
+| [`docs/dev-workflow.md`](docs/dev-workflow.md)                     | Git-szabályok, hookok, dokumentáció-frissítés                                       |
+| [`docs/system-prompt.md`](docs/system-prompt.md)                   | A belső (lakberendezői) agent system promptja                                       |
+| [`docs/system-prompt-customer.md`](docs/system-prompt-customer.md) | Az ügyfélirányú (customer) agent system promptja (J3, HF5)                          |
+| [`docs/implementation/STATUS.md`](docs/implementation/STATUS.md)   | Implementációs tervek státusz-indexe (kanonikus, innen linkelve minden rész-terv)   |
+| [`docs/plugin-valasztasok.md`](docs/plugin-valasztasok.md)         | Marketplace plugin és MCP szerver választások indoklása                             |
+| [`docs/rag-pipeline.md`](docs/rag-pipeline.md)                     | RAG chunking-stratégia, golden-set kiértékelés, költségbecslés (F4/F7/F9)           |
+| [`docs/rag-architektura.md`](docs/rag-architektura.md)             | RAG karbantartási architektúra-terv (hash-alapú sync, F8)                           |
+| [`docs/hf3-megfeleles.md`](docs/hf3-megfeleles.md)                 | HF3 megfelelőségi összefoglaló — kereszthivatkozások + eltérések indoklással        |
+| [`docs/ddd/glossary.md`](docs/ddd/glossary.md)                     | Ubiquitous language (termék-katalógus + RAG domain fogalmak)                        |
+| [`docs/ddd/model.md`](docs/ddd/model.md)                           | Entitások, value objectek, aggregátumok                                             |
+| [`docs/tech/infra.md`](docs/tech/infra.md)                         | Postgres/pgvector infra, a két DB-kapcsolat (RO/RW)                                 |
+| [`docs/tech/architecture.md`](docs/tech/architecture.md)           | `packages/core`/`apps/cli`/`apps/server`/`apps/web` felosztás, `rag/` réteg         |
+| [`docs/tech/api.md`](docs/tech/api.md)                             | Tool/CLI felület + HTTP-felület (`/api/chat`, `/api/threads`)                       |
+| [`CLAUDE.md`](CLAUDE.md)                                           | Claude Code-nak szóló projekt-instrukciók                                           |
 
 ## Helyi fejlesztői környezet
 
