@@ -71,6 +71,13 @@ hiba-metrikát (a nem-eszkalált, de utólag hibásnak bizonyuló válaszok ará
 tartósan magas, az arra utal, hogy a rendszer túl magabiztos, és szigorítani kell az
 eszkalációs szabályon.
 
+**Kapcsolódó pont a HF4-hez:** a fenti válaszok több pontja (AI-jelzés, nincs
+sürgetés/nyomásgyakorlás, emberi jóváhagyás) nem utólagos ötlet, hanem annak a
+kockázatnak a tudatos kezelése, amit a HF4-es AI Act-elemzésem saját maga jelzett
+előre — hogy a belső chat-felület ügyfelekre való kiterjesztése, meggyőzési/sürgetési
+mintázattal párosulva, a legszigorúbb szabályozási kategóriába ugratná a rendszert.
+Részletesen: `HF5-megoldas.md`, "Kapcsolódás a HF4-hez" szakasz.
+
 ## A két saját, kényes kérdés
 
 **7. Mi történik, ha valaki csak a chat-ablakon keresztül, más vásárlónak kiadva magát,

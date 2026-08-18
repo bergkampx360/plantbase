@@ -17,15 +17,30 @@ Az új felület egy 24/7 elérhető ügyfél-chat (`/customer`), ami:
    jóváhagyási pont**: semmi nem jut el az ügyfélhez addig, amíg egy munkatárs jóvá nem
    hagyja a `/staff/handoffs` felületen.
 
+### Kapcsolódás a HF4-hez: egy tudatosan kezelt kockázat
+
+A HF4-es AI Act-elemzésem saját maga jelezte előre ezt a lépést mint kockázat-ugrató
+tényezőt: ha a meglévő, addig csak belső webes chat-felületet valaha kiterjesztjük az
+ügyfelekre, és a válaszok meggyőzési/sürgetési mintázatot tartalmaznának, az a
+legszigorúbb szabályozási kategóriába (tiltott gyakorlat) ugratná a rendszert — és
+kifejezetten megjegyeztem, hogy ez nem elméleti, hanem közeli határeset, mert a technikai
+alap (a webes UI) már készen állt. Ez a HF5 pontosan ez a lépés. Ezért a rendszer
+tudatosan két konkrét védelmet épített be, nem utólag, hanem a tervezés részeként: az
+ügyfél-chat mindig, állandóan jelzi, hogy AI-asszisztenssel beszélget a vásárló (nem élő
+munkatárssal), és a rendszer-utasítás explicit tiltja a mesterséges sürgetést/nyomásgyakorlást
+("csak ma", "utolsó darab" jellegű megfogalmazásokat), akkor is, ha egy adott állítás
+igaz lenne. Az emberi jóváhagyási pont ezen felül egy második védelmi réteg: minden olyan
+esetben, ami ítélőképességet igényelne, a rendszer nem is próbál meg maga dönteni.
+
 ## 2. Melyik fájdalmakat oldja meg — és melyiket nem
 
 A cégvezető tíz fájdalma közül ez a PoC hármat old meg ténylegesen:
 
-| # | Fájdalom | Hogyan oldja meg |
-| - | -------- | ----------------- |
-| 1 | Munkaidőn kívül nincs válasz | A chat 24/7 elérhető, nem staff-órákhoz kötött. |
-| 2 | Ugyanazokat a kérdéseket válaszoljuk meg naponta százszor | A termék- és gondozási kérdések nagy része (méret, ár, fényigény, öntözés, gyakori betegségtünetek) közvetlenül, emberi beavatkozás nélkül megválaszolható. |
-| 8 | A sürgős ügy ugyanabban a sorban áll, mint a triviális | Az emberi jóváhagyási pont ténylegesen **külön sorba** tereli azt, amit a rendszer nem tud vagy nem szabad megválaszolnia — a staff nem az összes bejövő üzenetet nézi végig, csak azokat, amik tényleg eldöntést igényelnek. |
+| #   | Fájdalom                                                  | Hogyan oldja meg                                                                                                                                                                                                              |
+| --- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Munkaidőn kívül nincs válasz                              | A chat 24/7 elérhető, nem staff-órákhoz kötött.                                                                                                                                                                               |
+| 2   | Ugyanazokat a kérdéseket válaszoljuk meg naponta százszor | A termék- és gondozási kérdések nagy része (méret, ár, fényigény, öntözés, gyakori betegségtünetek) közvetlenül, emberi beavatkozás nélkül megválaszolható.                                                                   |
+| 8   | A sürgős ügy ugyanabban a sorban áll, mint a triviális    | Az emberi jóváhagyási pont ténylegesen **külön sorba** tereli azt, amit a rendszer nem tud vagy nem szabad megválaszolnia — a staff nem az összes bejövő üzenetet nézi végig, csak azokat, amik tényleg eldöntést igényelnek. |
 
 **Amit ez a PoC kifejezetten NEM old meg:**
 

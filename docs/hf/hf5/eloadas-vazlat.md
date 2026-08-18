@@ -37,6 +37,10 @@
   küldi egy munkatársnak, és semmi nem jut el a vásárlóhoz addig, amíg valaki jóvá nem hagyja.
 - Élő demó: mindkét út valós adaton, élőben generált válasszal fut, nincs előre megírt
   szöveg.
+- **Beépített védelem, nem utólagos ötlet:** a chat mindig jelzi, hogy AI-asszisztenssel
+  beszélgetünk, és a rendszer explicit tiltja a mesterséges sürgetést/nyomásgyakorlást —
+  ez pontosan az a kockázat, amit a korábbi AI Act-elemzésünk (HF4) már jelzett, ha
+  valaha kiterjesztjük a webes felületet az ügyfelekre.
 
 ## 4. dia — Adattérkép (kötelező dia)
 
