@@ -43,6 +43,38 @@ function extractText(message: UIMessage): string {
     .join('');
 }
 
+function isUIMessageParts(value: unknown): value is UIMessage['parts'] {
+  return Array.isArray(value) && value.length > 0;
+}
+
+// Valódi hiba javítása (nem csak elméleti kockázat — élő, több-körös teszttel derült ki):
+// korábban mindkét chat-route a priorMessages-t `{ type: 'text', text: m.content }}`-ra
+// laposította, EL NEM olvasva a H4 óta tárolt Message.parts mezőt — a modell így a saját
+// korábbi tool-hívásait sosem látta vissza a history-ban, csak a végső szöveget. Több körös
+// beszélgetésben ez oda vezetett, hogy a modell a 2-3. körtől kezdve MAGA IS csak szöveget
+// generált valódi tool-hívás nélkül (pl. "Ezt a kérést kollégának továbbítottam", miközben a
+// requestHumanHandoff tool ténylegesen sosem futott le) — a látott minta alapján úgy tűnt,
+// mintha a tool-hívás elhagyása lenne az elvárt válasz-alak. Ugyanaz a fallback-logika, mint
+// a kliens-oldali toUIMessages()-ben (apps/web/src/app/app.tsx): ha van tárolt parts (nem
+// null, nem üres tömb), azt használjuk; a H4 előtti, parts nélküli soroknál content-only
+// szöveges part marad az egyetlen forrás.
+function priorMessagesToUIMessages(
+  priorMessages: {
+    id: number;
+    role: string;
+    content: string;
+    parts: unknown;
+  }[],
+): UIMessage[] {
+  return priorMessages.map((m) => ({
+    id: String(m.id),
+    role: m.role as 'user' | 'assistant',
+    parts: isUIMessageParts(m.parts)
+      ? m.parts
+      : [{ type: 'text', text: m.content }],
+  }));
+}
+
 // origin: 'internal' szűrés (J5, docs/implementation/09-customer-facing-poc.md, 8. döntés) —
 // enélkül a /api/customer/chat által létrehozott ügyfél-threadek megkülönböztetés nélkül
 // bekerülnének a belső ThreadSidebar listájába. A meglévő belső hívó viselkedése változatlan
@@ -119,11 +151,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
   });
 
   const uiMessages: UIMessage[] = [
-    ...priorMessages.map((m): UIMessage => ({
-      id: String(m.id),
-      role: m.role as 'user' | 'assistant',
-      parts: [{ type: 'text', text: m.content }],
-    })),
+    ...priorMessagesToUIMessages(priorMessages),
     message,
   ];
 
@@ -212,11 +240,7 @@ app.post('/api/customer/chat', async (req: Request, res: Response) => {
   });
 
   const uiMessages: UIMessage[] = [
-    ...priorMessages.map((m): UIMessage => ({
-      id: String(m.id),
-      role: m.role as 'user' | 'assistant',
-      parts: [{ type: 'text', text: m.content }],
-    })),
+    ...priorMessagesToUIMessages(priorMessages),
     message,
   ];
 
