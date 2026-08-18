@@ -66,6 +66,11 @@
   az eszkaláció létrehoz; ember hagyja jóvá vagy utasítja el a staff felületen, mielőtt bármi
   eljutna az ügyfélhez.
 - **Insert-only szerepkör (`plantbase_handoff`)** — a customer-facing agent egyetlen írási
-  jogosultsága: kizárólag INSERT a `customer_handoffs` táblára, SELECT-et sem lát.
+  jogosultsága: kizárólag INSERT a `customer_handoffs` táblára, SELECT-et sem lát (még a
+  saját beírt sorát sem tudja visszaolvasni — a tool nem is kér `RETURNING`-et).
+- **searchProducts** — ügyfél-biztonságos, whitelistelt szűrőkkel (kategória, fény-/öntözési
+  igény, nehézségi szint, háziállat-/gyerekbiztonság, légtisztító hatás, maximum ár)
+  paraméterezett termékkeresés a RO poolon; a customer-facing perzóna ezt kapja a belső
+  `runSql` helyett, hogy szabad SQL-generálás sosem legyen elérhető egy publikus felületről.
 - **Thread origin** — a `Thread.origin` mező (`'internal' | 'customer'`), ami elválasztja a
   lakberendezői és az ügyfél-beszélgetéseket a megosztott `Thread`/`Message` táblákban.
