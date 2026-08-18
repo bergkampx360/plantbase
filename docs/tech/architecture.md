@@ -14,10 +14,15 @@ Nem ismeri a belépési pontokat (`apps/*`); csak `packages/db`-re hivatkozhat (
 packages/core/src/
 ├── index.ts               a csomag publikus felülete (askAgent, MAX_TOOL_ITERATIONS, resolveModel,
 │                           RUN_SQL_TOOL, LIST_CATEGORIES_TOOL, SEARCH_KNOWLEDGE_TOOL, SYSTEM_PROMPT,
-│                           generateThreadTitle, J2-től REQUEST_HUMAN_HANDOFF_TOOL, SEARCH_PRODUCTS_TOOL)
+│                           generateThreadTitle, J2-től REQUEST_HUMAN_HANDOFF_TOOL, SEARCH_PRODUCTS_TOOL,
+│                           J3-tól SYSTEM_PROMPT_CUSTOMER)
 ├── agent/                 agent-orkesztráció (I1, docs/implementation/08-source-structure-refactor.md)
 │   ├── ask-agent.ts        az askAgent (Vercel ai SDK streamText+tool()+stopWhen, G1, MAX_TOOL_ITERATIONS=5)
 │   ├── system-prompt.ts    az élő system prompt (SYSTEM_PROMPT konstans) — docs/system-prompt.md szinkronban tartva
+│   ├── system-prompt-customer.ts az ügyfél-facing system prompt (J3, SYSTEM_PROMPT_CUSTOMER) —
+│   │                       docs/system-prompt-customer.md szinkronban tartva; nincs SQL-generálás
+│   │                       (nincs runSql tool ennél a perzónánál), whitelistelt searchProducts-
+│   │                       szűrők + explicit eszkalációs szabály (requestHumanHandoff)
 │   └── title-agent.ts      generateThreadTitle() — a hyde.ts mintáját követő, egyszerű generateText
 │                           hívás, szál-cím rövid összefoglalása az első kérdésből (H3)
 ├── tools/                 az agent-nek felkínált tool-definíciók (I1)

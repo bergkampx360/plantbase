@@ -204,7 +204,20 @@ validációs hibaágak, hibás input, a meglévő tool-spec-ek lefedettségi min
 **Commit:** `feat: add requestHumanHandoff and searchProducts customer tools`
 → megállok, kérem a tesztelést.
 
-### J3 — Ügyfél-rendszerprompt ⏳ Nyitott
+### J3 — Ügyfél-rendszerprompt ✅ KÉSZ
+
+**Valódi eltérés a tervhez képest, implementáció közben találva**: az első teszt-verzió
+`.not.toContain('runSql')` assertion-nel próbálta ellenőrizni, hogy a `runSql` tool nem
+elérhető az ügyfél-perzónának — ez tévesen bukott, mert a prompt szándékosan **megnevezi** a
+`runSql`-t, hogy kimondja, hogy NINCS ("nincs runSql tool, SOSEM generálj SQL-t") — ez a
+kizárás explicit kimondása, nem a szó hiánya. Javítva: az assertion azt ellenőrzi, hogy a
+`runSql(` hívási alak (tool-deklaráció mintája) nem szerepel, plusz hogy a kizáró mondat
+ténylegesen jelen van — ez pontosabban méri azt, amit valójában garantálni akarunk.
+
+A `docs/system-prompt-customer.md` mirror-fájl a `docs/system-prompt.md` mintáját követi
+(szinkron-teszt a `.spec.ts`-ben), de **egyszerűbb formában**: mivel a customer promptban
+nincs beágyazott \`\`\`sql kódblokk (nincs SQL-generálás), nem kellett a belső promptnál
+használt 4↔3-backtick trükk — egyetlen \`\`\`xml fence elég.
 
 Tervezett tartalom:
 

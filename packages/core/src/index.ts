@@ -8,4 +8,5 @@ export { SEARCH_KNOWLEDGE_TOOL } from './tools/search-knowledge';
 export { REQUEST_HUMAN_HANDOFF_TOOL } from './tools/request-human-handoff';
 export { SEARCH_PRODUCTS_TOOL } from './tools/search-products';
 export { SYSTEM_PROMPT } from './agent/system-prompt';
+export { SYSTEM_PROMPT_CUSTOMER } from './agent/system-prompt-customer';
 export { generateThreadTitle } from './agent/title-agent';
