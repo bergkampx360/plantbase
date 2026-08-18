@@ -64,6 +64,16 @@ konzisztens, de ez nem javítja az emberi stáb közti eltérést), #10 (churn-e
 7. **Nincs ügyfél-azonosítás/session-modell** — ezt explicit "nem része a rendszernek"
    pontként dokumentáljuk (README, kérdéslap), nem próbáljuk meg pótlólag, hitelesítés
    nélküli demó-célra épített PoC-ként.
+8. **A `Thread` modell kap egy `origin` mezőt (`'internal' | 'customer'`, default
+   `'internal'`)** — enélkül a `GET /api/threads` (amit a belső `ThreadSidebar` hív)
+   szűrés nélkül **minden** threadet visszaadna, tehát az ügyfél-beszélgetések
+   megkülönböztetés nélkül megjelennének a lakberendező "korábbi beszélgetések"
+   listájában, mert a J5-ös `/api/customer/chat` ugyanazt a `Thread`/`Message` táblát
+   használja (nincs külön ügyfél-tábla, ld. 7. döntés). A `POST /api/customer/chat`
+   `origin: 'customer'`-rel hozza létre a threadet; a `GET /api/threads` alapértelmezésben
+   (query nélkül, a meglévő belső hívó viselkedése változatlan marad) csak
+   `origin: 'internal'`-t ad vissza — ez a valódi elhatárolás a két felhasználói kör
+   előzményei között, nem csak dokumentált korlátozás.
 
 ---
 
@@ -82,18 +92,29 @@ Tervezett tartalom:
   `context?`, `reason` enum-jellegű string, `draftReply?`, `status` default `pending`,
   `reviewer?`, `reviewNote?`, `createdAt`, `reviewedAt?`), `@@map("customer_handoffs")`,
   dokumentáló komment a `Thread`/`KnowledgeChunk` stílusában (miért ez az egyetlen írási
-  kivétel).
-- Migráció (`prisma migrate dev --name add_customer_handoff`).
+  kivétel). Ugyanitt a `Thread` modell bővítése egy `origin` mezővel (`String`, default
+  `"internal"`, `@map("origin")`) — ld. 8. döntés: enélkül a J6-os ügyfél-chat threadjei
+  megkülönböztetés nélkül bekerülnének a belső `GET /api/threads` listába.
+- Migráció (`prisma migrate dev --name add_customer_handoff_and_thread_origin`).
 - `db-role-setup` skill bővítése: új szerepkör, ami kizárólag INSERT-et kap a
   `customer_handoffs` táblára (a `plantbase_ro` létrehozásának mintájára), skill
   újrafuttatása a helyi Postgresen.
 - `.env.example`: új `DATABASE_URL_HANDOFF` blokk, a `DATABASE_URL_READONLY` kommentstílusát
   követve.
 - `packages/db/src/index.ts`: `CustomerHandoff` típus export a `Thread` mintájára.
+- `packages/core/src/infra/db-pool.spec.ts` (ÚJ vagy bővítve, ha már létezik): **automata**
+  integrációs teszt a helyi teszt-DB ellen — a `getHandoffPool()`-lal futtatott `SELECT *
+FROM customer_handoffs` jogosultsági hibával bukjon, egy `INSERT INTO customer_handoffs
+(...)` viszont sikerüljön. Ez a legérzékenyebb, biztonság-kritikus garancia a J részben
+  (az agent csak INSERT-elhet, SELECT-et sem lát), ezért ez sem maradhat kézi ellenőrzés —
+  a repo-konvenció szerint (`docs/dev-workflow.md`, minden bevezetett funkció automata
+  teszttel alátámasztva) ez a teszt zárja le a fázist, nem helyettesíti, hanem kiegészíti a
+  lenti kézi migrációs ellenőrzést.
 
-**Teszt:** migráció ténylegesen lefut a helyi docker-compose Postgresen; ellenőrzés, hogy az
-új szerepkör kapcsolattal SELECT ne menjen át, INSERT viszont igen (kézi `psql`/pool-próba);
-`pnpm exec nx run-many -t build,typecheck,test,lint` zöld.
+**Teszt:** migráció ténylegesen lefut a helyi docker-compose Postgresen (kézi ellenőrzés);
+a fenti `db-pool.spec.ts` automatán igazolja a SELECT-tiltást/INSERT-engedélyt a
+`DATABASE_URL_HANDOFF` szerepkörön; `pnpm exec nx run-many -t build,typecheck,test,lint`
+zöld.
 **Commit:** `feat: add CustomerHandoff model and insert-only DB role`
 → megállok, kérem a tesztelést.
 
@@ -156,14 +177,23 @@ Tervezett tartalom:
 
 - `POST /api/customer/chat`: az `/api/chat` handler mintája, de `SYSTEM_PROMPT_CUSTOMER` +
   a 3 ügyfél-tool, `logInteraction` hívással (`durationMs`, `escalated` a `toolCalls`-ból,
-  `persona: 'customer'`).
+  `persona: 'customer'`), és a threadet `origin: 'customer'`-rel hozza létre (8. döntés).
+- `GET /api/threads` bővítése: alapértelmezésben (query nélkül) csak `origin: 'internal'`
+  threadeket ad vissza — a meglévő belső hívó (`ThreadSidebar`) viselkedése így
+  változatlan marad, csak most már ténylegesen elhatárolva az ügyfél-threadektől
+  (8. döntés).
 - `GET /api/handoffs` (query: `status`, default `pending`), `POST
-  /api/handoffs/:id/approve`, `POST /api/handoffs/:id/reject` — sima Prisma RW, a
+/api/handoffs/:id/approve`, `POST /api/handoffs/:id/reject` — sima Prisma RW, a
   `/api/threads/:id` guard-mintáját követve (400/404).
 
 **Teszt:** `app.spec.ts` bővítése (supertest): sikeres közvetlen válasz-ág, sikeres
-eszkaláció-ág (INSERT ellenőrzése mockolt/valós Prisma-hívással), `/api/handoffs` lista,
-jóváhagyás/elutasítás státuszváltás, 400/404 ágak. `nx test server` zöld.
+eszkaláció-ág — **fontos pontosítás**: a `requestHumanHandoff` tool a `getHandoffPool()`-on
+(nyers `pg.Pool`, `DATABASE_URL_HANDOFF`) ír, NEM Prisma-n keresztül (2. döntés), tehát az
+INSERT ellenőrzése a `getHandoffPool()` mockolásával/stubolásával történik, nem
+`vi.mock('@plantbase/db')`-vel; a `GET /api/threads` `origin`-szűrése (csak internal jön
+vissza query nélkül); `/api/handoffs` lista, jóváhagyás/elutasítás státuszváltás (ez viszont
+valóban Prisma RW-n megy, itt helyes a `vi.mock('@plantbase/db')` minta); 400/404 ágak.
+`nx test server` zöld.
 **Commit:** `feat: add customer chat endpoint and staff handoff review routes`
 → megállok, kérem a tesztelést.
 
@@ -171,10 +201,12 @@ jóváhagyás/elutasítás státuszváltás, 400/404 ágak. `nx test server` zö
 
 Tervezett tartalom:
 
-- `apps/web/src/components/chat/chat.tsx`: `apiUrl` prop-osítása (default a jelenlegi
-  `/api/chat`).
-- Új `apps/web/src/app/customer-app.tsx`: `Chat apiUrl="/api/customer/chat"`, állandó
-  AI-jelzés sáv, eltérő branding.
+- `apps/web/src/components/chat/chat.tsx`: `apiUrl` prop-osítása — a default a jelenlegi,
+  ténylegesen hardkódolt `API_URL` konstans marad (`http://localhost:3001/api/chat`, teljes
+  URL, nem relatív útvonal), hogy a belső `App` hívása változatlan maradjon.
+- Új `apps/web/src/app/customer-app.tsx`: `Chat apiUrl="http://localhost:3001/api/customer/chat"`
+  (ugyanaz a hardkódolt-host minta, mint a meglévő `API_URL`-nél), állandó AI-jelzés sáv,
+  eltérő branding.
 - `apps/web/src/main.tsx`: `window.location.pathname`-alapú route-switch (`/customer` →
   `CustomerApp`, egyébként a meglévő belső `App`).
 
@@ -220,7 +252,7 @@ Tervezett tartalom:
   `searchKnowledge`, nem-`weak` találat → közvetlen válasz, nincs handoff.
 - **B ág** (hatókörön kívüli eszkaláció): "50 db pozsgás növényt szeretnék rendelni céges
   ajándéknak, egyedi árat és számlás szállítást kérnék" → `requestHumanHandoff({reason:
-  'out_of_scope'})` → staff jóváhagyja a `/staff/handoffs`-on.
+'out_of_scope'})` → staff jóváhagyja a `/staff/handoffs`-on.
 - **C ág** (bizonytalanság-demó): gyengén fedett gondozási/kártevő téma → `searchKnowledge`
   kétszer `weak:true` → `requestHumanHandoff({reason: 'weak_knowledge'})`.
 
@@ -229,6 +261,8 @@ seed-adaton.
 
 **Teszt:** teljes `nx run-many -t build,typecheck,test,lint` zöld; a fenti három demó-ág
 manuális, böngészős végigfuttatása (`nx serve server` + `nx serve web`); `logs/*.jsonl` és a
-`customer_handoffs` tábla ellenőrzése; a belső (`/`) felület regressziómentessége.
+`customer_handoffs` tábla ellenőrzése; a belső (`/`) felület regressziómentessége — beleértve
+explicit annak ellenőrzését, hogy a demó közben létrejött ügyfél-threadek NEM jelennek meg a
+belső `ThreadSidebar`-ban (8. döntés, `origin`-szűrés).
 **Commit:** `docs: HF5 — ügyfélirányú PoC leadandók (business case, mérési terv, kérdéslap)`
 → megállok, kérem a tesztelést.
