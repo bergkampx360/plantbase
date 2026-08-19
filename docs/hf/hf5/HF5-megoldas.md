@@ -124,7 +124,8 @@ végrehajtotta volna). Mindkettőt javítottam, és a javítás után többször
 
 ## 6. Kapcsolódó leadandók
 
-- Prezentáció (üzleti indoklás, adattérkép, rollout terv, mérési terv): [`eloadas-vazlat.md`](eloadas-vazlat.md)
+- Prezentáció (üzleti indoklás, adattérkép, rollout terv, mérési terv): [`eloadas.html`](eloadas.html)
+  (a tényleges, bemutatható diasor), tartalmi forrásként/előadói jegyzetként [`eloadas-vazlat.md`](eloadas-vazlat.md)
 - Teljes mérési terv tábla: [`meresi-terv.md`](meresi-terv.md)
 - Kérdéslap (6 megadott + 2 saját kérdés): [`qna.md`](qna.md)
 - A tényleges kód: `packages/core/src/tools/request-human-handoff.ts`,

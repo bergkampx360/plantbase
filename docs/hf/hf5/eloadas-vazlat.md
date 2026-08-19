@@ -1,8 +1,13 @@
-# HF5 — Prezentáció vázlat (üzleti indoklás, ~5 perc, 6-8 dia)
+# HF5 — Prezentáció vázlat (üzleti indoklás, ~5 perc, 8 dia)
 
-> A use case-t a PoC mutatja meg (mit csinál a rendszer); ez a diasor a business case-re
-> fókuszál (miért éri meg). Minden itt szereplő állítást a repóban lévő PoC ténylegesen
+> A tényleges, bemutatható diasor: [`eloadas.html`](eloadas.html) — böngészőben megnyitva
+> nyílgombokkal/görgetéssel lapozható, nyomtatva/PDF-be mentve is helyesen tördelődik. Ez a
+> fájl az a részletesebb tartalmi forrás/előadói jegyzet, ami diánként kifejti, miért az
+> szerepel a diákon, ami, és minden itt szereplő állítást a repóban lévő PoC ténylegesen
 > igazol.
+>
+> A use case-t a PoC mutatja meg (mit csinál a rendszer); ez a diasor a business case-re
+> fókuszál (miért éri meg).
 
 ---
 
