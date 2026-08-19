@@ -12,9 +12,17 @@
   (+ a megfelelő `@ai-sdk/*` provider) az LLM-hívásokhoz (G1 óta az `askAgent` is ezen megy, ld.
   lent). Nincs valódi hálózati/DB hívás.
 - **Integration** — valódi, futó Postgres (docker-compose) ellen: pl. migráció+seed idempotencia
-  (`packages/db`), a read-only szerepkör tényleges write-tiltása. Ma ez csak a `db-role-setup` skill
-  kézi `psql` lépéseként létezik, nincs automatizálva — ez tudatos, dokumentált állapot, nem
-  felejtés (ld. "Kimarad" lent).
+  (`packages/db`), a read-only szerepkör tényleges write-tiltása. A `plantbase_ro` (read-only)
+  szerepkörre ez ma is csak a `db-role-setup` skill kézi `psql` lépéseként létezik, nincs
+  automatizálva — ez tudatos, dokumentált állapot, nem felejtés (ld. "Kimarad" lent). **J1-től
+  (HF5, `docs/implementation/09-customer-facing-poc.md`) van egy első, ténylegesen
+  automatizált tag ebben a szintben**: `packages/core/src/infra/db-pool.integration.spec.ts`
+  — külön fájlnév-minta (`*.integration.spec.ts`), kizárva a `vitest.config.mts` alap `test`
+  targetjéből (hogy az továbbra is gyors és DB-független maradjon), saját
+  `pnpm --filter @plantbase/core run test:integration` scripttel futtatva. Valódi Postgres
+  ellen igazolja mind az insert-only `DATABASE_URL_HANDOFF` szerepkör INSERT-engedélyét/
+  SELECT-tiltását, mind azt, hogy a `plantbase_ro` sem lát rá az új `customer_handoffs`
+  táblára.
 - **E2E** — a `plantbase` bináris tényleges elindítása (build + spawn), csak kritikus flow-ra
   (`konvenciok.md` elve). Ma egy sincs — ez a legritkábban elvárt szint, nem blokkoló hiány.
 
@@ -109,7 +117,9 @@ zöldek — nem elég, hogy a kód fut.
 
 - `coverage.thresholds` tényleges beállítása a `vitest.config.mts`-ekben.
 - `apps/cli/vitest.config.mts` létrehozása és az első CLI-szintű tesztek megírása.
-- Automatizált integration-teszt a read-only DB-szerepkörre (ma kézi `db-role-setup` lépés).
+- Automatizált integration-teszt a **read-only** (`plantbase_ro`) DB-szerepkörre (ma kézi
+  `db-role-setup` lépés) — ez a döntés nem változott. Az **insert-only** (`plantbase_handoff`,
+  J1) szerepkörre viszont már van automatizált integration-teszt, ld. fent.
 - CI (GitHub Actions) — már korábban is "4. órára" ütemezve, ez a döntés nem változik.
 
 Ezek egy külön, jövőbeli kód-PR-ban valósulnak meg, amit ez a stratégia mint elfogadott terv fog

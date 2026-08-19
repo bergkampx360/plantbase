@@ -27,6 +27,7 @@ elkészült — ld. [`docs/rag-pipeline.md`](docs/rag-pipeline.md), [`docs/rag-a
 G rész (webes chat felület) is kész: streamelő `apps/server` (Express) + `apps/web` (React,
 `useChat`, tool-kártyák, "Új chat"/history-sáv) ugyanazokra a `packages/core`-építőelemekre épül,
 mint a CLI, DB-alapú (`Thread`/`Message`) beszélgetés-történettel — ld. "Futtatás és tesztelés".
+J rész (HF5, ügyfélirányú PoC) is kész — ld. "Ügyfélirányú PoC (HF5)" lent.
 
 ### Költség (RAG)
 
@@ -45,27 +46,28 @@ Részletek és a `products` séma: [`docs/stack.md`](docs/stack.md).
 
 ## Dokumentáció
 
-| Dokumentum                                                       | Miről szól                                                                          |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| [`docs/brs-plantbase.md`](docs/brs-plantbase.md)                 | Üzleti igény, megoldás, scope, követelmények, ROI-keret                             |
-| [`docs/roi.md`](docs/roi.md)                                     | ROI-levezetés pénzben, 5 fős iroda szintjén                                         |
-| [`docs/stack.md`](docs/stack.md)                                 | Tech stack, `products` séma                                                         |
-| [`docs/architektura.md`](docs/architektura.md)                   | Tervezett fájlstruktúra, kulcs technológiai döntések                                |
-| [`docs/konvenciok.md`](docs/konvenciok.md)                       | Kódkonvenciók (naming, TypeScript, hibakezelés, tesztelés)                          |
-| [`docs/testing-strategy.md`](docs/testing-strategy.md)           | Plantbase-specifikus automata tesztelési stratégia (unit/integration/E2E, coverage) |
-| [`docs/dev-workflow.md`](docs/dev-workflow.md)                   | Git-szabályok, hookok, dokumentáció-frissítés                                       |
-| [`docs/system-prompt.md`](docs/system-prompt.md)                 | Az agent system promptja                                                            |
-| [`docs/implementation/STATUS.md`](docs/implementation/STATUS.md) | Implementációs tervek státusz-indexe (kanonikus, innen linkelve minden rész-terv)   |
-| [`docs/plugin-valasztasok.md`](docs/plugin-valasztasok.md)       | Marketplace plugin és MCP szerver választások indoklása                             |
-| [`docs/rag-pipeline.md`](docs/rag-pipeline.md)                   | RAG chunking-stratégia, golden-set kiértékelés, költségbecslés (F4/F7/F9)           |
-| [`docs/rag-architektura.md`](docs/rag-architektura.md)           | RAG karbantartási architektúra-terv (hash-alapú sync, F8)                           |
-| [`docs/hf3-megfeleles.md`](docs/hf3-megfeleles.md)               | HF3 megfelelőségi összefoglaló — kereszthivatkozások + eltérések indoklással        |
-| [`docs/ddd/glossary.md`](docs/ddd/glossary.md)                   | Ubiquitous language (termék-katalógus + RAG domain fogalmak)                        |
-| [`docs/ddd/model.md`](docs/ddd/model.md)                         | Entitások, value objectek, aggregátumok                                             |
-| [`docs/tech/infra.md`](docs/tech/infra.md)                       | Postgres/pgvector infra, a két DB-kapcsolat (RO/RW)                                 |
-| [`docs/tech/architecture.md`](docs/tech/architecture.md)         | `packages/core`/`apps/cli`/`apps/server`/`apps/web` felosztás, `rag/` réteg         |
-| [`docs/tech/api.md`](docs/tech/api.md)                           | Tool/CLI felület + HTTP-felület (`/api/chat`, `/api/threads`)                       |
-| [`CLAUDE.md`](CLAUDE.md)                                         | Claude Code-nak szóló projekt-instrukciók                                           |
+| Dokumentum                                                         | Miről szól                                                                          |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| [`docs/brs-plantbase.md`](docs/brs-plantbase.md)                   | Üzleti igény, megoldás, scope, követelmények, ROI-keret                             |
+| [`docs/roi.md`](docs/roi.md)                                       | ROI-levezetés pénzben, 5 fős iroda szintjén                                         |
+| [`docs/stack.md`](docs/stack.md)                                   | Tech stack, `products` séma                                                         |
+| [`docs/architektura.md`](docs/architektura.md)                     | Tervezett fájlstruktúra, kulcs technológiai döntések                                |
+| [`docs/konvenciok.md`](docs/konvenciok.md)                         | Kódkonvenciók (naming, TypeScript, hibakezelés, tesztelés)                          |
+| [`docs/testing-strategy.md`](docs/testing-strategy.md)             | Plantbase-specifikus automata tesztelési stratégia (unit/integration/E2E, coverage) |
+| [`docs/dev-workflow.md`](docs/dev-workflow.md)                     | Git-szabályok, hookok, dokumentáció-frissítés                                       |
+| [`docs/system-prompt.md`](docs/system-prompt.md)                   | A belső (lakberendezői) agent system promptja                                       |
+| [`docs/system-prompt-customer.md`](docs/system-prompt-customer.md) | Az ügyfélirányú (customer) agent system promptja (J3, HF5)                          |
+| [`docs/implementation/STATUS.md`](docs/implementation/STATUS.md)   | Implementációs tervek státusz-indexe (kanonikus, innen linkelve minden rész-terv)   |
+| [`docs/plugin-valasztasok.md`](docs/plugin-valasztasok.md)         | Marketplace plugin és MCP szerver választások indoklása                             |
+| [`docs/rag-pipeline.md`](docs/rag-pipeline.md)                     | RAG chunking-stratégia, golden-set kiértékelés, költségbecslés (F4/F7/F9)           |
+| [`docs/rag-architektura.md`](docs/rag-architektura.md)             | RAG karbantartási architektúra-terv (hash-alapú sync, F8)                           |
+| [`docs/hf3-megfeleles.md`](docs/hf3-megfeleles.md)                 | HF3 megfelelőségi összefoglaló — kereszthivatkozások + eltérések indoklással        |
+| [`docs/ddd/glossary.md`](docs/ddd/glossary.md)                     | Ubiquitous language (termék-katalógus + RAG domain fogalmak)                        |
+| [`docs/ddd/model.md`](docs/ddd/model.md)                           | Entitások, value objectek, aggregátumok                                             |
+| [`docs/tech/infra.md`](docs/tech/infra.md)                         | Postgres/pgvector infra, a két DB-kapcsolat (RO/RW)                                 |
+| [`docs/tech/architecture.md`](docs/tech/architecture.md)           | `packages/core`/`apps/cli`/`apps/server`/`apps/web` felosztás, `rag/` réteg         |
+| [`docs/tech/api.md`](docs/tech/api.md)                             | Tool/CLI felület + HTTP-felület (`/api/chat`, `/api/threads`)                       |
+| [`CLAUDE.md`](CLAUDE.md)                                           | Claude Code-nak szóló projekt-instrukciók                                           |
 
 ## Helyi fejlesztői környezet
 
@@ -117,6 +119,19 @@ pnpm exec nx serve web      # Vite dev-szerver, alapértelmezett port 4200 (nem 
 
 Ezután a böngészőben a `http://localhost:4200` cím alatt érhető el a chat UI. A `PORT`/`CORS_ORIGIN`
 env-változók (`.env.example`) opcionálisak, van kódbeli fallback mindkettőre.
+
+**Ügyfélirányú PoC** (J rész, HF5) — ugyanaz a két folyamat (`nx serve server` + `nx serve
+web`), két új útvonallal:
+
+- `http://localhost:4200/customer` — a webshop vásárlóinak szánt chat (nem a
+  lakberendezőknek), szűkített tool-készlettel és emberi jóváhagyási ponttal.
+- `http://localhost:4200/staff/handoffs` — a staff felülete, ahol a bizonytalan/hatókörön
+  kívüli kérdéseket jóváhagyják vagy elutasítják, mielőtt bármi eljutna a vásárlóhoz.
+
+Előfeltétel: a séma migrálva legyen (`prisma migrate dev`), és a `db-role-setup` skill
+lefusson (a `docker/postgres/initdb/02-handoff-role.sql` hozza létre az agent szűk,
+csak-beszúró adatbázis-jogosultságát). Részletek, a megoldott/nem megoldott fájdalmak
+listája és a demó-forgatókönyv: [`docs/hf/hf5/HF5-megoldas.md`](docs/hf/hf5/HF5-megoldas.md).
 
 **RAG golden-set kiértékelés** (reprodukálható, `docs/rag-pipeline.md` "Golden set" szakaszának alapja) — nyers vektorkeresés vs. teljes HyDE+rerank pipeline összevetése a 8 tesztkérdésre, valós DB/API-hívásokkal:
 

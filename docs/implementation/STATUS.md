@@ -3,17 +3,17 @@
 Egyetlen hely, ahol a teljes terv állapota egy pillantásra látszik. A README "Állapot" szakasza és
 minden más docs-fájl **ide hivatkozzon vissza**, ne duplikálja a táblázatot.
 
-| Rész | Fájl                                                                   | Fázisok      | Státusz    |
-| ---- | ---------------------------------------------------------------------- | ------------ | ---------- |
-| A–B  | [`01-environment-and-agent-core.md`](01-environment-and-agent-core.md) | A1–A7, B1–B5 | ✅ Kész    |
-| C    | [`02-ux-dx-improvements.md`](02-ux-dx-improvements.md)                 | C1–C3        | ✅ Kész    |
-| D    | [`03-runsql-guard-hardening.md`](03-runsql-guard-hardening.md)         | D1–D3        | ✅ Kész    |
-| E    | [`04-runsql-guard-refinements.md`](04-runsql-guard-refinements.md)     | E1–E3        | ✅ Kész    |
-| F    | [`05-rag-pipeline.md`](05-rag-pipeline.md)                             | F1–F11       | ✅ Kész    |
-| G    | [`06-web-chat.md`](06-web-chat.md)                                     | G1–G7        | ✅ Kész    |
-| H    | [`07-web-ux-improvements.md`](07-web-ux-improvements.md)               | H1–H4        | ✅ Kész    |
-| I    | [`08-source-structure-refactor.md`](08-source-structure-refactor.md)   | I1–I2        | ✅ Kész    |
-| J    | [`09-customer-facing-poc.md`](09-customer-facing-poc.md)               | J1–J8        | ⏳ Nyitott |
+| Rész | Fájl                                                                   | Fázisok      | Státusz |
+| ---- | ---------------------------------------------------------------------- | ------------ | ------- |
+| A–B  | [`01-environment-and-agent-core.md`](01-environment-and-agent-core.md) | A1–A7, B1–B5 | ✅ Kész |
+| C    | [`02-ux-dx-improvements.md`](02-ux-dx-improvements.md)                 | C1–C3        | ✅ Kész |
+| D    | [`03-runsql-guard-hardening.md`](03-runsql-guard-hardening.md)         | D1–D3        | ✅ Kész |
+| E    | [`04-runsql-guard-refinements.md`](04-runsql-guard-refinements.md)     | E1–E3        | ✅ Kész |
+| F    | [`05-rag-pipeline.md`](05-rag-pipeline.md)                             | F1–F11       | ✅ Kész |
+| G    | [`06-web-chat.md`](06-web-chat.md)                                     | G1–G7        | ✅ Kész |
+| H    | [`07-web-ux-improvements.md`](07-web-ux-improvements.md)               | H1–H4        | ✅ Kész |
+| I    | [`08-source-structure-refactor.md`](08-source-structure-refactor.md)   | I1–I2        | ✅ Kész |
+| J    | [`09-customer-facing-poc.md`](09-customer-facing-poc.md)               | J1–J8        | ✅ Kész |
 
 ## Új rész indításának szabálya
 

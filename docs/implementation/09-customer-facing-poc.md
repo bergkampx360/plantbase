@@ -391,7 +391,22 @@ jóváhagyás-gomb hívja a megfelelő végpontot és frissíti a listát, a
 **Commit:** `feat: add staff handoff review page`
 → megállok, kérem a tesztelést.
 
-### J8 — Dokumentáció lezárása (HF5 leadandók) ⏳ Nyitott
+### J8 — Dokumentáció lezárása (HF5 leadandók) ✅ KÉSZ
+
+A tervhez képest egy tudatos tartalmi döntés: a `docs/hf/hf5/*.md` négy leadandó
+(`HF5-megoldas.md`, `eloadas-vazlat.md`, `meresi-terv.md`, `qna.md`) a diák saját szavaival,
+első személyben íródott, tudatosan mellőzve minden Claude Code/AI-eszköz-hivatkozást — ezek a
+tényleges beadott házifeladat-anyagok, nem a fejlesztési naplók. Ez a fájl (a J-rész
+implementációs terve) és a többi `docs/implementation/*`/`docs/tech/*` dokumentum továbbra is
+a szokásos, teljes fejlesztési átláthatósággal íródik (`docs/architektura.md` 4. döntése) — a
+kettő tudatosan elkülönített: az egyik a leadandó üzleti/szakmai anyag, a másik a
+kódbázis saját fejlesztési naplója.
+
+A három demó-ág (A/B/C) tényleges, élő végigfuttatása és a `logs`/`customer_handoffs`
+ellenőrzése már a J7 lezárása után, a J8 megírása előtt megtörtént (beleértve egy
+organikusan felfedezett, tervben nem szereplő `weak_knowledge`-eszkalációt is egy olajfáról
+szóló, kétkörös beszélgetésben) — ez adta a `HF5-megoldas.md` demó-forgatókönyv szakaszának
+és a `meresi-terv.md` mért adatpontjainak alapját.
 
 Tervezett tartalom:
 

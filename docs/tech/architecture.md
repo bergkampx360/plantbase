@@ -121,7 +121,7 @@ a repóban); **J7-től** `StaffHandoffsPage` (`src/app/staff-handoffs-page.tsx`,
 jóváhagyási pont UI-ja: `GET /api/handoffs?status=pending` lekérdezése (a `ThreadSidebar`
 fetch-mintáját követve), kérdés/ok/kontextus/javasolt-válasz megjelenítése, Jóváhagyás/
 Elutasítás gombok a `POST /api/handoffs/:id/approve|reject` végpontokra, utána refetch;
-`ToolCallCard` (`src/app/tool-call.tsx`, G5) — összecsukható kártya a tool-hívások/-eredmények
+`ToolCallCard` (`src/components/chat/tool-call.tsx`, G5) — összecsukható kártya a tool-hívások/-eredmények
 megjelenítésére, az AI SDK `isToolUIPart()`/`ToolUIPart` típusaira építve (a CLI `--show-prompt`
 funkcionális megfelelője).
 

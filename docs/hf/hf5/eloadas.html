@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="hu">
+  <head>
+    <meta charset="utf-8" />
+    <title>Az ügyfélszolgálati asszisztens — üzleti indoklás</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #ffffff;
+        --fg: #1a1f16;
+        --muted: #5b6358;
+        --accent: #2f6b3a;
+        --accent-soft: #e7f0e6;
+        --border: #d8ddd4;
+        --danger: #8a3b2b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-snap-type: y mandatory;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family:
+          -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+      section.slide {
+        scroll-snap-align: start;
+        min-height: 100vh;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 6vh 10vw;
+        border-bottom: 1px solid var(--border);
+        position: relative;
+      }
+      section.slide .kicker {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.85rem;
+        color: var(--accent);
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+      }
+      section.slide h1 {
+        font-size: clamp(1.8rem, 4vw, 3rem);
+        line-height: 1.15;
+        margin: 0 0 1.2rem 0;
+      }
+      section.slide h2 {
+        font-size: clamp(1.4rem, 3vw, 2.1rem);
+        line-height: 1.2;
+        margin: 0 0 1.4rem 0;
+      }
+      section.slide ul {
+        font-size: clamp(1rem, 1.6vw, 1.35rem);
+        line-height: 1.55;
+        padding-left: 1.3em;
+        max-width: 60em;
+      }
+      section.slide li {
+        margin-bottom: 0.7em;
+      }
+      section.slide li::marker {
+        color: var(--accent);
+      }
+      section.slide .lead {
+        font-size: clamp(1.05rem, 1.8vw, 1.5rem);
+        color: var(--muted);
+        max-width: 46em;
+        margin-bottom: 1.5rem;
+      }
+      .pill-row {
+        display: flex;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+      }
+      .pill {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-radius: 999px;
+        padding: 0.35em 1em;
+        font-weight: 700;
+        font-size: clamp(0.85rem, 1.3vw, 1.05rem);
+      }
+      .pill.not {
+        background: #f3ece9;
+        color: var(--danger);
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: clamp(0.78rem, 1.15vw, 1rem);
+        max-width: 74em;
+      }
+      th,
+      td {
+        border: 1px solid var(--border);
+        padding: 0.55em 0.7em;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .note {
+        margin-top: 1.2rem;
+        font-size: clamp(0.85rem, 1.2vw, 1.05rem);
+        color: var(--muted);
+        border-left: 3px solid var(--accent);
+        padding-left: 0.9em;
+      }
+      .counter {
+        position: fixed;
+        bottom: 1.2rem;
+        right: 1.6rem;
+        font-size: 0.85rem;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.85);
+        padding: 0.25em 0.7em;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+      }
+      .title-slide {
+        justify-content: center;
+        align-items: flex-start;
+      }
+      .title-slide .sub {
+        font-size: clamp(1.1rem, 2vw, 1.5rem);
+        color: var(--muted);
+        margin-bottom: 2.5rem;
+      }
+      @media print {
+        html,
+        body {
+          scroll-snap-type: none;
+          overflow: visible;
+        }
+        section.slide {
+          min-height: 100vh;
+          page-break-after: always;
+          border-bottom: none;
+        }
+        .counter {
+          display: none;
+        }
+        .corner-mark {
+          display: none;
+        }
+      }
+      /* Márkajelzés — a repóban nincs külön logófájl, a termék-UI mindenhol a 🌱
+         szimbólumot + "Plantbase" szót használja saját arculatként
+         (apps/web/src/components/chat/chat.tsx fejléce); ugyanezt a mintát tükrözi
+         ez a diasor is, egységes zöld tónusban. */
+      .mark {
+        color: var(--accent);
+        display: block;
+      }
+      .wordmark {
+        display: flex;
+        align-items: center;
+        gap: 0.6em;
+        margin-bottom: 1.6rem;
+      }
+      .wordmark .mark {
+        width: 2.4rem;
+        height: 2.4rem;
+      }
+      .wordmark span {
+        font-weight: 800;
+        font-size: 1.15rem;
+        letter-spacing: 0.02em;
+        color: var(--accent);
+      }
+      .corner-mark {
+        position: fixed;
+        top: 1.4rem;
+        left: 1.6rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        opacity: 0.55;
+        z-index: 5;
+      }
+      .corner-mark .mark {
+        width: 1.3rem;
+        height: 1.3rem;
+      }
+      .corner-mark span {
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 0.03em;
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Márkajel egyszer definiálva, <use>-zal újrahasznosítva a wordmarkban és a
+         sarok-jelzésben -->
+    <svg width="0" height="0" style="position: absolute">
+      <symbol id="plantbase-mark" viewBox="0 0 48 48">
+        <path
+          d="M24 42V22"
+          stroke="currentColor"
+          stroke-width="3"
+          stroke-linecap="round"
+        />
+        <path d="M24 24C24 24 8 24 8 10C8 10 24 8 24 24Z" fill="currentColor" />
+        <path
+          d="M24 24C24 24 40 24 40 10C40 10 24 8 24 24Z"
+          fill="currentColor"
+          opacity="0.55"
+        />
+      </symbol>
+    </svg>
+
+    <div class="corner-mark" aria-hidden="true">
+      <svg class="mark"><use href="#plantbase-mark" /></svg>
+      <span>Plantbase</span>
+    </div>
+
+    <section class="slide title-slide">
+      <div class="wordmark">
+        <svg class="mark"><use href="#plantbase-mark" /></svg>
+        <span>PLANTBASE</span>
+      </div>
+      <div class="kicker">
+        Vezetői döntéselőkészítő anyag &middot; kb. 5 perc
+      </div>
+      <h1>
+        Az ügyfélszolgálati asszisztens<br />— a belső eszközünk kifelé fordítva
+      </h1>
+      <div class="sub">
+        Eddig a lakberendező kollégáinknak dolgozott. Most megmutatom, mit
+        kapnak ebből a mi ügyfeleink — egy működő PoC-kal, nem ígérettel.
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">1 / 8</div>
+      <h2>A probléma: melyik három fájdalmat célozzuk</h2>
+      <ul>
+        <li>
+          <strong>#1 — nincs válasz munkaidőn kívül.</strong> A vásárlók akkor
+          is keresnének minket, amikor a csapat nem elérhető.
+        </li>
+        <li>
+          <strong>#2 — ugyanazok a kérdések naponta százszor.</strong>
+          Staff-időt visz el olyasmi, amit jobban tudnának csinálni.
+        </li>
+        <li>
+          <strong
+            >#8 — a sürgős ugyanabban a sorban áll, mint a triviális.</strong
+          >
+          Nincs triázs a bejövő kérdések között.
+        </li>
+      </ul>
+      <div class="note">
+        Amit ma nem vállalunk: onboarding, rendelés-státusz, személyre szabás,
+        panasz-tanulás, szerződéskötés, staff-konzisztencia,
+        lemorzsolódás-előrejelzés — ezek külön kezdeményezések.
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">2 / 8</div>
+      <h2>A megoldás: két út, egy demó</h2>
+      <ul>
+        <li>
+          <strong>Közvetlen válasz-ág:</strong> termék- és gondozási kérdésekre
+          azonnal, forráshivatkozással.
+        </li>
+        <li>
+          <strong>Eszkalációs ág — az emberi jóváhagyási pont:</strong>
+          bizonytalanság vagy ítélőképességet igénylő kérés esetén
+          <em>nem válaszol találgatva</em> — jóváhagyásra küldi, semmi nem jut
+          el a vásárlóhoz addig, amíg valaki jóvá nem hagyja.
+        </li>
+        <li>
+          Élő demó: mindkét út valós adaton, élőben generált válasszal — nincs
+          előre megírt szöveg.
+        </li>
+      </ul>
+      <div class="note">
+        Beépített védelem, nem utólagos ötlet: állandó AI-jelzés, tiltott a
+        mesterséges sürgetés — pontosan az a kockázat, amit a korábbi AI
+        Act-elemzésünk (HF4) már jelzett erre az esetre.
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">3 / 8 &middot; kötelező dia</div>
+      <h2>Adattérkép — egyetlen vásárlói kérdés útja</h2>
+      <table>
+        <tr>
+          <th>Adat</th>
+          <th>Hova megy</th>
+          <th>Mi marad nálunk</th>
+          <th>Mi NEM megy ki sosem</th>
+        </tr>
+        <tr>
+          <td>A vásárló kérdése</td>
+          <td>
+            Anthropic (válasz); gondozási kérdésnél OpenAI
+            <strong>kétszer</strong> is (kereséshez, pontozáshoz)
+          </td>
+          <td>Kérdés+válasz naplófájlban és adatbázisban</td>
+          <td>A katalógus és a cikkek tartalma — csak olvassuk</td>
+        </tr>
+        <tr>
+          <td>Beszélgetés-előzmény</td>
+          <td>—</td>
+          <td>Helyi Postgres (Thread/Message)</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Eszkalált esetek</td>
+          <td>—</td>
+          <td>Helyi Postgres, külön, csak-beszúrható tábla</td>
+          <td>A jóváhagyás státusza sosem megy vissza a modellhez</td>
+        </tr>
+        <tr>
+          <td>Interakció teljes naplója</td>
+          <td>—</td>
+          <td>Helyi JSONL — önálló, második másolat</td>
+          <td>—</td>
+        </tr>
+      </table>
+      <div class="note">
+        Nyílt pont, amit nem szépítünk: ma nincs automatikus anonimizálás, és
+        nincs hozzáférés-/megőrzési szabály a naplózott adatra — előfeltétele az
+        éles bevezetésnek.
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">4 / 8 &middot; kötelező dia</div>
+      <h2>Rollout terv</h2>
+      <ul>
+        <li>
+          <strong>Pilot:</strong> szűk vásárlói kör, 2-4 hét, staff minden
+          eszkalációt manuálisan felülvizsgál.
+        </li>
+        <li>
+          <strong>Döntési pont:</strong> tovább lépünk, ha a
+          válaszidő/eszkalációs arány a mérési tervben rögzített tartományban
+          van, ÉS a havi minőségi audit nem talál rendszerszintű hibát.
+        </li>
+        <li>
+          <strong>Teljes bevezetés:</strong> fokozatos kiterjesztés, folyamatos
+          staff-átfutásidő-figyeléssel.
+        </li>
+        <li>
+          <strong>Gazda a go-live után:</strong> folyamatgazda (napi triázs,
+          riportok) + technikai gazda (fejlesztő).
+        </li>
+      </ul>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">5 / 8 &middot; kötelező dia</div>
+      <h2>Mérési terv — összefoglaló</h2>
+      <ul>
+        <li>
+          <strong>Válaszidő</strong> (#1) és
+          <strong>eszkalációs arány</strong> (#8) — automatikusan mérhető, már
+          ma is naplózva.
+        </li>
+        <li>
+          <strong>FAQ-deflekciós arány</strong> (#2) — hány kérdést old meg a
+          rendszer staff nélkül.
+        </li>
+        <li>
+          <strong>Staff jóváhagyási átfutási idő</strong> és
+          <strong>elutasítási arány.</strong>
+        </li>
+        <li>
+          <strong>Hiba-metrika, nem csak siker-metrika:</strong> havi audit a
+          nem-eszkalált, de utólag hibásnak bizonyuló válaszok arányára.
+        </li>
+      </ul>
+      <div class="note">
+        Teljes tábla, forrás-megjelöléssel soronként:
+        <code>docs/hf/hf5/meresi-terv.md</code>.
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">6 / 8</div>
+      <h2>Amit tudatosan nem vállalunk</h2>
+      <div class="pill-row">
+        <span class="pill not">Nincs vásárlói azonosítás</span>
+        <span class="pill not"
+          >Nincs automatikus vásárlói értesítés jóváhagyás után</span
+        >
+        <span class="pill not">Nincs rendeléskezelő-integráció</span>
+        <span class="pill not">Nincs anonimizálás / megőrzési szabály</span>
+      </div>
+      <p class="lead">
+        Ezek nem elfelejtett részletek — explicit, dokumentált előfeltételei egy
+        éles bevezetésnek.
+      </p>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">7 / 8</div>
+      <h2>Összegzés</h2>
+      <ul>
+        <li>A PoC ténylegesen fut, valós adaton, mindkét úttal.</li>
+        <li>Három fájdalmat old meg — hetet nem — ezt nyíltan vállaljuk.</li>
+        <li>
+          A humán jóváhagyási pont garantálja: semmi nem jut el a vásárlóhoz
+          felülvizsgálat nélkül, ha a rendszer bizonytalan.
+        </li>
+      </ul>
+    </section>
+
+    <section class="slide">
+      <div class="kicker">8 / 8</div>
+      <h2>Kérdések?</h2>
+      <p class="lead">
+        A legkényesebb kérdésekre — beleértve két, saját magunk által feltett,
+        kényes kérdést is — előre válaszoltunk: <code>docs/hf/hf5/qna.md</code>.
+      </p>
+    </section>
+
+    <div class="counter" id="counter">Cím</div>
+
+    <script>
+      const slides = Array.from(document.querySelectorAll('section.slide'));
+      const counter = document.getElementById('counter');
+
+      // Explicit módon nyilvántartott index, NEM a window.scrollY-ból minden
+      // billentyűleütéskor újraszámolt érték — az eredeti verzió ezt tette, és emiatt
+      // csak az első leütés működött: a html+body-n EGYSZERRE beállított
+      // scroll-snap-type/overflow-y két egymásba ágyazott görgethető kontextust hozott
+      // létre, így a scrollIntoView() a body-t görgette, a window.scrollY viszont a
+      // (görgetlen) dokumentum-görgetést tükrözte — a következő leütéskor a kiszámolt
+      // index emiatt nem haladt tovább. Kézi görgetésnél (egérgörgő/trackpad) a scroll
+      // eseményből frissítjük ugyanezt az indexet, hogy a két navigációs mód ne
+      // csússzon szét egymástól.
+      let currentIndex = 0;
+
+      function renderCounter() {
+        // a kicker-feliratok "N / 8" tartalmi-dia-számozást használnak (a címdiát nem
+        // számolják) — a láttató számláló ugyanezt a számozást tükrözi, hogy ne mutasson
+        // két eltérő "hányadik dia" jelzést egyszerre
+        counter.textContent =
+          currentIndex === 0
+            ? 'Cím'
+            : currentIndex + ' / ' + (slides.length - 1);
+      }
+
+      function goTo(index) {
+        currentIndex = Math.max(0, Math.min(index, slides.length - 1));
+        slides[currentIndex].scrollIntoView({ behavior: 'smooth' });
+        renderCounter();
+      }
+
+      // egér/trackpad-görgetésnél kívülről is szinkronban tartjuk az indexet
+      let scrollSyncTimeout;
+      window.addEventListener(
+        'scroll',
+        () => {
+          clearTimeout(scrollSyncTimeout);
+          scrollSyncTimeout = setTimeout(() => {
+            const y = window.scrollY;
+            let idx = 0;
+            slides.forEach((s, i) => {
+              if (s.offsetTop <= y + 10) idx = i;
+            });
+            currentIndex = idx;
+            renderCounter();
+          }, 120);
+        },
+        { passive: true },
+      );
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+          e.preventDefault();
+          goTo(currentIndex + 1);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          goTo(currentIndex - 1);
+        }
+      });
+
+      renderCounter();
+    </script>
+  </body>
+</html>
